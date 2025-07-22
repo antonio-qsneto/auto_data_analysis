@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Data Analysis Result</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        .plotly-graph-div {
+            width: 100% !important;
+            height: 320px !important;
+        }
+        .plot-card {
+            border-radius: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            background: #fff;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="container mt-4">
+    <h2>CSV Preview</h2>
+    <div class="mb-4">
+        {{ preview|safe }}
+    </div>
+
+    <h3>Generate Analysis</h3>
+    <form id="plotForm" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="file" accept=".csv" class="form-control mb-3" required>
+        <button type="submit" class="btn btn-success">Generate Plots with AI</button>
+    </form>
+
+    <div id="plotsContainer" class="row mt-4"></div>
+
+    <script>
+        document.getElementById('plotForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const response = await fetch("{% url 'gerar_plot' %}", {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            const container = document.getElementById('plotsContainer');
+            container.innerHTML = '';
+
+            if (data.error) {
+                container.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                return;
+            }
+
+            data.plots.forEach((plotJSON, i) => {
+                const colDiv = document.createElement('div');
+                colDiv.className = 'col-md-6 d-flex align-items-stretch';
+
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'plot-card w-100';
+
+                const plotDiv = document.createElement('div');
+                plotDiv.id = 'plot' + i;
+                plotDiv.style.height = "350px";
+                plotDiv.style.width = "100%";
+
+                cardDiv.appendChild(plotDiv);
+                colDiv.appendChild(cardDiv);
+                container.appendChild(colDiv);
+
+                // Set autosize and remove fixed width/height from layout
+                let layout = plotJSON.layout || {};
+                layout.autosize = true;
+                layout.width = null;
+                layout.height = null;
+                layout.margin = layout.margin || {l: 40, r: 20, t: 40, b: 40};
+
+                Plotly.newPlot(plotDiv.id, plotJSON.data, layout, {responsive: true});
+            });
+        });
+    </script>
+</body>
+</html>
