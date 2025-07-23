@@ -11,5 +11,58 @@
         {{ form.as_p }}
         <button type="submit" class="btn btn-primary">Analyze</button>
     </form>
+
+    <div id="plotsContainer" class="row mt-4"></div>
+
+    <script>
+        document.getElementById('plotForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const response = await fetch("{% url 'gerar_plot' %}", {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            const container = document.getElementById('plotsContainer');
+            container.innerHTML = '';
+
+            if (data.error) {
+                container.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                return;
+            }
+
+            data.plots.forEach((plotJSON, i) => {
+                // Only show plot if it has data and data is not empty
+                if (!plotJSON.data || !Array.isArray(plotJSON.data) || plotJSON.data.length === 0) {
+                    return; // Skip empty plots
+                }
+
+                const colDiv = document.createElement('div');
+                colDiv.className = 'col-md-6 d-flex align-items-stretch';
+
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'plot-card w-100';
+
+                const plotDiv = document.createElement('div');
+                plotDiv.id = 'plot' + i;
+                plotDiv.style.height = "350px";
+                plotDiv.style.width = "100%";
+
+                cardDiv.appendChild(plotDiv);
+                colDiv.appendChild(cardDiv);
+                container.appendChild(colDiv);
+
+                let layout = plotJSON.layout || {};
+                layout.autosize = true;
+                layout.width = null;
+                layout.height = null;
+                layout.margin = layout.margin || {l: 40, r: 20, t: 40, b: 40};
+
+                Plotly.newPlot(plotDiv.id, plotJSON.data, layout, {responsive: true});
+            });
+        });
+    </script>
 </body>
 </html>
