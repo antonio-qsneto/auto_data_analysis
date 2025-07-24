@@ -9,6 +9,7 @@ def chamar_openrouter(prompt: str, api_key: str) -> str:
 
     payload = {
         "model": "deepseek/deepseek-chat-v3-0324:free",
+        #"model": "openai/gpt-4.1",
         "messages": [
             {"role": "system", "content": "You are a data analyst who generates Python code for visualization."},
             {"role": "user", "content": prompt}
@@ -22,4 +23,5 @@ def chamar_openrouter(prompt: str, api_key: str) -> str:
         return response.json()["choices"][0]["message"]["content"]
     else:
         print("Chave não encontrada ou inválida aqui")
+        print(f"api_key: {api_key}")
         raise RuntimeError(f"Erro {response.status_code}: {response.text}")

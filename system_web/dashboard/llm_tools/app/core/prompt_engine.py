@@ -34,25 +34,30 @@ Preview of first rows:
 
 Your task:
 1. Analyze the structure and content of `df`.
-2. If appropriate based on shape and columns, generate Python code to create visualizations:
-   - Time Series Plot (if date/time column exists)
-   - Box Plot per category
-   - Correlation Heatmap
-   - Top N Expenses
-   - Histogram or KDE
-   - Anomaly Detection
-   - Summary Table by category
-   - Cumulative Spending Curve
-   - Pie Chart by category
+2. Based on the data, decide which visualizations are relevant and possible to generate. Only generate plots that make sense for the data provided. Consider the presence of date/time columns, numeric columns, categorical columns, and the overall shape of the data.
+3. For each relevant plot type, generate Python code using Plotly to create the visualization. Possible plot types include:
+   - Time Series Plot (if a date/time column exists)
+   - Box Plot per category (if categorical and numeric columns exist)
+   - Correlation Heatmap (if there are at least two numeric columns)
+   - Top N Expenses (if there is a column representing expenses)
+   - Histogram or KDE (if there are numeric columns)
+   - Anomaly Detection (if time series or numeric data is present)
+   - Summary Table by category (if categorical columns exist)
+   - Cumulative Spending Curve (if time and expense columns exist)
+   - Pie Chart by category (if categorical columns exist)
 
-3. Generate Python code for data visualization using Plotly only. Do not use matplotlib or seaborn.
-4. Do NOT load the data (df is already defined).
-5. Do NOT call plt.show().
-6. For each plot, append the Plotly figure object (not a dict) to a list called plot_data.
-   Example: plot_data.append(fig)
-7. Return only valid Python code. Not comments or explanations.
-8. Use plotly for plots, and ensure they are JSON-serializable.
-9. If you want to use the DataFrame index as x or y, first reset the index or assign it to a new column (e.g., df['index'] = df.index), then use that column name in the plot.
-10. Do not use x='index' unless 'index' is a column in df.
+4. If a column contains date or datetime information, always convert it using pd.to_datetime before plotting. For time series plots, set the x-axis type to 'date' using fig.update_xaxes(type='date').
+5. Use Plotly only for visualizations. Do NOT use matplotlib or seaborn.
+6. Do NOT load the data (df is already defined).
+7. Do NOT call plt.show().
+8. For each plot, append the Plotly figure object to a list called `plot_data`.
+   Example: `plot_data.append(fig)`
+9. Return only **valid Python code**, no comments or explanations.
+10. Ensure the figures are JSON-serializable.
+11. If you need to use the DataFrame index, create a column like `df['index'] = df.index`.
+12. Only generate code if there is data to plot; otherwise, skip that plot type.
+13. If a for loop is necessary, do not generate several plots—just generate one plot for each type.
+14. Import pandas if necessary.
+
     """
     return prompt.strip()
