@@ -8,14 +8,15 @@ def chamar_openrouter(prompt: str, api_key: str) -> str:
     }
 
     payload = {
-        "model": "deepseek/deepseek-chat-v3-0324:free",
-        #"model": "openai/gpt-4.1",
+        #"model": "deepseek/deepseek-chat-v3-0324:free",
+        "model": "google/gemini-2.5-flash-lite-preview-06-17",
+
         "messages": [
             {"role": "system", "content": "You are a data analyst who generates Python code for visualization."},
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.3,
-        "max_tokens": 1000
+        "max_tokens": 1476
     }
 
     response = requests.post(url, json=payload, headers=headers)
