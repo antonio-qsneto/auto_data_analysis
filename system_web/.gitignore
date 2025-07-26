@@ -1,16 +1,6 @@
 .env
-.idea/
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.db
 *.sqlite3
 .vscode/
 node_modules/
-dist/
-build/
-coverage/
 *.log
 *.env
-*.DS_Store

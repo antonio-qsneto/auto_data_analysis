@@ -16,7 +16,7 @@ def chamar_openrouter(prompt: str, api_key: str) -> str:
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.3,
-        "max_tokens": 1476
+        "max_tokens": 1420
     }
 
     response = requests.post(url, json=payload, headers=headers)
