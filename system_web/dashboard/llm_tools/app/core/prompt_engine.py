@@ -33,33 +33,46 @@ Sample data:
 
 Your task is to generate Python code that:
 
-At the top of the code "import plotly" especifically in this exactly format: "import plotly"
-1. Analyzes df (don't create another DataFrame. It's the only one available) and creates only relevant Plotly visualizations based on the available columns.
+1. Analyzes df (don't create another DataFrame. It's the only one available) and creates a list named `chart_data` with dictionaries formatted for Chart.js.
 2. Detect column types:
-   - Date columns → time series and cumulative plots.
-   - Numeric columns → histograms, box plots, correlation heatmap.
-   - Categorical columns → pie charts and grouped bar charts.
-3. Clean data before plotting:
+   - Date columns → time series (line chart).
+   - Numeric columns → bar charts, histograms, and correlation heatmaps.
+   - Categorical columns → pie charts or bar charts.
+3. Include at least 6 different visualizations when possible:
+   - **Line charts:** For time series (if a date column exists).
+   - **Bar charts:** For numeric vs category and grouped comparisons.
+   - **Pie charts:** For category distributions.
+   - **Histogram:** For numeric distributions.
+   - **Correlation Heatmap:** For numeric correlations (use type 'heatmap').
+   - **Box plot:** For numeric spread by category (use type 'boxplot').
+4. Clean data before plotting:
    - Convert date columns: df[col] = pd.to_datetime(df[col], errors='coerce')
    - Convert numeric columns: df[col] = pd.to_numeric(df[col], errors='coerce')
-   - Drop NaN values in the columns used for each plot.
-4. When plotting:
-   - ALWAYS extract columns as Python lists using `.dropna().tolist()`.
-   - Example: `x = df['Valor'].dropna().tolist()`
-5. Plot rules:
-   - **Time Series:** if a date column and a numeric column exist, sort by date, convert date to ISO strings (strftime('%Y-%m-%d')), and plot with `x=date_list, y=numeric_list`.
-   - **Box Plot:** use `go.Box` with lists for y-values grouped by category.
-   - **Pie Chart:** use `go.Pie(labels=labels_list, values=values_list)`.
-   - **Bar Chart:** use `go.Bar(x=categories_list, y=values_list)`.
-   - **Correlation Heatmap:** if 2+ numeric columns exist, use `go.Heatmap` with a correlation matrix converted to lists.
-6. Only create a plot if there are at least 2 valid data points for it.
-7. After creating each figure:
-   - Convert it to JSON-safe format using `fig.to_plotly_json()`.
-   - Append it to a list called `plot_data` using `plot_data.append(fig.to_plotly_json())`.
-8. Return valid Python code only, no explanations or comments.
-10. Ensure all generated figures are fully JSON-serializable (no bdata, no non-serializable objects).
-11. Exclude columns named 'index' or starting with 'Unnamed' from numeric or categorical analysis.
-12. do not put any ```python``` or ```python``` tags in the code or ```.
-
+   - Drop NaN values in the columns used for each chart.
+5. Chart.js structure for each chart:
+   chart_data.append({{
+       "type": "bar" or "line" or "pie" or "doughnut" or "heatmap" or "boxplot",
+       "data": {{
+           "labels": [...],
+           "datasets": [{{
+               "label": "...",
+               "data": [...],
+               "backgroundColor": ["rgba(75,192,192,0.2)", ...],
+               "borderColor": ["rgba(75,192,192,1)", ...],
+               "borderWidth": 1
+           }}]
+       }}
+   }})
+6. For colors, use simple rgba strings like:
+   backgroundColor = "rgba(75, 192, 192, 0.2)"
+   borderColor = "rgba(75, 192, 192, 1)"
+7. Only include charts with at least 2 valid points.
+8. Return only valid Python code (no comments, no markdown).
+9. The final result must be a variable `chart_data` (a list of chart dicts).
+10. NO COMMENTS, NO EXPLANATIONS, JUST THE CODE.
+11. Do not put any ```python``` or ``` tags in the code.
 """
+
+
+
     return prompt.strip()

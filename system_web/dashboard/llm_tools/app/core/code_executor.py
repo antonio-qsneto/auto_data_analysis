@@ -3,7 +3,9 @@ import io
 import pandas as pd
 import matplotlib.pyplot as plt
 import re
-import plotly.tools as tls
+import numpy as np # type: ignore
+
+
 
 def extrair_codigo_puro(resposta_llm: str) -> str:
     if "```python" in resposta_llm:
@@ -16,26 +18,25 @@ def extrair_codigo_puro(resposta_llm: str) -> str:
 
 def executar_codigo_ia(codigo: str, df: pd.DataFrame) -> dict:
     stdout = io.StringIO()
-    local_vars = {}
+    namespace = {"pd": pd, "df": df, "np": np, "chart_data": []}
 
-    with contextlib.redirect_stdout(stdout):
-        exec(codigo, {"pd": pd, "plt": plt, "df": df}, local_vars)
+    try:
+        with contextlib.redirect_stdout(stdout):
+            exec(codigo, namespace)
 
-    figures_json = []
-    for fig_num in plt.get_fignums():
-        fig = plt.figure(fig_num)
-        try:
-            plotly_fig = tls.mpl_to_plotly(fig)
-            if plotly_fig is not None and hasattr(plotly_fig, "to_plotly_json"):
-                figures_json.append(plotly_fig.to_plotly_json())
-            else:
-                figures_json.append({"error": "mpl_to_plotly returned None or object without to_plotly_json"})
-        except Exception as e:
-            figures_json.append({"error": str(e)})
+        charts = namespace.get("chart_data", [])
+        return {
+            "stdout": stdout.getvalue(),
+            "charts": charts
+        }
 
-    plt.close('all')
-
-    return {
-        "stdout": stdout.getvalue(),
-        "plots": figures_json
-    }
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print("Error executing code:\n", error_trace)
+        return {
+            "stdout": stdout.getvalue(),
+            "error": str(e),
+            "traceback": error_trace,
+            "charts": []
+        }

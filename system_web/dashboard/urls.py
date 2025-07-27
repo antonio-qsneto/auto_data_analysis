@@ -1,8 +1,6 @@
 from django.urls import path
-from . import views
-from dashboard.views import upload_csv
+from dashboard import views
 
 urlpatterns = [
-    path('gerar-plot/', views.gerar_plot_view, name='gerar_plot'),  # type: ignore
-    path('upload-csv/', upload_csv, name='upload_csv'),  # type: ignore
+    path('gerar_chart/', views.gerar_chart_view, name='gerar_chart'),
 ]
