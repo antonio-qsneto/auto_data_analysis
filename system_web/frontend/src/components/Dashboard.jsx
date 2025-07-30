@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import Chart from 'chart.js/auto';
+import React, { useState } from "react";
+import Charts from "./Charts";
 
 export default function Dashboard() {
   const [charts, setCharts] = useState([]);
@@ -27,18 +27,7 @@ export default function Dashboard() {
       }
 
       const data = await response.json();
-      console.log("Charts received:", data.charts);
-
       setCharts(data.charts);
-
-      // Render charts dynamically after data is received
-      setTimeout(() => {
-        data.charts.forEach((chart, index) => {
-          const ctx = document.getElementById(`chart-${index}`).getContext("2d");
-          new Chart(ctx, chart);
-        });
-      }, 200);
-
     } catch (err) {
       console.error(err);
       setError("Error uploading file or generating charts.");
@@ -48,24 +37,47 @@ export default function Dashboard() {
   };
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial" }}>
-      <h1>📊 Auto Data Analysis Dashboard</h1>
+    <div className="content-area">
+      <h1 className="dashboard-title">
+        📊 Auto Data Analysis Dashboard
+      </h1>
 
-      <input
-        type="file"
-        accept=".csv"
-        onChange={handleFileUpload}
-        style={{ marginBottom: "20px" }}
-      />
+      {/* KPI Cards */}
+      <div className="sparkboxes">
+        <div className="box box1">
+          <strong>1213</strong>
+          <p>CLICKS</p>
+        </div>
+        <div className="box box2">
+          <strong>422</strong>
+          <p>VIEWS</p>
+        </div>
+        <div className="box box3">
+          <strong>311</strong>
+          <p>LEADS</p>
+        </div>
+        <div className="box box4">
+          <strong>22</strong>
+          <p>SALES</p>
+        </div>
+      </div>
 
-      {loading && <p>Generating charts... Please wait.</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {/* File Upload */}
+      <div className="upload-area">
+        <input
+          type="file"
+          accept=".csv"
+          onChange={handleFileUpload}
+        />
+      </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-        {charts.map((chart, index) => (
-          <div key={index} style={{ border: "1px solid #ccc", padding: "10px" }}>
-            <canvas id={`chart-${index}`} width="400" height="300"></canvas>
-          </div>
+      {loading && <p className="loading">Generating charts...</p>}
+      {error && <p className="error">{error}</p>}
+
+      {/* Charts */}
+      <div className="charts-grid">
+        {charts.map((chart, idx) => (
+          <Charts key={idx} charts={[chart]} />
         ))}
       </div>
     </div>

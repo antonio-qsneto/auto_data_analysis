@@ -33,45 +33,59 @@ Sample data:
 
 Your task is to generate Python code that:
 
-1. Analyzes df (don't create another DataFrame. It's the only one available) and creates a list named `chart_data` with dictionaries formatted for Chart.js.
-2. Detect column types:
-   - Date columns → time series (line chart).
-   - Numeric columns → bar charts, histograms, and correlation heatmaps.
-   - Categorical columns → pie charts or bar charts.
-3. Include at least 6 different visualizations when possible:
-   - **Line charts:** For time series (if a date column exists).
-   - **Bar charts:** For numeric vs category and grouped comparisons.
-   - **Pie charts:** For category distributions.
-   - **Histogram:** For numeric distributions.
-   - **Correlation Heatmap:** For numeric correlations (use type 'heatmap').
-   - **Box plot:** For numeric spread by category (use type 'boxplot').
-4. Clean data before plotting:
+1. Analyzes df (don't create another DataFrame. It's the only one available) and creates a list named `chart_data` where each element is a dictionary formatted for **ApexCharts**.
+2. Detect column types and include at least **6 different chart types** when possible:
+   - **Line charts** (type: 'line'): For time series when date columns exist.
+   - **Area charts** (type: 'area'): For trends over time.
+   - **Bar/Column charts** (type: 'bar' or 'column'): For numeric vs category and grouped comparisons.
+   - **Pie charts** (type: 'pie'): For category distributions.
+   - **Histogram** (represented as 'bar'): For numeric distributions.
+   - **Correlation Heatmap** (type: 'heatmap'): For numeric correlations.
+   - **Box & Whisker** (type: 'boxPlot'): For numeric spread by category.
+   - Optional extra charts if possible: 'radar', 'bubble', 'scatter', 'candlestick'.
+3. Clean data before plotting:
    - Convert date columns: df[col] = pd.to_datetime(df[col], errors='coerce')
    - Convert numeric columns: df[col] = pd.to_numeric(df[col], errors='coerce')
    - Drop NaN values in the columns used for each chart.
-5. Chart.js structure for each chart:
-   chart_data.append({{
-       "type": "bar" or "line" or "pie" or "doughnut" or "heatmap" or "boxplot",
-       "data": {{
-           "labels": [...],
-           "datasets": [{{
-               "label": "...",
-               "data": [...],
-               "backgroundColor": ["rgba(75,192,192,0.2)", ...],
-               "borderColor": ["rgba(75,192,192,1)", ...],
-               "borderWidth": 1
-           }}]
-       }}
-   }})
-6. For colors, use simple rgba strings like:
-   backgroundColor = "rgba(75, 192, 192, 0.2)"
-   borderColor = "rgba(75, 192, 192, 1)"
-7. Only include charts with at least 2 valid points.
-8. Return only valid Python code (no comments, no markdown).
-9. The final result must be a variable `chart_data` (a list of chart dicts).
-10. NO COMMENTS, NO EXPLANATIONS, JUST THE CODE.
-11. Do not put any ```python``` or ``` tags in the code.
+4. Use **ApexCharts data structure**:
+   For charts like line/bar/area:
+   {{
+       "type": "line" or "bar" or "area",
+       "title": "Chart Title",
+       "labels": [...],
+       "series": [{{"name": "Label", "data": [...]}}]
+   }}
+   For pie:
+   {{
+       "type": "pie",
+       "title": "Chart Title",
+       "labels": [...],
+       "series": [...]
+   }}
+   For heatmap:
+   {{
+       "type": "heatmap",
+       "title": "Chart Title",
+       "series": [
+           {{"name": "Row", "data": [{{"x": "Col", "y": value}}, ...]}}
+       ]
+   }}
+   For boxPlot:
+   {{
+       "type": "boxPlot",
+       "title": "Chart Title",
+       "series": [
+           {{"name": "Box", "data": [{{"x": "Category", "y": [min, q1, median, q3, max]}}]}}
+       ]
+   }}
+5. Only include charts with at least 2 valid data points.
+6. The output must be valid Python code with:
+   chart_data = [{{...}}, ...]
+7. Do not include comments, explanations, or markdown.
+8. Do not wrap code in ``` tags.
 """
+
+
 
 
 
