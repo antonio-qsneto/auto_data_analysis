@@ -5,6 +5,14 @@ export default function Dashboard() {
   const [charts, setCharts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [theme, setTheme] = useState("dark");
+
+  // Theme toggle handler
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    document.body.className = newTheme;
+  };
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
@@ -38,6 +46,25 @@ export default function Dashboard() {
 
   return (
     <div className="content-area">
+      <button
+        onClick={toggleTheme}
+        style={{
+          position: "absolute",
+          top: 20,
+          right: 30,
+          padding: "8px 18px",
+          borderRadius: "6px",
+          border: "none",
+          background: "#4C83FF",
+          color: "#fff",
+          fontWeight: "bold",
+          cursor: "pointer",
+          zIndex: 10
+        }}
+      >
+        Switch to {theme === "dark" ? "Light" : "Dark"} Theme
+      </button>
+
       <h1 className="dashboard-title">
         📊 Auto Data Analysis Dashboard
       </h1>
@@ -77,7 +104,7 @@ export default function Dashboard() {
       {/* Charts */}
       <div className="charts-grid">
         {charts.map((chart, idx) => (
-          <Charts key={idx} charts={[chart]} />
+          <Charts key={idx} charts={[chart]} theme={theme} />
         ))}
       </div>
     </div>
