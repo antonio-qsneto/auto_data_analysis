@@ -18,28 +18,36 @@ export default function Charts({ charts, theme = "dark" }) {
   const gridColor = theme === "dark" ? "#444" : "#ccc";
   const cardBg = theme === "dark" ? "#2B2D3E" : "#fff";
 
-  let wideChartCount = 0; // Add this before your map
-
   return (
     <>
       {charts.map((chart, idx) => {
         const type = chart.type || "line";
-        const isWide = type === "area" || type === "line";
         let colClass = "";
 
-        // Alternate columns only for wide charts
-        if (isWide) {
-          colClass = wideChartCount % 2 === 0 ? "col-1" : "col-2";
-          wideChartCount++;
+        // Explicit column assignment
+        if (type === "line") {
+          colClass = "col-1-2";
+        } else if (type === "area") {
+          colClass = "col-2-3";
         }
 
-        // Provide default options if not present
+        const isWide = type === "area" || type === "line";
+
         const options = {
           ...chart.options,
           chart: {
             ...chart.options?.chart,
             foreColor: textColor,
             background: cardBg,
+          },
+          title: {
+            text: chart.title || chart.options?.title?.text || "",
+            align: "left",
+            style: {
+              color: textColor,
+              fontSize: "18px",
+              fontWeight: 600,
+            },
           },
           dataLabels: {
             enabled: false,
