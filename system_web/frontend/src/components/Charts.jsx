@@ -6,6 +6,13 @@ export default function Charts({ charts }) {
     return <p style={{ color: "#ccc", textAlign: "center" }}>No charts available</p>;
   }
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    if (isNaN(date)) return dateStr;
+    return date.toLocaleDateString("en-US", { month: "short", day: "2-digit" });
+  };
+
   return (
     <div className="charts-grid">
       {charts.map((chart, idx) => {
@@ -34,14 +41,31 @@ export default function Charts({ charts }) {
             : {
                 xaxis: {
                   categories: chart.labels || [],
-                  labels: { style: { colors: "#fff" } }
+                  labels: {
+                    style: { colors: "#fff" },
+                    formatter: (val) => formatDate(val)
+                  }
                 },
-                yaxis: { labels: { style: { colors: "#fff" }, formatter: (val) => val.toFixed(1) } },
-                dataLabels: { enabled: false, formatter: (val) => val.toFixed(1), style: { colors: ["#fff"] } }
+                yaxis: {
+                  labels: {
+                    style: { colors: "#fff" },
+                    formatter: (val) => Number(val).toFixed(1)
+                  }
+                },
+                dataLabels: {
+                  enabled: false,
+                  formatter: (val) => Number(val).toFixed(1),
+                  style: { colors: ["#fff"] }
+                }
               }),
           grid: { borderColor: "#444" },
           legend: { labels: { colors: "#fff" } },
-          tooltip: { theme: "dark" }
+          tooltip: {
+            theme: "dark",
+            y: {
+              formatter: (val) => Number(val).toFixed(1)
+            }
+          }
         };
 
         return (
