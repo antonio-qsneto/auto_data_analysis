@@ -18,65 +18,92 @@ export default function Charts({ charts, theme = "dark" }) {
   const gridColor = theme === "dark" ? "#444" : "#ccc";
   const cardBg = theme === "dark" ? "#2B2D3E" : "#fff";
 
+  let wideChartCount = 0; // Add this before your map
+
   return (
-    <div className="charts-grid">
+    <>
       {charts.map((chart, idx) => {
         const type = chart.type || "line";
-        const isHeatmap = type === "heatmap";
+        const isWide = type === "area" || type === "line";
+        let colClass = "";
+
+        // Alternate columns only for wide charts
+        if (isWide) {
+          colClass = wideChartCount % 2 === 0 ? "col-1" : "col-2";
+          wideChartCount++;
+        }
+
+        // Provide default options if not present
         const options = {
+          ...chart.options,
           chart: {
-            type,
-            toolbar: { show: false },
-            background: "transparent"
+            ...chart.options?.chart,
+            foreColor: textColor,
+            background: cardBg,
           },
-          theme: { mode: theme },
-          title: {
-            text: chart.title || "",
-            align: "center",
-            style: { color: textColor, fontSize: "16px" }
+          dataLabels: {
+            enabled: false,
           },
-          ...(isHeatmap
-            ? {
-                dataLabels: { enabled: true, style: { colors: [textColor] } },
-                xaxis: { labels: { style: { colors: textColor } } },
-                yaxis: { labels: { style: { colors: textColor } } }
-              }
-            : {
-                xaxis: {
-                  categories: chart.labels || [],
-                  labels: {
-                    style: { colors: textColor },
-                    formatter: (val) => formatDate(val)
-                  }
-                },
-                yaxis: {
-                  labels: {
-                    style: { colors: textColor },
-                    formatter: (val) => Number(val).toFixed(1)
-                  }
-                },
-                dataLabels: {
-                  enabled: false,
-                  formatter: (val) => Number(val).toFixed(1),
-                  style: { colors: [textColor] }
-                }
-              }),
-          grid: { borderColor: gridColor },
-          legend: { labels: { colors: textColor } },
           tooltip: {
-            theme: theme,
+            theme: theme === "dark" ? "dark" : "light",
+            style: {
+              fontSize: '14px',
+              color: textColor,
+            },
             y: {
-              formatter: (val) => Number(val).toFixed(1)
-            }
-          }
+              formatter: (val) =>
+                typeof val === "number" ? val.toFixed(1) : val,
+            },
+          },
+          xaxis: {
+            ...chart.options?.xaxis,
+            labels: {
+              ...chart.options?.xaxis?.labels,
+              style: { colors: textColor },
+              rotate: -45,
+              hideOverlappingLabels: true,
+              trim: true,
+              maxHeight: 80,
+              formatter: chart.options?.xaxis?.type === "datetime"
+                ? formatDate
+                : (val) =>
+                    typeof val === "number"
+                      ? val.toFixed(1)
+                      : val,
+            },
+            tickAmount: 8,
+          },
+          yaxis: {
+            ...chart.options?.yaxis,
+            labels: {
+              ...chart.options?.yaxis?.labels,
+              style: { colors: textColor },
+              formatter: (val) =>
+                typeof val === "number" ? val.toFixed(1) : val,
+            },
+          },
+          grid: {
+            ...chart.options?.grid,
+            borderColor: gridColor,
+          },
         };
 
         return (
-          <div key={idx} className="chart-card" style={{ backgroundColor: cardBg }}>
-            <ReactApexChart options={options} series={chart.series} type={type} width="100%" height="100%" />
+          <div
+            key={idx}
+            className={`chart-card${isWide ? " wide" : ""}${colClass ? " " + colClass : ""}`}
+            style={{ backgroundColor: cardBg }}
+          >
+            <ReactApexChart
+              options={options}
+              series={chart.series}
+              type={type}
+              width="100%"
+              height="100%"
+            />
           </div>
         );
       })}
-    </div>
+    </>
   );
 }
