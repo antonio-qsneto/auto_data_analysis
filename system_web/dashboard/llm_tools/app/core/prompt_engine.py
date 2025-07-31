@@ -47,7 +47,10 @@ Your task is to generate Python code that:
    - Convert date columns: df[col] = pd.to_datetime(df[col], errors='coerce')
    - Convert numeric columns: df[col] = pd.to_numeric(df[col], errors='coerce')
    - Drop NaN values in the columns used for each chart.
-4. Use **ApexCharts data structure**:
+4. Ignore columns named "index" or columns that are just DataFrame indices.
+5. Use only columns with meaningful names for chart labels, series, and axes.
+6. Avoid generic names like "series-1", "series-2" unless there is no better label in the data.
+7. Use **ApexCharts data structure**:
    For charts like line/bar/area:
    {{
        "type": "line" or "bar" or "area",

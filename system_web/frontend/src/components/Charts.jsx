@@ -24,24 +24,51 @@ export default function Charts({ charts, theme = "dark" }) {
         const type = chart.type || "line";
         let colClass = "";
 
-        // Explicit column assignment
-        if (type === "line") {
+        // Wide for line, area, candlestick
+        const isWide = type === "area" || type === "line" || type === "candlestick";
+        if (type === "line" || type === "candlestick") {
           colClass = "col-1-2";
         } else if (type === "area") {
           colClass = "col-2-3";
         }
 
-        const isWide = type === "area" || type === "line";
+        // Filter candlestick data to last 3 months
+        let filteredChart = chart;
+        if (type === "candlestick" && chart.labels && chart.series && chart.labels.length > 0) {
+          const now = new Date();
+          const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+          // Find indices where label (date) is within last 3 months
+          const filteredIndices = chart.labels
+            .map((label, i) => {
+              const d = new Date(label);
+              return d >= threeMonthsAgo ? i : null;
+            })
+            .filter(i => i !== null);
 
+          // Filter labels and each series' data
+          filteredChart = {
+            ...chart,
+            labels: filteredIndices.map(i => chart.labels[i]),
+            series: chart.series.map(s => ({
+              ...s,
+              data: filteredIndices.map(i => s.data[i])
+            }))
+          };
+        }
+
+        // Use filteredChart for candlestick, original for others
+        const chartToUse = type === "candlestick" ? filteredChart : chart;
+
+        // Build options with correct labels/categories
         const options = {
-          ...chart.options,
+          ...chartToUse.options,
           chart: {
-            ...chart.options?.chart,
+            ...chartToUse.options?.chart,
             foreColor: textColor,
             background: cardBg,
           },
           title: {
-            text: chart.title || chart.options?.title?.text || "",
+            text: chartToUse.title || chartToUse.options?.title?.text || "",
             align: "left",
             style: {
               color: textColor,
@@ -59,39 +86,193 @@ export default function Charts({ charts, theme = "dark" }) {
               color: textColor,
             },
             y: {
-              formatter: (val) =>
-                typeof val === "number" ? val.toFixed(1) : val,
-            },
+              formatter: (val) => {
+                if (
+                  (["line", "area", "bar", "column"].includes(type) && typeof val === "number") ||
+                  (type === "boxPlot" && typeof val === "number")
+                ) {
+                  return val.toFixed(1);
+                }
+                // For boxPlot, val can be an array [min, q1, median, q3, max]
+                if (type === "boxPlot" && Array.isArray(val)) {
+                  return val.map(v => typeof v === "number" ? v.toFixed(1) : v).join(", ");
+                }
+                // For boxPlot, val can be an object with a y property (ApexCharts format)
+                if (type === "boxPlot" && val && typeof val === "object" && Array.isArray(val.y)) {
+                  return val.y.map(v => typeof v === "number" ? v.toFixed(1) : v).join(", ");
+                }
+                return val;
+              }
+            }
           },
-          xaxis: {
-            ...chart.options?.xaxis,
-            labels: {
-              ...chart.options?.xaxis?.labels,
-              style: { colors: textColor },
-              rotate: -45,
-              hideOverlappingLabels: true,
-              trim: true,
-              maxHeight: 80,
-              formatter: chart.options?.xaxis?.type === "datetime"
-                ? formatDate
-                : (val) =>
-                    typeof val === "number"
-                      ? val.toFixed(1)
-                      : val,
+          ...(type === "pie" || type === "donut" ? { labels: chart.labels } : {}),
+          ...(type === "bar" || type === "column" ? { 
+            xaxis: { 
+              ...chartToUse.options?.xaxis, 
+              categories: chart.labels,
+              labels: {
+                ...chartToUse.options?.xaxis?.labels,
+                style: { colors: textColor },
+                rotate: -45,
+                hideOverlappingLabels: true,
+                trim: true,
+                maxHeight: 80,
+                formatter: (val) =>
+                  typeof val === "number"
+                    ? val.toFixed(1)
+                    : val,
+              },
             },
-            tickAmount: 8,
-          },
-          yaxis: {
-            ...chart.options?.yaxis,
-            labels: {
-              ...chart.options?.yaxis?.labels,
-              style: { colors: textColor },
-              formatter: (val) =>
-                typeof val === "number" ? val.toFixed(1) : val,
+            yaxis: {
+              ...chartToUse.options?.yaxis,
+              labels: {
+                ...chartToUse.options?.yaxis?.labels,
+                style: { colors: textColor },
+                formatter: (val) =>
+                  typeof val === "number"
+                    ? val.toFixed(1)
+                    : val,
+              },
+            }
+          } : {}),
+          ...(type === "area" ? {
+            xaxis: {
+              ...chartToUse.options?.xaxis,
+              categories: chart.labels,
+              tickAmount: 8, // Reduce number of ticks/labels
+              labels: {
+                ...chartToUse.options?.xaxis?.labels,
+                style: { colors: textColor },
+                rotate: -45,
+                hideOverlappingLabels: true,
+                trim: true,
+                maxHeight: 80,
+                formatter: (val) =>
+                  typeof val === "number"
+                    ? val.toFixed(1)
+                    : val,
+              },
             },
-          },
+            yaxis: {
+              ...chartToUse.options?.yaxis,
+              labels: {
+                ...chartToUse.options?.yaxis?.labels,
+                style: { colors: textColor },
+                formatter: (val) =>
+                  typeof val === "number"
+                    ? val.toFixed(1)
+                    : val,
+              },
+            }
+          } : {}),
+          ...(type === "line" ? {
+            xaxis: {
+              ...chartToUse.options?.xaxis,
+              categories: chart.labels,
+              tickAmount: 8,
+              labels: {
+                ...chartToUse.options?.xaxis?.labels,
+                style: { colors: textColor },
+                rotate: -45,
+                hideOverlappingLabels: true,
+                trim: true,
+                maxHeight: 80,
+                formatter: (val) =>
+                  typeof val === "number"
+                    ? val.toFixed(1)
+                    : val,
+              },
+            },
+            yaxis: {
+              ...chartToUse.options?.yaxis,
+              labels: {
+                ...chartToUse.options?.yaxis?.labels,
+                style: { colors: textColor },
+                formatter: (val) =>
+                  typeof val === "number"
+                    ? val.toFixed(1)
+                    : val,
+              },
+            }
+          } : {}),
+          ...(type === "candlestick" ? {
+            xaxis: {
+              ...chartToUse.options?.xaxis,
+              categories: chart.labels,
+              tickAmount: 8,
+              labels: {
+                ...chartToUse.options?.xaxis?.labels,
+                style: { colors: textColor },
+                rotate: -45,
+                hideOverlappingLabels: true,
+                trim: true,
+                maxHeight: 80,
+                formatter: (val) =>
+                  typeof val === "number"
+                    ? val.toFixed(1)
+                    : val,
+              },
+            },
+            yaxis: {
+              ...chartToUse.options?.yaxis,
+              labels: {
+                ...chartToUse.options?.yaxis?.labels,
+                style: { colors: textColor },
+                formatter: (val) =>
+                  typeof val === "number"
+                    ? val.toFixed(1)
+                    : val,
+              },
+            }
+          } : {}),
+          ...(type === "heatmap" ? {
+            theme: {
+              mode: theme === "dark" ? "dark" : "light"
+            },
+            plotOptions: {
+              heatmap: {
+                shadeIntensity: 0.7,
+                colorScale: {
+                  ranges: [
+                    { from: -Infinity, to: 0, color: "#374151", name: "Low" },
+                    { from: 0, to: 1, color: "#2563eb", name: "Very Low" },
+                    { from: 1, to: 10, color: "#0ea5e9", name: "Low" },
+                    { from: 10, to: 100, color: "#22d3ee", name: "Medium" },
+                    { from: 100, to: 1000, color: "#a21caf", name: "High" },
+                    { from: 1000, to: Infinity, color: "#f59e42", name: "Very High" }
+                  ]
+                }
+              }
+            }
+          } : {}),
+          ...(type === "boxPlot" ? {
+            yaxis: {
+              ...chartToUse.options?.yaxis,
+              labels: {
+                ...chartToUse.options?.yaxis?.labels,
+                style: { colors: textColor },
+                formatter: (val) =>
+                  typeof val === "number"
+                    ? val.toFixed(1)
+                    : val,
+              },
+            }
+          } : {}),
+          ...(type === "scatter" ? {
+            yaxis: {
+              ...chartToUse.options?.yaxis,
+              labels: {
+                ...chartToUse.options?.yaxis?.labels,
+                style: { colors: textColor },
+                formatter: (val) =>
+                  typeof val === "number"
+                    ? val.toFixed(1)
+                    : val,
+              },
+            }
+          } : {}),
           grid: {
-            ...chart.options?.grid,
+            ...chartToUse.options?.grid,
             borderColor: gridColor,
           },
         };
@@ -104,7 +285,7 @@ export default function Charts({ charts, theme = "dark" }) {
           >
             <ReactApexChart
               options={options}
-              series={chart.series}
+              series={chartToUse.series}
               type={type}
               width="100%"
               height="100%"

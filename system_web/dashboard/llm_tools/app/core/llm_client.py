@@ -10,8 +10,8 @@ def chamar_openrouter(prompt: str, api_key: str) -> str:
     payload = {
         #"model": "deepseek/deepseek-chat-v3-0324:free",
         #"model": "deepseek/deepseek-r1-0528:free",
-        #"model": "qwen/qwen3-coder:free",
-        "model": "moonshotai/kimi-k2:free",
+        "model": "qwen/qwen3-coder:free",
+        #"model": "moonshotai/kimi-k2:free",
 
         "messages": [
             {"role": "system", "content": "You are a data analyst who generates Python code for visualization."},
