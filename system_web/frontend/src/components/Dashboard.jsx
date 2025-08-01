@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import Charts from "./Charts";
+import SideBar from "./SideBar";
 
 export default function Dashboard() {
   const [charts, setCharts] = useState([]);
@@ -107,6 +108,8 @@ export default function Dashboard() {
           <Charts key={idx} charts={[chart]} theme={theme} />
         ))}
       </div>
+
+      <SideBar />
     </div>
   );
 }

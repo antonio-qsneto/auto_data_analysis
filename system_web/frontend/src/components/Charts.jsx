@@ -35,23 +35,15 @@ export default function Charts({ charts, theme = "dark" }) {
         // Filter candlestick data to last 3 months
         let filteredChart = chart;
         if (type === "candlestick" && chart.labels && chart.series && chart.labels.length > 0) {
-          const now = new Date();
-          const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
-          // Find indices where label (date) is within last 3 months
-          const filteredIndices = chart.labels
-            .map((label, i) => {
-              const d = new Date(label);
-              return d >= threeMonthsAgo ? i : null;
-            })
-            .filter(i => i !== null);
-
-          // Filter labels and each series' data
+          const total = chart.labels.length;
+          const sliceSize = Math.max(1, Math.floor(total / 10));
+          const start = total - sliceSize;
           filteredChart = {
             ...chart,
-            labels: filteredIndices.map(i => chart.labels[i]),
+            labels: chart.labels.slice(start),
             series: chart.series.map(s => ({
               ...s,
-              data: filteredIndices.map(i => s.data[i])
+              data: s.data.slice(start)
             }))
           };
         }
@@ -67,6 +59,9 @@ export default function Charts({ charts, theme = "dark" }) {
             foreColor: textColor,
             background: cardBg,
           },
+          colors: [
+            "#008FFB", "#00E396", "#FEB019", "#FF4560", "#775DD0"
+          ],
           title: {
             text: chartToUse.title || chartToUse.options?.title?.text || "",
             align: "left",
@@ -259,6 +254,19 @@ export default function Charts({ charts, theme = "dark" }) {
             }
           } : {}),
           ...(type === "scatter" ? {
+            yaxis: {
+              ...chartToUse.options?.yaxis,
+              labels: {
+                ...chartToUse.options?.yaxis?.labels,
+                style: { colors: textColor },
+                formatter: (val) =>
+                  typeof val === "number"
+                    ? val.toFixed(1)
+                    : val,
+              },
+            }
+          } : {}),
+          ...(type === "bubble" ? {
             yaxis: {
               ...chartToUse.options?.yaxis,
               labels: {
