@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 
 // SVG icons (Heroicons, MIT)
 const icons = {
@@ -59,24 +59,13 @@ const actionItems = [
 ];
 
 export default function SideBar() {
-  const [expanded, setExpanded] = useState(false);
-
-  // For mobile: collapse if window is small
-  React.useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 600) setExpanded(false);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // Demo avatar
+  // Always collapsed, no expand/collapse state
   const avatarUrl = "https://randomuser.me/api/portraits/men/32.jpg";
 
   return (
     <>
       <nav
-        className={`sidebar${expanded ? " expanded" : ""}`}
+        className="sidebar"
         aria-label="Main sidebar"
         tabIndex={0}
       >
@@ -103,7 +92,6 @@ export default function SideBar() {
                 tabIndex={0}
               >
                 {item.icon}
-                {expanded && <span className="sidebar-label">{item.label}</span>}
               </button>
             </li>
           ))}
@@ -114,7 +102,7 @@ export default function SideBar() {
 
         {/* Actions */}
         <ul className="sidebar-actions" role="menu">
-          {actionItems.map((item, idx) => (
+          {actionItems.map((item) => (
             <li key={item.key} role="none">
               <button
                 className={`sidebar-btn${item.key === "plus" ? " sidebar-btn-plus" : ""}`}
@@ -122,7 +110,6 @@ export default function SideBar() {
                 tabIndex={0}
               >
                 {item.icon}
-                {expanded && <span className="sidebar-label">{item.label}</span>}
               </button>
             </li>
           ))}
@@ -134,22 +121,9 @@ export default function SideBar() {
               tabIndex={0}
             >
               <img src={avatarUrl} alt="User avatar" />
-              {expanded && <span className="sidebar-label">Profile</span>}
             </button>
           </li>
         </ul>
-
-        {/* Collapse/Expand toggle */}
-        <button
-          className="sidebar-toggle"
-          aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"}
-          onClick={() => setExpanded((v) => !v)}
-          tabIndex={0}
-        >
-          <svg width="24" height="24" fill="none" stroke="#2AFADF" strokeWidth="2" viewBox="0 0 24 24">
-            <path d={expanded ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"} />
-          </svg>
-        </button>
       </nav>
       <style>{`
 .sidebar {
@@ -162,11 +136,7 @@ export default function SideBar() {
   flex-direction: column;
   align-items: center;
   z-index: 100;
-  transition: width 0.22s cubic-bezier(.4,0,.2,1);
   box-shadow: 2px 0 16px 0 rgba(0,0,0,0.13);
-}
-.sidebar.expanded {
-  width: 210px;
 }
 .sidebar-logo {
   margin: 24px 0 32px 0;
@@ -235,53 +205,15 @@ export default function SideBar() {
   background: #1a1d2b;
 }
 .sidebar-label {
-  margin-left: 18px;
-  color: #e6f9fa;
-  font-size: 1.08rem;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  opacity: 1;
-  transition: opacity 0.18s, margin 0.18s;
-  white-space: nowrap;
-}
-.sidebar:not(.expanded) .sidebar-label {
-  opacity: 0;
-  margin-left: 0;
-  pointer-events: none;
+  display: none;
 }
 .sidebar-spacer {
   flex: 1 1 auto;
-}
-.sidebar-toggle {
-  position: absolute;
-  bottom: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: none;
-  border: none;
-  color: #2AFADF;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s;
-  cursor: pointer;
-}
-.sidebar-toggle:hover, .sidebar-toggle:focus {
-  background: #2b314a;
 }
 @media (max-width: 600px) {
   .sidebar {
     width: 56px !important;
     min-width: 56px;
-  }
-  .sidebar.expanded {
-    width: 180px !important;
-  }
-  .sidebar-label {
-    font-size: 1rem;
   }
 }
       `}</style>

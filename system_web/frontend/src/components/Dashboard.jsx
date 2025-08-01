@@ -46,70 +46,82 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="content-area">
-      <button
-        onClick={toggleTheme}
+    <>
+      <SideBar />
+      <div
+        className="content-area"
         style={{
-          position: "absolute",
-          top: 20,
-          right: 30,
-          padding: "8px 18px",
-          borderRadius: "6px",
-          border: "none",
-          background: "#4C83FF",
-          color: "#fff",
-          fontWeight: "bold",
-          cursor: "pointer",
-          zIndex: 10
+          marginLeft: 72,
+          maxWidth: 1200,
+          marginRight: "auto",
+          marginTop: 0,
+          marginBottom: 0,
+          marginInline: "auto", // This will center horizontally
+          padding: 20,
         }}
       >
-        Switch to {theme === "dark" ? "Light" : "Dark"} Theme
-      </button>
+        <button
+          onClick={toggleTheme}
+          style={{
+            position: "absolute",
+            top: 20,
+            right: 30,
+            padding: "8px 18px",
+            borderRadius: "6px",
+            border: "none",
+            background: "#4C83FF",
+            color: "#fff",
+            fontWeight: "bold",
+            cursor: "pointer",
+            zIndex: 10
+          }}
+        >
+          Switch to {theme === "dark" ? "Light" : "Dark"} Theme
+        </button>
 
-      <h1 className="dashboard-title">
-        📊 Auto Data Analysis Dashboard
-      </h1>
+        <h1 className="dashboard-title">
+          📊 Auto Data Analysis Dashboard
+        </h1>
 
-      {/* KPI Cards */}
-      <div className="sparkboxes">
-        <div className="box box1">
-          <strong>1213</strong>
-          <p>CLICKS</p>
+        {/* KPI Cards */}
+        <div className="sparkboxes">
+          <div className="box box1">
+            <strong>1213</strong>
+            <p>CLICKS</p>
+          </div>
+          <div className="box box2">
+            <strong>422</strong>
+            <p>VIEWS</p>
+          </div>
+          <div className="box box3">
+            <strong>311</strong>
+            <p>LEADS</p>
+          </div>
+          <div className="box box4">
+            <strong>22</strong>
+            <p>SALES</p>
+          </div>
         </div>
-        <div className="box box2">
-          <strong>422</strong>
-          <p>VIEWS</p>
+
+        {/* File Upload */}
+        <div className="upload-area">
+          <input
+            type="file"
+            accept=".csv"
+            onChange={handleFileUpload}
+          />
         </div>
-        <div className="box box3">
-          <strong>311</strong>
-          <p>LEADS</p>
-        </div>
-        <div className="box box4">
-          <strong>22</strong>
-          <p>SALES</p>
+
+        {loading && <p className="loading">Generating charts...</p>}
+        {error && <p className="error">{error}</p>}
+
+        {/* Charts */}
+        <div className="charts-grid">
+          {charts.map((chart, idx) => (
+            <Charts key={idx} charts={[chart]} theme={theme} />
+          ))}
         </div>
       </div>
-
-      {/* File Upload */}
-      <div className="upload-area">
-        <input
-          type="file"
-          accept=".csv"
-          onChange={handleFileUpload}
-        />
-      </div>
-
-      {loading && <p className="loading">Generating charts...</p>}
-      {error && <p className="error">{error}</p>}
-
-      {/* Charts */}
-      <div className="charts-grid">
-        {charts.map((chart, idx) => (
-          <Charts key={idx} charts={[chart]} theme={theme} />
-        ))}
-      </div>
-
-      <SideBar />
-    </div>
+    </>
   );
 }
