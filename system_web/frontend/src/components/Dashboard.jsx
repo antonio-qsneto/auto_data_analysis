@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Charts from "./Charts";
 import SideBar from "./SideBar";
 
@@ -7,6 +7,9 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [theme, setTheme] = useState("dark");
+  const [dragActive, setDragActive] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const fileInputRef = useRef(null);
 
   // Theme toggle handler
   const toggleTheme = () => {
@@ -15,9 +18,39 @@ export default function Dashboard() {
     document.body.className = newTheme;
   };
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  // Handle file selection (from input or drop)
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0] || e.dataTransfer?.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setError("");
+    }
+  };
+
+  // Drag events
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(true);
+  };
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+  };
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    handleFileChange(e);
+  };
+
+  // Upload handler
+  const handleFileUpload = async (file = selectedFile) => {
+    if (!file) {
+      setError("Please select a CSV file to upload.");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("file", file);
@@ -42,6 +75,8 @@ export default function Dashboard() {
       setError("Error uploading file or generating charts.");
     } finally {
       setLoading(false);
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -56,7 +91,7 @@ export default function Dashboard() {
           marginRight: "auto",
           marginTop: 0,
           marginBottom: 0,
-          marginInline: "auto", // This will center horizontally
+          marginInline: "auto",
           padding: 20,
         }}
       >
@@ -79,10 +114,6 @@ export default function Dashboard() {
           Switch to {theme === "dark" ? "Light" : "Dark"} Theme
         </button>
 
-        <h1 className="dashboard-title">
-          📊 Auto Data Analysis Dashboard
-        </h1>
-
         {/* KPI Cards */}
         <div className="sparkboxes">
           <div className="box box1">
@@ -103,13 +134,85 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* File Upload */}
-        <div className="upload-area">
+        {/* File Upload with Drag & Drop */}
+        <div
+          className={`upload-area${dragActive ? " drag-active" : ""}${theme === "light" ? " light" : ""}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          style={{
+            border: dragActive
+              ? "2px dashed #2AFADF"
+              : "2px dashed #444",
+            background: dragActive
+              ? (theme === "light" ? "#f5faff" : "#23263a")
+              : "transparent",
+            borderRadius: 8,
+            padding: 32,
+            textAlign: "center",
+            marginBottom: 30,
+            transition: "border 0.2s, background 0.2s"
+          }}
+        >
           <input
+            ref={fileInputRef}
             type="file"
             accept=".csv"
-            onChange={handleFileUpload}
+            style={{ display: "none" }}
+            onChange={handleFileChange}
           />
+          <div>
+            <p
+              style={{
+                color: theme === "light" ? "#23263a" : "#b8e3e7",
+                marginBottom: 12
+              }}
+            >
+              Drag &amp; drop your <b>CSV</b> file here, or{" "}
+              <span
+                style={{
+                  color: "#2AFADF",
+                  cursor: "pointer",
+                  textDecoration: "underline"
+                }}
+                onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                tabIndex={0}
+                role="button"
+                aria-label="Select file"
+                onKeyDown={e => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    fileInputRef.current && fileInputRef.current.click();
+                  }
+                }}
+              >
+                browse
+              </span>
+            </p>
+            {selectedFile && (
+              <div style={{ marginBottom: 10, color: "#4C83FF" }}>
+                Selected: <b>{selectedFile.name}</b>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => handleFileUpload(selectedFile)}
+              disabled={!selectedFile || loading}
+              style={{
+                background: "#2AFADF",
+                color: theme === "light" ? "#23263a" : "#23263a",
+                border: "none",
+                borderRadius: 6,
+                padding: "10px 24px",
+                fontWeight: "bold",
+                fontSize: "1rem",
+                cursor: selectedFile && !loading ? "pointer" : "not-allowed",
+                opacity: selectedFile && !loading ? 1 : 0.6,
+                marginTop: 8
+              }}
+            >
+              {loading ? "Uploading..." : "Upload"}
+            </button>
+          </div>
         </div>
 
         {loading && <p className="loading">Generating charts...</p>}

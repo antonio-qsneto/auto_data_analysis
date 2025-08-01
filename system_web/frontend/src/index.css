@@ -82,6 +82,16 @@ body {
   cursor: pointer;
 }
 
+/* Add to index.css */
+.upload-area.drag-active {
+  border-color: #2AFADF !important;
+  background: #23263a !important;
+}
+.upload-area.drag-active.light {
+  background: #f5faff !important;
+  border-color: #2AFADF !important;
+}
+
 /* Charts Grid */
 .charts-grid {
   display: grid;

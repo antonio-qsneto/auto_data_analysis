@@ -1,4 +1,5 @@
 import React from "react";
+import XLogo from "../assets/X.svg";
 
 // SVG icons (Heroicons, MIT)
 const icons = {
@@ -70,16 +71,18 @@ export default function SideBar() {
         tabIndex={0}
       >
         {/* Logo */}
-        <div className="sidebar-logo" aria-label="Auto Data Analysis">
-          <svg width="38" height="38" viewBox="0 0 38 38" aria-hidden="true">
-            <defs>
-              <linearGradient id="logo-gradient" x1="0" y1="0" x2="38" y2="38" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#2AFADF" />
-                <stop offset="1" stopColor="#4C83FF" />
-              </linearGradient>
-            </defs>
-            <text x="7" y="30" fontFamily="Montserrat, Arial" fontWeight="bold" fontSize="32" fill="url(#logo-gradient)">A</text>
-          </svg>
+        <div className="sidebar-logo" aria-label="Logo">
+          <img
+            src={XLogo}
+            alt="Logo"
+            style={{
+              width: 38,
+              height: 38,
+              display: "block",
+              margin: "0 auto",
+              borderRadius: "8px"
+            }}
+          />
         </div>
 
         {/* Nav icons */}
