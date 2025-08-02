@@ -51,6 +51,35 @@ export default function Charts({ charts, theme = "dark" }) {
         // Use filteredChart for candlestick, original for others
         const chartToUse = type === "candlestick" ? filteredChart : chart;
 
+        // Dynamically build heatmap ranges
+        let dynamicHeatmapRanges = [];
+        if (type === "heatmap" && chart.series) {
+          // 1. Collect all y values
+          const allY = chart.series.flatMap(s => s.data.map(d => d.y));
+          const min = Math.min(...allY);
+          const max = Math.max(...allY);
+
+          // 2. Define breakpoints (quantiles or equal intervals)
+          // Example: 6 ranges (like your labels)
+          const steps = 6;
+          const stepSize = (max - min) / steps;
+          const colors = [
+            "#374151", "#2563eb", "#0ea5e9", "#22d3ee", "#a21caf", "#f59e42"
+          ];
+          const names = [
+            "Very Low", "Low", "Medium Low", "Medium", "High", "Very High"
+          ];
+
+          for (let i = 0; i < steps; i++) {
+            dynamicHeatmapRanges.push({
+              from: min + i * stepSize,
+              to: i === steps - 1 ? Infinity : min + (i + 1) * stepSize,
+              color: colors[i],
+              name: names[i]
+            });
+          }
+        }
+
         // Build options with correct labels/categories
         const options = {
           ...chartToUse.options,
@@ -228,14 +257,16 @@ export default function Charts({ charts, theme = "dark" }) {
               heatmap: {
                 shadeIntensity: 0.7,
                 colorScale: {
-                  ranges: [
-                    { from: -Infinity, to: 0, color: "#374151", name: "Low" },
-                    { from: 0, to: 1, color: "#2563eb", name: "Very Low" },
-                    { from: 1, to: 10, color: "#0ea5e9", name: "Low" },
-                    { from: 10, to: 100, color: "#22d3ee", name: "Medium" },
-                    { from: 100, to: 1000, color: "#a21caf", name: "High" },
-                    { from: 1000, to: Infinity, color: "#f59e42", name: "Very High" }
-                  ]
+                  ranges: dynamicHeatmapRanges.length > 0
+                    ? dynamicHeatmapRanges
+                    : [
+                        { from: 0, to: 0, color: "#374151", name: "Low" },
+                        { from: 0.01, to: 1000, color: "#2563eb", name: "Very Low" },
+                        { from: 1000.01, to: 5000, color: "#0ea5e9", name: "Low" },
+                        { from: 5000.01, to: 10000, color: "#22d3ee", name: "Medium" },
+                        { from: 10000.01, to: 20000, color: "#a21caf", name: "High" },
+                        { from: 20000.01, to: Infinity, color: "#f59e42", name: "Very High" }
+                      ]
                 }
               }
             }
