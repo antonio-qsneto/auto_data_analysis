@@ -2,18 +2,32 @@ import pandas as pd
 import random
 from datetime import datetime, timedelta
 
-categorias = ["Alimentação", "Transporte", "Lazer", "Educação", "Investimento", "Saúde", "Aluguel", "Outros"]
-tipos = ["Despesa", "Receita"]
+# Categories and types
+categories = ["Food", "Transport", "Leisure", "Education", "Investment", "Health", "Rent", "Others"]
+types = ["Expense", "Income"]
 
-dados = []
+# Data container
+data_list = []
 
+# Generate 100 random records
 for _ in range(100):
-    data = datetime(2024, 1, 1) + timedelta(days=random.randint(0, 180))
-    categoria = random.choice(categorias)
-    tipo = "Despesa" if categoria != "Investimento" else "Receita"
-    valor = round(random.uniform(50, 1000), 2) if tipo == "Despesa" else round(random.uniform(500, 5000), 2)
-    
-    dados.append([data.strftime('%Y-%m-%d'), categoria, tipo, valor])
+    # Random date within 180 days starting from 2024-01-01
+    date = datetime(2024, 1, 1) + timedelta(days=random.randint(0, 180))
 
-df = pd.DataFrame(dados, columns=["Data", "Categoria", "Tipo", "Valor"])
-df.to_csv("gastos_fake.csv", index=False)
+    # Random category
+    category = random.choice(categories)
+
+    # Define type: "Expense" for all except "Investment" which is "Income"
+    transaction_type = "Expense" if category != "Investment" else "Income"
+
+    # Random value: smaller for expenses, larger for income
+    amount = round(random.uniform(50, 1000), 2) if transaction_type == "Expense" else round(random.uniform(500, 5000), 2)
+
+    # Append record
+    data_list.append([date.strftime('%Y-%m-%d'), category, transaction_type, amount])
+
+# Create DataFrame
+df = pd.DataFrame(data_list, columns=["Date", "Category", "Type", "Amount"])
+
+# Save to CSV
+df.to_csv("fake_expenses.csv", index=False)
