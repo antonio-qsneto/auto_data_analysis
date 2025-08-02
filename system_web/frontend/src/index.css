@@ -103,11 +103,42 @@ body {
 }
 
 .chart-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  height: 450px;
   background-color: var(--card-bg);
   border-radius: 5px;
   padding: 15px;
-  height: 450px;
   box-shadow: 0 50px 50px 0 rgba(0,0,0,0.18); /* <-- Add this line */
+}
+
+.chart-card .chart-title {
+  flex: 0 0 32px;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chart-card .chart-area {
+  flex: 1 1 auto;
+  min-height: 0;
+  /* Ensures chart doesn't overflow */
+}
+
+.chart-card .chart-options {
+  flex: 0 0 28px;
+  margin-top: 8px;
+  font-size: 14px;
+  color: inherit;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chart-card .apexcharts-canvas {

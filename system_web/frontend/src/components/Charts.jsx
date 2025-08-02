@@ -285,19 +285,37 @@ export default function Charts({ charts, theme = "dark" }) {
           },
         };
 
+        // Remove title from options so it doesn't overlap
+        const { title, ...optionsWithoutTitle } = options;
+
         return (
           <div
             key={idx}
             className={`chart-card${isWide ? " wide" : ""}${colClass ? " " + colClass : ""}`}
             style={{ backgroundColor: cardBg }}
           >
-            <ReactApexChart
-              options={options}
-              series={chartToUse.series}
-              type={type}
-              width="100%"
-              height="100%"
-            />
+            {/* Title above chart */}
+            <div className="chart-title" style={{ color: textColor }}>
+              {chartToUse.title || chartToUse.options?.title?.text || ""}
+            </div>
+            {/* Chart */}
+            <div className="chart-area">
+              <ReactApexChart
+                options={optionsWithoutTitle}
+                series={chartToUse.series}
+                type={type}
+                width="100%"
+                height="100%"
+              />
+            </div>
+            {/* Options/Legend below chart */}
+            {options.legend && (
+              <div className="chart-options">
+                <span>
+                  {options.legend.position ? `Legend: ${options.legend.position}` : ""}
+                </span>
+              </div>
+            )}
           </div>
         );
       })}

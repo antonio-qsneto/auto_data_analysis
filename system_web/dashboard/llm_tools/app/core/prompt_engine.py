@@ -76,16 +76,23 @@ Your task is to generate Python code that:
    For boxPlot:
    {{
        "type": "boxPlot",
-       "title": "Chart Title",
+       "title": "Spread of [numeric_column] by [category_column]",
        "series": [
-           {{"name": "Box", "data": [{{"x": "Category", "y": [min, q1, median, q3, max]}}]}}
+           {{
+               "name": "[numeric_column]",
+               "data": [
+                   {{"x": "<category_value>", "y": [min, q1, median, q3, max]}},
+                   ...
+               ]
+           }}
        ]
    }}
-5. Only include charts with at least 2 valid data points.
-6. The output must be valid Python code with:
+   IMPORTANT: All categories must be included inside ONE single series (not multiple series).
+8. Only include charts with at least 2 valid data points.
+9. The output must be valid Python code with:
    chart_data = [{{...}}, ...]
-7. Do not include comments, explanations, or markdown.
-8. Do not wrap code in ``` tags.
+10. Do not include comments, explanations, or markdown.
+11. Do not wrap code in ``` tags.
 """
 
 
