@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import XLogo from "../assets/X.svg";
 
 // SVG icons (Heroicons, MIT)
@@ -60,6 +61,7 @@ const actionItems = [
 ];
 
 export default function SideBar() {
+  const navigate = useNavigate();
   // Always collapsed, no expand/collapse state
   const avatarUrl = "https://randomuser.me/api/portraits/men/32.jpg";
 
@@ -111,6 +113,7 @@ export default function SideBar() {
                 className={`sidebar-btn${item.key === "plus" ? " sidebar-btn-plus" : ""}`}
                 aria-label={item.aria}
                 tabIndex={0}
+                onClick={item.key === "plus" ? () => navigate("/") : undefined}
               >
                 {item.icon}
               </button>

@@ -92,6 +92,29 @@ body {
   border-color: #2AFADF !important;
 }
 
+/* Input phrase and button use theme variables */
+.upload-area p,
+.upload-area .upload-btn,
+.upload-area span[role="button"] {
+  color: var(--text);
+}
+
+.upload-area .upload-btn {
+  background: var(--card-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+
+.upload-area span[role="button"] {
+  color: #2AFADF;
+}
+
+
+body.light .upload-area span[role="button"] {
+  color: #0396FF;
+}
+
 /* Charts Grid */
 .charts-grid {
   display: grid;
@@ -190,4 +213,23 @@ body.light {
   --card-bg: #fff;
   --text: #222;
   --border: #ccc;
+}
+
+.apexcharts-boxPlot-whisker {
+  stroke: #b8e3e7 !important; /* lighter blue for dark theme */
+}
+.apexcharts-boxPlot-median {
+  stroke: #FFD3A5 !important; /* orange for median line */
+}
+body.light .apexcharts-boxPlot-whisker {
+  stroke: #222 !important;
+}
+body.light .apexcharts-boxPlot-median {
+  stroke: #FD6585 !important;
+}
+body.dark .apexcharts-boxPlot-whisker {
+  stroke: #e0e0e0 !important; /* light gray for whiskers */
+}
+body.dark .apexcharts-boxPlot-median {
+  stroke: #FFD3A5 !important; /* orange for median line */
 }

@@ -272,6 +272,18 @@ export default function Charts({ charts, theme = "dark" }) {
             }
           } : {}),
           ...(type === "boxPlot" ? {
+            plotOptions: {
+              boxPlot: {
+                colors: {
+                  upper: theme === "dark" ? "#4C83FF" : "#0396FF",
+                  lower: theme === "dark" ? "#FD6585" : "#FFD3A5"
+                },
+                stroke: {
+                  colors: [theme === "dark" ? "#e0e0e0" : "#222222"], // light gray for dark, dark for light
+                  width: 2
+                }
+              }
+            },
             yaxis: {
               ...chartToUse.options?.yaxis,
               labels: {
@@ -285,6 +297,25 @@ export default function Charts({ charts, theme = "dark" }) {
             }
           } : {}),
           ...(type === "scatter" ? {
+            xaxis: {
+              ...chartToUse.options?.xaxis,
+              categories: chart.labels,
+              labels: {
+                ...chartToUse.options?.xaxis?.labels,
+                style: { colors: textColor },
+                rotate: -45, // Rotate labels for better readability
+                hideOverlappingLabels: true,
+                trim: true,
+                maxHeight: 80,
+                formatter: (val) => {
+                  // Trim label to 10 characters
+                  if (typeof val === "string" && val.length > 10) {
+                    return val.slice(0, 10) + "...";
+                  }
+                  return val;
+                },
+              },
+            },
             yaxis: {
               ...chartToUse.options?.yaxis,
               labels: {
