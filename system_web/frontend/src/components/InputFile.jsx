@@ -12,7 +12,8 @@ export default function InputFile({
   loading,
   error,
   theme,
-  setTheme
+  setTheme,
+  setBusinessSummary // NEW
 }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [dragActive, setDragActive] = useState(false);
@@ -62,6 +63,7 @@ export default function InputFile({
       if (!response.ok) throw new Error("Failed to generate charts");
       const data = await response.json();
       setCharts && setCharts(data.charts);
+      setBusinessSummary && setBusinessSummary(data.business_summary || ""); // NEW
       navigate("/dashboard"); // Redirect after upload
     } catch (err) {
       setError && setError("Error uploading file or generating charts.");

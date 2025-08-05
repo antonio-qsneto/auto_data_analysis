@@ -8,6 +8,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [theme, setTheme] = useState("dark");
+  const [businessSummary, setBusinessSummary] = useState(""); // NEW
 
   useEffect(() => {
     document.body.className = theme;
@@ -27,6 +28,7 @@ export default function App() {
               error={error}
               theme={theme}
               setTheme={setTheme}
+              setBusinessSummary={setBusinessSummary} // NEW
             />
           }
         />
@@ -37,6 +39,7 @@ export default function App() {
               charts={charts}
               theme={theme}
               setTheme={setTheme}
+              businessSummary={businessSummary} // NEW
             />
           }
         />

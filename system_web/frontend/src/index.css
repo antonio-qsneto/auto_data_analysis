@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 /* Color Variables */
 :root {
   --bg: #343E59;
@@ -133,7 +135,7 @@ body.light .upload-area span[role="button"] {
   background-color: var(--card-bg);
   border-radius: 5px;
   padding: 15px;
-  box-shadow: 0 50px 50px 0 rgba(0,0,0,0.18); /* <-- Add this line */
+  /* box-shadow: 0 50px 50px 0 rgba(0,0,0,0.18); /* <-- Add this line */
 }
 
 .chart-card .chart-title {
