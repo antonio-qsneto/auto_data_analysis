@@ -42,7 +42,7 @@ Your task is to generate Python code that:
    - **Histogram** (represented as 'bar'): For numeric distributions.
    - **Correlation Heatmap** (type: 'heatmap'): For numeric correlations.
    - **Box & Whisker** (type: 'boxPlot'): For numeric spread by category.
-   - Optional extra charts if possible: 'radar', 'bubble', 'scatter', 'candlestick'.
+   - Optional extra charts if possible: 'radar', 'bubble', 'scatter', 'candlestick (if candlestick, use Ticker column name as title)'.
 3. Clean data before plotting:
    - Convert date columns: df[col] = pd.to_datetime(df[col], errors='coerce')
    - Convert numeric columns: df[col] = pd.to_numeric(df[col], errors='coerce')

@@ -9,7 +9,7 @@ def chamar_openrouter(prompt: str, api_key: str) -> str:
 
     payload = {
         #"model": "deepseek/deepseek-chat-v3-0324:free",
-        #"model": "qwen/qwen3-coder:free",
+        #"model": "qwen/qwen3-coder",
         "model": "moonshotai/kimi-k2:free",
         #"model": "google/gemini-2.5-flash-lite-preview-06-17",
 
@@ -18,7 +18,7 @@ def chamar_openrouter(prompt: str, api_key: str) -> str:
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.3,
-        "max_tokens": 2000,
+        "max_tokens": 3000,
     }
 
     response = requests.post(url, json=payload, headers=headers, timeout=60)

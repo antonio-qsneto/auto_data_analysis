@@ -2,6 +2,7 @@ import React from "react";
 import Charts from "../components/charts/Charts";
 import SideBar from "../components/layout/SideBar";
 import SparkBox from "../components/layout/SparkBox";
+import Footer from "../components/layout/Footer";
 
 // Parse summary into individual metrics for cards
 function parseBusinessSummary(summary) {
@@ -100,6 +101,7 @@ export default function Dashboard({ charts, theme, setTheme, businessSummary }) 
           ))}
         </div>
       </div>
+      <Footer />
     </>
   );
 }
