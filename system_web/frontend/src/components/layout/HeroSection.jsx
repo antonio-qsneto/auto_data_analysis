@@ -6,10 +6,10 @@ export default function HeroSection() {
   const navigate = useNavigate();
   return (
     <section className="w-full bg-gradient-to-r from-blue-50 via-white to-cyan-50 py-16 px-6 md:px-12">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-24 items-center">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         
         {/* Left column: Text */}
-        <div className="space-y-6">
+        <div className="space-y-6 justify-self-start md:pl-0">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
             Turning Data into <br/>
             <span className="text-blue-600">Smart Decisions</span> 
@@ -37,12 +37,12 @@ export default function HeroSection() {
         </div>
         
         {/* Right column: Image */}
-        <div className="flex justify-center">
+        <div className="flex justify-end">
           <img
             src={screenFake}
             alt="Data Analysis Dashboard Preview"
-            className="rounded-3xl shadow-xl border border-gray-200 w-3/4 max-w-2xl object-contain"
-            style={{ minWidth: "750px", maxHeight: "900px" }}
+            className="rounded-3xl shadow-xl border border-gray-200 w-full max-w-xl object-contain"
+            style={{ minWidth: "350px", maxHeight: "600px" }}
           />
         </div>
       </div>
