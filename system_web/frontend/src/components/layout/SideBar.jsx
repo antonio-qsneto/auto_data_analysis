@@ -1,8 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import XLogo from "../assets/X.svg";
+import XLogo from "../../assets/images/Xclarty_logo.png";
 
-// SVG icons (Heroicons, MIT)
 const icons = {
   document: (
     <svg aria-hidden="true" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -62,167 +61,74 @@ const actionItems = [
 
 export default function SideBar() {
   const navigate = useNavigate();
-  // Always collapsed, no expand/collapse state
   const avatarUrl = "https://randomuser.me/api/portraits/men/32.jpg";
 
   return (
-    <>
-      <nav
-        className="sidebar"
-        aria-label="Main sidebar"
-        tabIndex={0}
-      >
-        {/* Logo */}
-        <div className="sidebar-logo" aria-label="Logo">
+    <nav
+      className="fixed left-0 top-0 bottom-0 w-20 text-white flex flex-col items-center z-50 shadow-2xl"
+      style={{ background: 'linear-gradient(to bottom, #2F324A 0%, #5b609aff 100%)' }}
+    >
+      {/* Logo - clickable to Index.jsx */}
+      <div className="mt-8 mb-10 flex items-center justify-center">
+        <button
+          onClick={() => navigate("/")}
+          aria-label="Go to Home"
+          className="focus:outline-none"
+        >
           <img
             src={XLogo}
             alt="Logo"
-            style={{
-              width: 38,
-              height: 38,
-              display: "block",
-              margin: "0 auto",
-              borderRadius: "8px"
-            }}
+            className="w-12 h-12 rounded-xl shadow-lg border-cyan-400 cursor-pointer"
           />
-        </div>
+        </button>
+      </div>
 
-        {/* Nav icons */}
-        <ul className="sidebar-nav" role="menu">
-          {navItems.map((item) => (
-            <li key={item.key} role="none">
-              <button
-                className="sidebar-btn"
-                aria-label={item.aria}
-                tabIndex={0}
-              >
-                {item.icon}
-              </button>
-            </li>
-          ))}
-        </ul>
-
-        {/* Spacer */}
-        <div className="sidebar-spacer" />
-
-        {/* Actions */}
-        <ul className="sidebar-actions" role="menu">
-          {actionItems.map((item) => (
-            <li key={item.key} role="none">
-              <button
-                className={`sidebar-btn${item.key === "plus" ? " sidebar-btn-plus" : ""}`}
-                aria-label={item.aria}
-                tabIndex={0}
-                onClick={item.key === "plus" ? () => navigate("/") : undefined}
-              >
-                {item.icon}
-              </button>
-            </li>
-          ))}
-          {/* Avatar */}
-          <li role="none">
+      {/* Nav icons */}
+      <ul className="flex flex-col gap-4 mb-8">
+        {navItems.map((item) => (
+          <li key={item.key}>
             <button
-              className="sidebar-btn sidebar-avatar"
-              aria-label="User Profile"
+              className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-cyan-600 focus:bg-cyan-600 transition cursor-pointer"
+              aria-label={item.aria}
               tabIndex={0}
             >
-              <img src={avatarUrl} alt="User avatar" />
+              {item.icon}
             </button>
           </li>
-        </ul>
-      </nav>
-      <style>{`
-.sidebar {
-  position: fixed;
-  left: 0; top: 0; bottom: 0;
-  width: 72px;
-  background: #23263a;
-  color: #b8e3e7;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  z-index: 100;
-  box-shadow: 2px 0 16px 0 rgba(0,0,0,0.13);
-}
-.sidebar-logo {
-  margin: 24px 0 32px 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.sidebar-nav, .sidebar-actions {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.sidebar-nav li, .sidebar-actions li {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-.sidebar-btn {
-  background: none;
-  border: none;
-  outline: none;
-  color: #b8e3e7;
-  width: 48px;
-  height: 48px;
-  margin: 6px 0;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s, color 0.15s;
-  cursor: pointer;
-  position: relative;
-}
-.sidebar-btn:focus-visible {
-  box-shadow: 0 0 0 2px #2AFADF;
-  background: #2b314a;
-}
-.sidebar-btn:hover, .sidebar-btn:focus {
-  background: #2b314a;
-  color: #2AFADF;
-}
-.sidebar-btn-plus {
-  background: linear-gradient(135deg, #2AFADF 10%, #4C83FF 100%);
-  color: #fff;
-  box-shadow: 0 2px 8px 0 rgba(42,250,223,0.18);
-}
-.sidebar-btn-plus:hover, .sidebar-btn-plus:focus {
-  background: linear-gradient(135deg, #4C83FF 10%, #2AFADF 100%);
-  color: #fff;
-}
-.sidebar-avatar {
-  padding: 0;
-  background: none;
-  margin-bottom: 10px;
-}
-.sidebar-avatar img {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: 2px solid #2AFADF;
-  object-fit: cover;
-  background: #1a1d2b;
-}
-.sidebar-label {
-  display: none;
-}
-.sidebar-spacer {
-  flex: 1 1 auto;
-}
-@media (max-width: 600px) {
-  .sidebar {
-    width: 56px !important;
-    min-width: 56px;
-  }
-}
-      `}</style>
-    </>
+        ))}
+      </ul>
+
+      <div className="flex-1" />
+
+      {/* Actions */}
+      <ul className="flex flex-col gap-3 mb-6">
+        {actionItems.map((item) => (
+          <li key={item.key}>
+            <button
+              className={`w-12 h-12 flex cursor-pointer items-center justify-center rounded-full transition ${
+                item.key === "plus"
+                  ? "bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-lg hover:from-blue-500 hover:to-cyan-400"
+                  : "hover:bg-cyan-600 focus:bg-cyan-600"
+              }`}
+              aria-label={item.aria}
+              tabIndex={0}
+              onClick={item.key === "plus" ? () => navigate("/") : undefined}
+            >
+              {item.icon}
+            </button>
+          </li>
+        ))}
+        {/* Avatar */}
+        <li>
+          <button
+            className="w-12 h-12 flex items-center justify-center rounded-full border-2 border-cyan-400 shadow-lg overflow-hidden cursor-pointer"
+            aria-label="User Profile"
+            tabIndex={0}
+          >
+            <img src={avatarUrl} alt="User avatar" className="w-10 h-10 rounded-full object-cover" />
+          </button>
+        </li>
+      </ul>
+    </nav>
   );
 }

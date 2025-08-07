@@ -95,8 +95,7 @@ Your task is to generate Python code that:
 11. Do not wrap code in ``` tags.
 """
 
-
-
+    print(f"summary ----->: {summary}")
 
 
     return prompt.strip()

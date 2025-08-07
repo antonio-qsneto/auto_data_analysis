@@ -1,7 +1,9 @@
 import React from "react";
-import screenFake from "../../assets/screen_fake.png";
+import screenFake from "../../assets/images/screen_fake.png";
+import { useNavigate } from "react-router-dom";
 
 export default function HeroSection() {
+  const navigate = useNavigate();
   return (
     <section className="w-full bg-gradient-to-r from-blue-50 via-white to-cyan-50 py-16 px-6 md:px-12">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-24 items-center">
@@ -22,8 +24,11 @@ export default function HeroSection() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <button className="px-6 py-3 font-semibold bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">
-              Try for Free →
+            <button
+              className="px-6 py-3 font-semibold bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition cursor-pointer"
+              onClick={() => navigate("/upload")}
+            >
+              Try It →
             </button>
             <button className="px-6 py-3 font-semibold border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition">
               Request a Demo

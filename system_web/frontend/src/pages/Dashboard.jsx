@@ -1,7 +1,7 @@
 import React from "react";
-import Charts from "./Charts";
-import SideBar from "./SideBar";
-import SparkBox from "./SparkBox";
+import Charts from "../components/charts/Charts";
+import SideBar from "../components/layout/SideBar";
+import SparkBox from "../components/layout/SparkBox";
 
 // Parse summary into individual metrics for cards
 function parseBusinessSummary(summary) {
