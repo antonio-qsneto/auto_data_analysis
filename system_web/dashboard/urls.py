@@ -1,6 +1,6 @@
 from django.urls import path
-from dashboard import views
+from dashboard.views import chart_views
 
 urlpatterns = [
-    path('gerar_chart/', views.gerar_chart_view, name='gerar_chart'),
+    path('gerar_chart/', chart_views.gerar_chart_view, name='gerar_chart'),
 ]

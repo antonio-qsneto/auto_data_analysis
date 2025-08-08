@@ -1,4 +1,9 @@
+import os
 import requests
+from openai import OpenAI # type: ignore
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def chamar_openrouter(prompt: str, api_key: str) -> str:
     url = "https://openrouter.ai/api/v1/chat/completions"
@@ -31,3 +36,39 @@ def chamar_openrouter(prompt: str, api_key: str) -> str:
         print(f"Response text: {response.text}")
         raise RuntimeError(f"Erro {response.status_code}: {response.text}")
  
+
+def openAI_call(prompt: str) -> str:
+    """
+    Calls GPT-5 Nano using the OpenAI Python SDK.
+    Uses API key from environment variable OPENAI_API_KEY.
+
+    Args:
+        prompt (str): The user prompt for the model.
+
+    Returns:
+        str: The model's response content.
+    """
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("Environment variable OPENAI_API_KEY not found.")
+
+    try:
+        # Create client with API key from env
+        client = OpenAI(api_key=api_key)
+
+        # Call GPT-5 Nano
+        response = client.chat.completions.create(
+            model="gpt-5-nano",
+            messages=[
+                {"role": "system", "content": "You are a data analyst who generates Python code for visualization."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3,
+            max_tokens=3000
+        )
+
+        return response.choices[0].message.content
+
+    except Exception as e:
+        print(f"OpenAI API error: {str(e)}")
+        raise RuntimeError(f"OpenAI API error: {str(e)}")
