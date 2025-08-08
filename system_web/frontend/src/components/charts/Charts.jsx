@@ -111,19 +111,24 @@ export default function Charts({ charts, theme = "dark" }) {
             },
             y: {
               formatter: (val) => {
+                // For boxPlot, val can be a number, array, or object with a y property
+                if (type === "boxPlot") {
+                  if (typeof val === "number") {
+                    return val.toFixed(1);
+                  }
+                  if (Array.isArray(val)) {
+                    return val.map(v => typeof v === "number" ? v.toFixed(1) : v).join(", ");
+                  }
+                  if (val && typeof val === "object" && Array.isArray(val.y)) {
+                    return val.y.map(v => typeof v === "number" ? v.toFixed(1) : v).join(", ");
+                  }
+                  return val;
+                }
+                // Other chart types
                 if (
-                  (["line", "area", "bar", "column"].includes(type) && typeof val === "number") ||
-                  (type === "boxPlot" && typeof val === "number")
+                  (["line", "area", "bar", "column"].includes(type) && typeof val === "number")
                 ) {
                   return val.toFixed(1);
-                }
-                // For boxPlot, val can be an array [min, q1, median, q3, max]
-                if (type === "boxPlot" && Array.isArray(val)) {
-                  return val.map(v => typeof v === "number" ? v.toFixed(1) : v).join(", ");
-                }
-                // For boxPlot, val can be an object with a y property (ApexCharts format)
-                if (type === "boxPlot" && val && typeof val === "object" && Array.isArray(val.y)) {
-                  return val.y.map(v => typeof v === "number" ? v.toFixed(1) : v).join(", ");
                 }
                 return val;
               }

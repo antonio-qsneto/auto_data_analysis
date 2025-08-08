@@ -9,8 +9,8 @@ def chamar_openrouter(prompt: str, api_key: str) -> str:
 
     payload = {
         #"model": "deepseek/deepseek-chat-v3-0324:free",
-        #"model": "qwen/qwen3-coder",
-        "model": "moonshotai/kimi-k2:free",
+        "model": "qwen/qwen3-coder",
+        #"model": "moonshotai/kimi-k2:free",
         #"model": "google/gemini-2.5-flash-lite-preview-06-17",
 
         "messages": [

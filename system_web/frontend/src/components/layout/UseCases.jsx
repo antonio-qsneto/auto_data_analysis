@@ -1,6 +1,10 @@
 import React from "react";
 import financeGif from "../../assets/gifs/finance.gif";
-import marketing from "../../assets/gifs/marketing.gif";
+import marketing from "../../assets/gifs/marketing.webp";
+import costumer from "../../assets/gifs/costumer.webp";
+import business from "../../assets/gifs/business.webp";
+import operational from "../../assets/gifs/operational.webp";
+import startup from "../../assets/gifs/startup.webp";
 
 const useCases = [
   {
@@ -9,29 +13,29 @@ const useCases = [
     image: financeGif,
   },
   {
+    title: "Customer Behavior Analytics",
+    description: "Identify purchasing patterns, engagement clusters, and churn risks using interactive 3D and segmentation charts.",
+    image: costumer,
+  },
+  {
     title: "Marketing",
     description: "Visualize acquisition metrics, campaign performance, and conversion rates with clean dashboards.",
     image: marketing,
   },
   {
-    title: "Operations",
-    description: "Forecast demand, monitor supply chains, and optimize inventory in real-time.",
-    image: "/images/operations-chart.png",
-  },
-  {
     title: "Business Owners",
     description: "Quickly upload spreadsheets and gain instant clarity on profit, expenses, and business trends.",
-    image: "/images/business-chart.png",
+    image: business,
   },
   {
-    title: "Data Science",
-    description: "Clean, prepare, and explore datasets interactively with AI-assisted suggestions.",
-    image: "/images/data-science-chart.png",
+    title: "Operational Efficiency Monitoring",
+    description: "Track production KPIs, detect process bottlenecks, and forecast resource needs using predictive analytics.",
+    image: operational,
   },
   {
-    title: "Scientific Research",
-    description: "Explore complex datasets, correlations, and outliers for deeper insights.",
-    image: "/images/science-chart.png",
+    title: "Startup & SMB Growth Tracking",
+    description: "Build sales forecasts, cash flow projections, and market performance dashboards for small and medium-sized businesses.",
+    image: startup,
   },
 ];
 
@@ -60,9 +64,6 @@ export default function UseCases() {
                 alt={item.title}
                 className="w-full h-48 object-cover rounded-xl"
               />
-              <button className="mt-4 text-indigo-600 font-medium hover:underline text-left">
-                Try it out →
-              </button>
             </div>
           ))}
         </div>
