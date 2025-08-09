@@ -1,3 +1,4 @@
+// DatabasePage.jsx (updated)
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SideBar from "../components/layout/SideBar";
@@ -18,6 +19,9 @@ export default function DatabasePage({
   const [dbUser, setDbUser] = useState("");
   const [dbPassword, setDbPassword] = useState("");
   const [dbName, setDbName] = useState("");
+  const [dbType, setDbType] = useState("postgresql");
+  const [tables, setTables] = useState([]);
+  const [selectedTable, setSelectedTable] = useState("");
   const navigate = useNavigate();
 
   const handleConnect = async () => {
@@ -27,6 +31,7 @@ export default function DatabasePage({
     }
     setLoading && setLoading(true);
     setError && setError("");
+    setTables([]); 
     try {
       const response = await fetch("http://127.0.0.1:8000/connect_database/", {
         method: "POST",
@@ -37,15 +42,52 @@ export default function DatabasePage({
           user: dbUser,
           password: dbPassword,
           database: dbName,
+          db_type: dbType,
         }),
       });
       if (!response.ok) throw new Error("Failed to connect to database");
+      const data = await response.json();
+      if (data.tables && data.tables.length > 0) {
+        setTables(data.tables);
+        setSelectedTable(data.tables[0]);
+      } else {
+        throw new Error("No tables found");
+      }
+    } catch (err) {
+      setError && setError("Error connecting to database: " + err.message);
+    } finally {
+      setLoading && setLoading(false);
+    }
+  };
+
+  const handleFetchData = async () => {
+    if (!selectedTable) {
+      setError && setError("Please select a table.");
+      return;
+    }
+    setLoading && setLoading(true);
+    setError && setError("");
+    try {
+      const response = await fetch("http://127.0.0.1:8000/fetch_table_data/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          host: dbHost,
+          port: dbPort,
+          user: dbUser,
+          password: dbPassword,
+          database: dbName,
+          db_type: dbType,
+          table: selectedTable,
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to fetch table data");
       const data = await response.json();
       setCharts && setCharts(data.charts);
       setBusinessSummary && setBusinessSummary(data.business_summary || "");
       navigate("/dashboard");
     } catch (err) {
-      setError && setError("Error connecting to database or generating charts.");
+      setError && setError("Error fetching table data: " + err.message);
     } finally {
       setLoading && setLoading(false);
     }
@@ -92,8 +134,18 @@ export default function DatabasePage({
             <h2 className="text-2xl font-bold mb-6 text-blue-700">Connect to your Database</h2>
             <form
               className="w-full flex flex-col gap-4"
-              onSubmit={e => { e.preventDefault(); handleConnect(); }}
+              onSubmit={e => { e.preventDefault(); tables.length > 0 ? handleFetchData() : handleConnect(); }}
             >
+              <select
+                value={dbType}
+                onChange={e => setDbType(e.target.value)}
+                className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none"
+              >
+                <option value="postgresql">PostgreSQL</option>
+                <option value="mysql">MySQL</option>
+                <option value="mariadb">MariaDB</option>
+                <option value="sqlserver">SQL Server</option>
+              </select>
               <input
                 type="text"
                 placeholder="Host"
@@ -129,6 +181,22 @@ export default function DatabasePage({
                 onChange={e => setDbName(e.target.value)}
                 className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none"
               />
+
+              {tables.length > 0 && (
+                <select
+                  value={selectedTable}
+                  onChange={e => setSelectedTable(e.target.value)}
+                  className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none"
+                >
+                  <option value="">Select a table</option>
+                  {tables.map((table) => (
+                    <option key={table} value={table}>
+                      {table}
+                    </option>
+                  ))}
+                </select>
+              )}
+
               <button
                 type="submit"
                 disabled={loading}
@@ -141,10 +209,10 @@ export default function DatabasePage({
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <img src={loadingGif} alt="Loading..." className="w-6 h-6 animate-spin" />
-                    Connecting...
+                    {tables.length > 0 ? "Fetching..." : "Connecting..."}
                   </span>
                 ) : (
-                  "Connect"
+                  tables.length > 0 ? "Fetch Data" : "Connect"
                 )}
               </button>
             </form>

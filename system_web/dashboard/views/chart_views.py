@@ -1,3 +1,4 @@
+# chart_views.py (updated)
 import os
 import json
 import pandas as pd
@@ -13,49 +14,34 @@ from dashboard.llm_tools.app.core.code_executor import executar_codigo_ia, extra
 
 load_dotenv()
 
+def process_data(df):
+    business_summary = extract_business_insights(df)
+    prompt = gerar_prompt_dinamico(df)
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        raise ValueError("API key not configured")
+    codigo_raw = chamar_openrouter(prompt, api_key)
+    codigo = extrair_codigo_puro(codigo_raw)
+    result = executar_codigo_ia(codigo, df)
+    charts_serializable = json.loads(json.dumps(result["charts"], default=convert_numpy))
+    save_json(charts_serializable)
+    return {
+        "business_summary": business_summary,
+        "stdout": result.get("stdout", ""),
+        "charts": charts_serializable
+    }
+
 @csrf_exempt
 def gerar_chart_view(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "Only POST method allowed"}, status=405)
+    from .handle_csv import handle_csv
+    return handle_csv(request)
 
-    try:
-        # Validate CSV upload
-        uploaded_file = request.FILES.get("file")
-        if not uploaded_file:
-            return JsonResponse({"error": "No file uploaded"}, status=400)
-        if not uploaded_file.name.endswith(".csv"):
-            return JsonResponse({"error": "Only CSV files allowed"}, status=400)
+@csrf_exempt
+def connect_database(request):
+    from .handle_db import get_tables
+    return get_tables(request)
 
-        # Read CSV
-        df = pd.read_csv(uploaded_file).reset_index(drop=True)
-        df["index"] = df.index
-
-        # Extract business insights
-        business_summary = extract_business_insights(df)
-
-        # Generate prompt and call LLM
-        prompt = gerar_prompt_dinamico(df)
-        api_key = os.getenv("OPENROUTER_API_KEY")
-        if not api_key:
-            return JsonResponse({"error": "API key not configured"}, status=500)
-
-        codigo_raw = chamar_openrouter(prompt, api_key)
-        codigo = extrair_codigo_puro(codigo_raw)
-        result = executar_codigo_ia(codigo, df)
-
-        # Serialize charts
-        charts_serializable = json.loads(json.dumps(result["charts"], default=convert_numpy))
-        save_json(charts_serializable)
-
-        return JsonResponse({
-            "business_summary": business_summary,
-            "stdout": result.get("stdout", ""),
-            "charts": charts_serializable
-        })
-
-    except Exception as e:
-        import traceback
-        return JsonResponse({
-            "error": str(e),
-            "traceback": traceback.format_exc()
-        }, status=500)
+@csrf_exempt
+def fetch_table_data(request):
+    from .handle_db import fetch_and_process_table
+    return fetch_and_process_table(request)
