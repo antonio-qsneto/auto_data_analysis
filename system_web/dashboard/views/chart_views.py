@@ -35,7 +35,7 @@ def gerar_chart_view(request):
 
         # Generate prompt and call LLM
         prompt = gerar_prompt_dinamico(df)
-        api_key = os.getenv("OPENAI_API_KEY")
+        api_key = os.getenv("OPENROUTER_API_KEY")
         if not api_key:
             return JsonResponse({"error": "API key not configured"}, status=500)
 

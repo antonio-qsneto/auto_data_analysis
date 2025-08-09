@@ -1,18 +1,14 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import XLogo from "../../assets/images/Xclarty_logo.png";
+import csv from "../../assets/icons/fluent_document-table-16-regular.svg"
+import database from "../../assets/icons/database.svg";
 
 const icons = {
   document: (
     <svg aria-hidden="true" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
       <path d="M7 3h6l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
       <polyline points="14 3 14 8 19 8" />
-    </svg>
-  ),
-  user: (
-    <svg aria-hidden="true" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 20v-1a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v1" />
     </svg>
   ),
   cube: (
@@ -48,8 +44,8 @@ const icons = {
 };
 
 const navItems = [
-  { key: "document", icon: icons.document, label: "Documents", aria: "Documents" },
-  { key: "user", icon: icons.user, label: "User", aria: "User" },
+  { key: "csv", icon: <img src={csv} alt="CSV Icon" className="w-8 h-8" />, label: "CSV", aria: "CSV" },
+  { key: "database", icon: <img src={database} alt="Database Icon" className="w-8 h-8" />, label: "Database", aria: "Database" },
   { key: "cube", icon: icons.cube, label: "Cube", aria: "Cube" },
 ];
 
@@ -91,6 +87,13 @@ export default function SideBar() {
               className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-cyan-600 focus:bg-cyan-600 transition cursor-pointer"
               aria-label={item.aria}
               tabIndex={0}
+              onClick={
+                item.key === "csv"
+                  ? () => navigate("/upload")
+                  : item.key === "database"
+                  ? () => navigate("/database")
+                  : undefined
+              }
             >
               {item.icon}
             </button>
@@ -112,7 +115,7 @@ export default function SideBar() {
               }`}
               aria-label={item.aria}
               tabIndex={0}
-              onClick={item.key === "plus" ? () => navigate("/") : undefined}
+              disabled={item.key === "plus"}
             >
               {item.icon}
             </button>
