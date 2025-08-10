@@ -1,5 +1,5 @@
 import React from "react";
-import BrandLogo from "../../assets/images/Xclarty_logo.png";
+import BrandLogo from "../../assets/images/Xclarty_logo.svg";
 
 export default function Header() {
   return (

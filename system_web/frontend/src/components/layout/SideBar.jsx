@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import XLogo from "../../assets/images/Xclarty_logo.png";
+import XLogo from "../../assets/icons/X.svg";
 import csv from "../../assets/icons/fluent_document-table-16-regular.svg"
 import database from "../../assets/icons/database.svg";
 
@@ -25,7 +25,7 @@ export default function SideBar() {
   return (
     <nav
       className="fixed left-0 top-0 bottom-0 w-20 text-white flex flex-col items-center z-50 shadow-2xl"
-      style={{ background: 'linear-gradient(to bottom, #2F324A 0%, #5b609aff 100%)' }}
+      style={{ background: 'linear-gradient(to bottom, #2F324A 0%, #5b709aff 100%)' }}
     >
       <div className="mt-8 mb-10 flex items-center justify-center">
         <button
@@ -36,7 +36,7 @@ export default function SideBar() {
           <img
             src={XLogo}
             alt="Logo"
-            className="w-12 h-12 rounded-xl shadow-lg border-cyan-400 cursor-pointer"
+            className="w-8 h-8 cursor-pointer"
           />
         </button>
       </div>
