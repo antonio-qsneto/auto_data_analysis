@@ -4,7 +4,7 @@ import pandas as pd
 import traceback
 import sqlalchemy as sa # type: ignore
 from django.http import JsonResponse
-from .chart_views import process_data
+from .core import process_data
 
 def get_tables(request):
     if request.method != "POST":

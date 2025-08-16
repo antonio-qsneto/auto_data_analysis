@@ -8,6 +8,7 @@ export default function App() {
   const [error, setError] = useState("");
   const [theme, setTheme] = useState("light");
   const [businessSummary, setBusinessSummary] = useState("");
+  const [insightsText, setInsightsText] = useState(""); // new state for insights
 
   useEffect(() => {
     document.body.className = theme;
@@ -23,6 +24,8 @@ export default function App() {
       setError={setError}
       businessSummary={businessSummary}
       setBusinessSummary={setBusinessSummary}
+      insightsText={insightsText} // pass insights_text to routes
+      setInsightsText={setInsightsText} // optional if you want to update it from children
       theme={theme}
       setTheme={setTheme}
     />

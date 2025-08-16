@@ -2,7 +2,7 @@
 import pandas as pd
 import traceback
 from django.http import JsonResponse
-from .chart_views import process_data
+from .core import process_data
 
 def handle_csv(request):
     if request.method != "POST":

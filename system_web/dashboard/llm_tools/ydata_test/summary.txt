@@ -1,0 +1,96 @@
+=== Dataset summary ===
+
+cells: 0
+duplicate rows: 0
+memory: 254.67 KB
+
+
+=== Variables summary (sample) ===
+
+Variables: 31
+  - name=State, type=Text, count=1051, unique=1
+  - name=Year, type=Numeric, count=1051, mean=2005, std=9.107, min=1992, max=2019
+  - name=Totals.Capital outlay, type=Numeric, count=1051, unique=1051, mean=1.897e+06, std=2.871e+06, min=1.075e+05, max=6.444e+07
+  - name=Totals.Revenue, type=Numeric, count=1051, unique=1051, mean=3.215e+07, std=5.439e+07, min=1.756e+06, max=1.096e+09
+  - name=Totals.Expenditure, type=Numeric, count=1051, unique=1051, mean=3.016e+07, std=4.926e+07, min=1.565e+06, max=9.3e+08
+  - name=Totals.General expenditure, type=Numeric, count=1051, unique=1051, mean=2.602e+07, std=4.222e+07, min=1.49e+06, max=8.277e+08
+  - name=Totals.General revenue, type=Numeric, count=1051, unique=1051, mean=2.611e+07, std=4.258e+07, min=1.518e+06, max=8.649e+08
+  - name=Totals.Insurance trust  revenue, type=Numeric, count=1051, unique=1051, mean=5.735e+06, std=1.205e+07, min=-3.058e+06, max=2.233e+08
+  - name=Totals.Intergovernmental, type=Numeric, count=1051, unique=1051, mean=8.127e+06, std=1.314e+07, min=4.122e+05, max=2.408e+08
+  - name=Totals.License tax, type=Numeric, count=1051, unique=1051, mean=8.053e+05, std=1.42e+06, min=5.483e+04, max=2.967e+07
+  - name=Totals.Selective sales tax, type=Numeric, count=1051, unique=1051, mean=2.106e+06, std=3.271e+06, min=5.635e+04, max=7.137e+07
+  - name=Totals.Tax, type=Numeric, count=1051, unique=1051, mean=1.328e+07, std=2.306e+07, min=5.65e+05, max=4.744e+08
+  - name=Details.Correction.Correction Total, type=Numeric, count=1051, unique=1049, mean=7.982e+05, std=1.412e+06, min=1.612e+04, max=3.06e+07
+  - name=Details.Education.Education Total, type=Numeric, count=1051, unique=1051, mean=9.099e+06, std=1.452e+07, min=4.305e+05, max=2.948e+08
+  - name=Details.Financial Aid.Assistance and Subsidies, type=Numeric, count=1051, unique=1051, mean=6.666e+05, std=9.571e+05, min=2.696e+04, max=2.151e+07
+  - name=Details.Financial Aid.Cash and Securities Total, type=Numeric, count=1051, unique=1051, mean=5.46e+07, std=9.82e+07, min=2.211e+06, max=2.062e+09
+  - name=Details.Health.Health Total Expenditure, type=Numeric, count=1051, unique=1047, mean=9.584e+05, std=1.765e+06, min=3.601e+04, max=3.507e+07
+  - name=Details.Intergovernmental.Intergovernmental Expenditure, type=Numeric, count=1051, unique=1051, mean=7.934e+06, std=1.522e+07, min=1.244e+05, max=2.789e+08
+  - name=Details.Intergovernmental.Intergovernmental to Combined and Unallocable, type=Numeric, count=1051, unique=1047, mean=1.962e+06, std=3.442e+06, min=1.41e+05, max=8.329e+07
+  - name=Details.Natural Resources.Natural Resources Construction, type=Numeric, count=1051, unique=1047, mean=3.651e+05, std=6.732e+05, min=2.328e+04, max=1.354e+07
+  - name=Details.Utilities.Utilities Current Operation, type=Numeric, count=1051, unique=1051, mean=1.525e+07, std=2.358e+07, min=6.91e+05, max=4.464e+08
+  - name=Details.Welfare.Welfare Institution Total Expenditure, type=Numeric, count=1051, unique=1049, mean=7.75e+06, std=1.414e+07, min=1.915e+05, max=2.079e+08
+  - name=Details.Natural Resources.Parks.Parks Total Expenditure, type=Numeric, count=1051, unique=1043, mean=1.054e+05, std=1.831e+05, min=4297, max=4.473e+06
+  - name=Details.Transportation.Highways.Highways Total Expenditure, type=Numeric, count=1051, unique=1051, mean=1.852e+06, std=2.718e+06, min=1.57e+05, max=6.362e+07
+  - name=Totals. Debt at end of fiscal year, type=Numeric, count=1051, unique=1051, mean=1.569e+07, std=2.713e+07, min=4.858e+05, max=4.831e+08
+  - name=Details.Insurance benefits and repayments, type=Numeric, count=1051, unique=1049, mean=3.683e+06, std=6.42e+06, min=7.535e+04, max=9.12e+07
+  - name=Details.Interest on debt, type=Numeric, count=1051, unique=1045, mean=7.384e+05, std=1.327e+06, min=1.958e+04, max=2.759e+07
+  - name=Details.Interest on general debt, type=Numeric, count=1051, unique=1047, mean=7.059e+05, std=1.24e+06, min=1.958e+04, max=2.678e+07
+  - name=Details.Miscellaneous general revenue, type=Numeric, count=1051, unique=1049, mean=2.054e+06, std=3.108e+06, min=1.134e+05, max=7.346e+07
+  - name=Details.Other taxes, type=Numeric, count=1051, unique=1045, mean=6.716e+05, std=1.191e+06, max=2.554e+07
+  - name=Details.Police protection, type=Numeric, count=1051, unique=1041, mean=2.306e+05, std=3.642e+05, min=4953, max=8.038e+06
+
+
+=== Correlations ===
+
+No correlations above threshold 0.7.
+
+
+=== Alerts / Warnings ===
+
+[Details.Correction.Correction Total] is highly overall correlated with [Details.Education.Education Total] and 27 other fields
+[Details.Education.Education Total] is highly overall correlated with [Details.Correction.Correction Total] and 27 other fields
+[Details.Financial Aid.Assistance and Subsidies] is highly overall correlated with [Details.Correction.Correction Total] and 26 other fields
+[Details.Financial Aid.Cash and Securities Total] is highly overall correlated with [Details.Correction.Correction Total] and 27 other fields
+[Details.Health.Health Total Expenditure] is highly overall correlated with [Details.Correction.Correction Total] and 26 other fields
+[Details.Insurance benefits and repayments] is highly overall correlated with [Details.Correction.Correction Total] and 27 other fields
+[Details.Interest on debt] is highly overall correlated with [Details.Correction.Correction Total] and 26 other fields
+[Details.Interest on general debt] is highly overall correlated with [Details.Correction.Correction Total] and 26 other fields
+[Details.Intergovernmental.Intergovernmental Expenditure] is highly overall correlated with [Details.Correction.Correction Total] and 27 other fields
+[Details.Intergovernmental.Intergovernmental to Combined and Unallocable] is highly overall correlated with [Details.Correction.Correction Total] and 27 other fields
+[Details.Miscellaneous general revenue] is highly overall correlated with [Details.Correction.Correction Total] and 27 other fields
+[Details.Natural Resources.Natural Resources Construction] is highly overall correlated with [Details.Correction.Correction Total] and 27 other fields
+[Details.Natural Resources.Parks.Parks Total Expenditure] is highly overall correlated with [Details.Correction.Correction Total] and 26 other fields
+[Details.Other taxes] is highly overall correlated with [Details.Correction.Correction Total] and 19 other fields
+[Details.Police protection] is highly overall correlated with [Details.Correction.Correction Total] and 27 other fields
+[Details.Transportation.Highways.Highways Total Expenditure] is highly overall correlated with [Details.Correction.Correction Total] and 27 other fields
+[Details.Utilities.Utilities Current Operation] is highly overall correlated with [Details.Correction.Correction Total] and 27 other fields
+[Details.Welfare.Welfare Institution Total Expenditure] is highly overall correlated with [Details.Correction.Correction Total] and 27 other fields
+[Totals. Debt at end of fiscal year] is highly overall correlated with [Details.Correction.Correction Total] and 26 other fields
+[Totals.Capital outlay] is highly overall correlated with [Details.Correction.Correction Total] and 27 other fields
+[Totals.Expenditure] is highly overall correlated with [Details.Correction.Correction Total] and 27 other fields
+[Totals.General expenditure] is highly overall correlated with [Details.Correction.Correction Total] and 27 other fields
+[Totals.General revenue] is highly overall correlated with [Details.Correction.Correction Total] and 27 other fields
+[Totals.Insurance trust  revenue] is highly overall correlated with [Details.Correction.Correction Total] and 26 other fields
+[Totals.Intergovernmental] is highly overall correlated with [Details.Correction.Correction Total] and 27 other fields
+[Totals.License tax] is highly overall correlated with [Details.Correction.Correction Total] and 26 other fields
+[Totals.Revenue] is highly overall correlated with [Details.Correction.Correction Total] and 27 other fields
+[Totals.Selective sales tax] is highly overall correlated with [Details.Correction.Correction Total] and 27 other fields
+[Totals.Tax] is highly overall correlated with [Details.Correction.Correction Total] and 27 other fields
+[Totals.Capital outlay] has unique values
+[Totals.Revenue] has unique values
+[Totals.Expenditure] has unique values
+[Totals.General expenditure] has unique values
+[Totals.General revenue] has unique values
+[Totals.Insurance trust  revenue] has unique values
+[Totals.Intergovernmental] has unique values
+[Totals.License tax] has unique values
+[Totals.Selective sales tax] has unique values
+[Totals.Tax] has unique values
+[Details.Education.Education Total] has unique values
+[Details.Financial Aid.Assistance and Subsidies] has unique values
+[Details.Financial Aid.Cash and Securities Total] has unique values
+[Details.Intergovernmental.Intergovernmental Expenditure] has unique values
+[Details.Utilities.Utilities Current Operation] has unique values
+[Details.Transportation.Highways.Highways Total Expenditure] has unique values
+[Totals. Debt at end of fiscal year] has unique values

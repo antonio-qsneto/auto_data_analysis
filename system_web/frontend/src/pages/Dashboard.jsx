@@ -3,19 +3,17 @@ import Charts from "../components/charts/Charts";
 import SideBar from "../components/layout/SideBar";
 import SparkBox from "../components/layout/SparkBox";
 import Footer from "../components/layout/Footer";
+import InsightCard from "../components/layout/InsightCard";
 
-// Parse summary into individual metrics for cards
 function parseBusinessSummary(summary) {
   if (!summary) return [];
   const cards = [];
-  // Find lines like "Year: Mean=2004.66 | Median=2002.00 | Std Dev=9.11 | Range=(1992.00, 2019.00)"
   const metricLineRegex = /^-?\s*([\w\s]+):\s*(.+)$/gm;
   let match;
   while ((match = metricLineRegex.exec(summary)) !== null) {
     const label = match[1].trim();
     const metrics = match[2].split('|').map(s => s.trim());
     metrics.forEach(metric => {
-      // Split by '=' or ':' for key-value
       let [key, value] = metric.split('=');
       if (!value && metric.includes(':')) [key, value] = metric.split(':');
       if (value) {
@@ -26,7 +24,6 @@ function parseBusinessSummary(summary) {
       }
     });
   }
-  // Fallback: if no metrics found, show whole line
   if (cards.length === 0) {
     summary.split('\n').forEach(line => {
       if (line.trim()) {
@@ -40,7 +37,10 @@ function parseBusinessSummary(summary) {
   return cards;
 }
 
-export default function Dashboard({ charts, theme, setTheme, businessSummary }) {
+export default function Dashboard({ charts, theme, setTheme, businessSummary, insightsText }) {
+
+  console.log(charts)
+
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
     setTheme(newTheme);
@@ -49,7 +49,6 @@ export default function Dashboard({ charts, theme, setTheme, businessSummary }) 
 
   const cards = parseBusinessSummary(businessSummary);
 
-  // Example gradients for up to 6 cards, fallback to blue
   const gradients = [
     "linear-gradient(135deg, #ABDCFF 10%, #0396FF 100%)",
     "linear-gradient(135deg, #2AFADF 10%, #4C83FF 100%)",
@@ -82,7 +81,6 @@ export default function Dashboard({ charts, theme, setTheme, businessSummary }) 
           Switch to {theme === "dark" ? "Light" : "Dark"} Theme
         </button>
 
-        {/* Dynamic KPI Cards */}
         <div className="sparkboxes">
           {cards.map((card, idx) => (
             <SparkBox
@@ -94,7 +92,8 @@ export default function Dashboard({ charts, theme, setTheme, businessSummary }) 
           ))}
         </div>
 
-        {/* Charts */}
+        <InsightCard insightsText={insightsText} />
+
         <div className="charts-grid">
           {charts.map((chart, idx) => (
             <Charts key={idx} charts={[chart]} theme={theme} />

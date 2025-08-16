@@ -11,7 +11,8 @@ export default function UploadPage({
   error,
   theme,
   setTheme,
-  setBusinessSummary
+  setBusinessSummary,
+  setInsightsText
 }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [dragActive, setDragActive] = useState(false);
@@ -62,6 +63,8 @@ export default function UploadPage({
       const data = await response.json();
       setCharts && setCharts(data.charts);
       setBusinessSummary && setBusinessSummary(data.business_summary || "");
+      setInsightsText && setInsightsText(data.insights_text || "")
+      //console.log(data.insights_text)
       navigate("/dashboard");
     } catch (err) {
       setError && setError("Error uploading file or generating charts.");

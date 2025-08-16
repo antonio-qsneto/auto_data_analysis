@@ -1,5 +1,7 @@
 import pandas as pd
 from typing import Optional
+from typing import Optional, Union, Tuple
+
 
 
 def gerar_prompt_dinamico(df: pd.DataFrame, profile_json: Optional[dict] = None) -> str:
@@ -95,7 +97,72 @@ Your task is to generate Python code that:
 11. Do not wrap code in ``` tags.
 """
 
-    print(f"summary ----->: {summary}")
+    #print(f"summary ----->: {summary}")
 
 
     return prompt.strip()
+
+
+def generate_prompt_insight(profile_report: Optional[Union[dict, str, Tuple[str, str]]] = None) -> str:
+    """
+    Build a prompt for a data scientist LLM from the output of `insight_text`.
+    `profile_report` may be:
+      - a dict (original ProfileReport JSON),
+      - a single string (the full textual summary),
+      - a tuple/list of two strings (summary_full, summary_central_tendency).
+    Returns a prompt (str).
+    """
+    summary_parts = []
+
+    if profile_report:
+        try:
+            # dict case: mimic previous behavior (variables listing)
+            if isinstance(profile_report, dict):
+                variables = profile_report.get("variables", {})
+                resumo = [
+                    f"- {col}: type={meta.get('type', 'unknown')}, missing={round(meta.get('p_missing', 0)*100, 1)}%"
+                    for col, meta in variables.items()
+                ]
+                summary_parts.append("ProfileReport variables summary:\n" + "\n".join(resumo))
+
+            # tuple/list of strings: (full_summary, central_tendency_summary)
+            elif isinstance(profile_report, (list, tuple)):
+                if len(profile_report) >= 1 and profile_report[0]:
+                    summary_parts.append("ProfileReport (full):\n" + str(profile_report[0]))
+                if len(profile_report) >= 2 and profile_report[1]:
+                    summary_parts.append("Central tendency summary:\n" + str(profile_report[1]))
+
+            # single string: treat as full textual summary
+            else:
+                summary_parts.append("ProfileReport text:\n" + str(profile_report))
+
+        except Exception:
+            # If anything goes wrong, continue with whatever we have (avoid breaking)
+            pass
+
+    summary_text = "\n\n".join(summary_parts).strip()
+
+    prompt = f"""
+You are an experienced data scientist. Read the information below (which comes from a ydata-profiling / ProfileReport summary) and produce a clear, concise, and actionable analysis.
+Use non-technical language that a layperson can understand. The idea is that a layperson can understand.
+Instructions:
+- Start with 3–6 key takeaways (one-sentence bullets).
+- Call out data-quality issues (missingness, duplicates, memory/size concerns) and which columns are affected.
+- Highlight important distributions and central-tendency points (means/medians/std) and mention any obvious outliers.
+- Report notable correlations or multicollinearity concerns and name the variable pairs.
+- Give 3 concrete next steps (e.g., cleaning actions, features to engineer, checks to run) prioritized by impact.
+- Keep the whole output short and scannable (use bullets and short paragraphs). Use plain language—avoid excessive jargon.
+- generate text in markdown format. style the markdown for a beautiful and elegant style.
+- dont put ```markdown or ```python in output. only the markdown code (important!)
+
+Context / ProfileReport content:
+{summary_text}
+
+Produce the analysis now.
+""".strip()
+
+    # handy debug printing (keeps behavior similar to your original function)
+    #print(f"summary text: {summary_text}")
+
+    return prompt
+
