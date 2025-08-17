@@ -1,14 +1,20 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import ApexCharts from "apexcharts";
 import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+import ReactMarkdown from "react-markdown";
 
 /**
- * ExportReportApex - adapted to accept chart descriptors like:
- *   { type: "line", title: "X", labels: [...], series: [...] }
- * or the previous shapes:
- *   { options: {...}, series: [...]}  OR  { config: {...} }
+ * ExportReportApex - improved:
+ * - Renders markdown beautifully and normalizes characters.
+ * - Produces charts 2x2 per page with fixed cell aspect (no vertical stretching).
+ * - Places insights on page intelligently, slices long insights across pages.
  *
- * Produces a PDF with 4 charts/page (2x2) using ApexCharts.dataURI()
+ * Props:
+ *  - businessSummary: string
+ *  - insightsText: string (markdown)
+ *  - charts: array of chart descriptors (see previous messages)
+ *  - filename: string
  */
 export default function ExportReportApex({
   businessSummary = "",
@@ -17,30 +23,48 @@ export default function ExportReportApex({
   filename = "apex_report.pdf"
 }) {
   const [busy, setBusy] = useState(false);
+  const hiddenRef = useRef(null);
   const PX_PER_MM = 96 / 25.4; // ~3.78 px/mm
 
-  // build Apex config from different descriptor shapes
+  // --- helpers ---------------------------------------------------------------
+
+  // Normalize and clean text to avoid mojibake / control chars
+  const cleanText = (s) => {
+    if (!s && s !== "") return "";
+    try {
+      let t = String(s);
+      // Normalize (NFKC to collapse composed forms), remove invisible controls & replacement char
+      t = t.normalize("NFKC").replace(/[\u0000-\u001F\u007F-\u009F\uFFFD]/g, "");
+      return t;
+    } catch (e) {
+      return String(s);
+    }
+  };
+
+  // Build apex config from descriptor and force white theme and sizes
   const buildApexConfig = (desc, targetPxWidth, targetPxHeight) => {
-    // if full config provided, use it (but still enforce size + light theme)
     if (desc && desc.config && typeof desc.config === "object") {
       const cfg = { ...desc.config };
-      cfg.chart = { ...(cfg.chart || {}), animations: { ...(cfg.chart?.animations || {}), enabled: false }, background: "#ffffff", toolbar: { show: false }, width: targetPxWidth, height: targetPxHeight };
+      cfg.chart = {
+        ...(cfg.chart || {}),
+        animations: { ...(cfg.chart?.animations || {}), enabled: false },
+        background: "#ffffff",
+        toolbar: { show: false },
+        width: targetPxWidth,
+        height: targetPxHeight
+      };
       cfg.theme = { ...(cfg.theme || {}), mode: "light" };
+      cfg.stroke = { ...(cfg.stroke || {}), width: cfg.stroke?.width ?? 2 };
       return cfg;
     }
 
-    // start building from options/series if present
     const base = { ...(desc.options || {}) };
+    let series = desc.series || base.series || [];
 
-    // normalize series: if desc.series exists, prefer it
-    let series = desc.series || (base.series ? base.series : []);
-    // If series is a simple numeric array (e.g. [1,2,3]) convert to [{ name, data }]
     if (Array.isArray(series) && series.length && (typeof series[0] === "number" || typeof series[0] === "string")) {
       series = [{ name: desc.title || "Series", data: series }];
     }
 
-    // If series is array but elements are objects with 'y' etc (heatmap/boxPlot shapes) we pass through
-    // Now map by type to proper options
     const type = desc.type || (base.chart && base.chart.type) || "line";
 
     const cfg = {
@@ -55,60 +79,26 @@ export default function ExportReportApex({
         width: targetPxWidth,
         height: targetPxHeight
       },
-      theme: { ...(base.theme || {}), mode: "light" }
+      theme: { ...(base.theme || {}), mode: "light" },
     };
 
-    // For common chart types set categories/labels
-    if (type === "pie" || type === "donut") {
-      // Apex pie expects series: [values] and options.labels = [...]
-      // If series is [{name,data}] convert to values
-      if (Array.isArray(series) && series.length && typeof series[0] === "object" && "data" in series[0] === false) {
-        // e.g. series already like [10,20,30]
-        cfg.series = series;
-      } else if (Array.isArray(series) && series.length && series[0] && Array.isArray(series[0].data)) {
-        // if supplied as [{name, data: [..]}], flatten to values (take first dataset)
-        cfg.series = series[0].data;
-      } else if (Array.isArray(series) && typeof series[0] === "number") {
-        cfg.series = series;
-      } else {
-        // fallback: keep provided series
-      }
-      if (desc.labels) cfg.labels = desc.labels;
-    } else if (type === "heatmap") {
-      // heatmap expects series of objects with name/data: leave as-is
-      if (desc.labels) {
-        // apex heatmap may use x-axis categories per series data; don't force
-      }
-    } else if (type === "boxPlot") {
-      // boxPlot expects series in a specific structure, assume desc.series is already correct
-    } else {
-      // default: line/area/bar/scatter etc -> set xaxis.categories from labels if present
-      if (desc.labels && desc.labels.length) {
-        cfg.xaxis = { ...(cfg.xaxis || {}), categories: desc.labels };
-      }
-      // ensure series is Apex-style: array of { name, data }
-      if (Array.isArray(series) && series.length && typeof series[0] !== "object") {
-        cfg.series = [{ name: desc.title || "Series", data: series }];
-      } else {
-        cfg.series = series;
-      }
+    if ((type === "pie" || type === "donut") && desc.labels) cfg.labels = desc.labels;
+    if (!(type === "pie" || type === "donut" || type === "heatmap" || type === "boxPlot") && desc.labels) {
+      cfg.xaxis = { ...(cfg.xaxis || {}), categories: desc.labels };
     }
-
-    // Give a readable default title plugin if not present
     if (!cfg.title && desc.title) {
       cfg.title = { text: desc.title, align: "left", style: { color: "#111", fontSize: "14px" } };
-    } else if (cfg.title && typeof cfg.title === "string") {
+    } else if (typeof cfg.title === "string") {
       cfg.title = { text: cfg.title, align: "left" };
     }
 
-    // small visual defaults for PDF legibility
     cfg.stroke = { ...(cfg.stroke || {}), width: cfg.stroke?.width ?? 2 };
     if (!cfg.legend) cfg.legend = { ...(cfg.legend || {}), labels: { colors: "#222" } };
 
     return cfg;
   };
 
-  // render an Apex descriptor to a PNG/SVG data URI using off-screen container
+  // Render apex to dataURL using offscreen container
   const renderApexToDataUrl = async (desc, targetPxWidth, targetPxHeight) => {
     const container = document.createElement("div");
     container.style.position = "absolute";
@@ -123,14 +113,13 @@ export default function ExportReportApex({
     try {
       const config = buildApexConfig(desc, targetPxWidth, targetPxHeight);
       if (!config.series) config.series = desc.series || [];
-
       const chart = new ApexCharts(container, config);
       await chart.render();
 
       const data = await chart.dataURI();
       const imgURI = data && (data.imgURI || data.img || data.svg || data.svgURI);
+
       if (!imgURI && data && data.svg) {
-        // fallback convert svg to base64
         const svg = data.svg;
         const svg64 = btoa(unescape(encodeURIComponent(svg)));
         const img64 = "data:image/svg+xml;base64," + svg64;
@@ -139,13 +128,10 @@ export default function ExportReportApex({
         return { imgURI: img64, widthPx: targetPxWidth, heightPx: targetPxHeight };
       }
 
-      // ensure image loads (so we can measure natural size)
+      // ensure image loads to measure natural size
       const img = new Image();
       img.src = imgURI;
-      await new Promise((res, rej) => {
-        img.onload = res;
-        img.onerror = rej;
-      });
+      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
 
       const widthPx = img.naturalWidth || targetPxWidth;
       const heightPx = img.naturalHeight || targetPxHeight;
@@ -155,25 +141,42 @@ export default function ExportReportApex({
 
       return { imgURI, widthPx, heightPx };
     } catch (err) {
-      try { document.body.removeChild(container); } catch (e) { /* ignore */ }
+      try { document.body.removeChild(container); } catch {}
       throw err;
     }
   };
 
-  // light markdown-ish -> plain text for PDF (minimal)
-  const markdownToPlain = (md) => {
-    if (!md) return "";
-    let t = md;
-    t = t.replace(/```[\s\S]*?```/g, match => "\n[code]\n" + match.replace(/```/g, "") + "\n[/code]\n");
-    t = t.replace(/^#{1,6}\s*(.*)$/gm, (m, g1) => `\n${g1.toUpperCase()}\n`);
-    t = t.replace(/^\s*[-*+]\s+/gm, "• ");
-    t = t.replace(/^\s*\d+\.\s+/gm, "• ");
-    t = t.replace(/\*\*(.*?)\*\*/g, "$1");
-    t = t.replace(/\*(.*?)\*/g, "$1");
-    t = t.replace(/\[(.*?)\]\(.*?\)/g, "$1");
-    t = t.replace(/\n{3,}/g, "\n\n");
-    return t.trim();
+  // Capture the hidden markdown node to a canvas (html2canvas)
+  const captureMarkdownCanvas = async (node, scale = 2) => {
+    return html2canvas(node, {
+      scale,
+      useCORS: true,
+      logging: false,
+      backgroundColor: "#ffffff",
+      scrollY: -window.scrollY
+    });
   };
+
+  // Slice a canvas into chunks (in px) with given max height (px). Returns array of dataURLs.
+  const sliceCanvasToDataUrls = (canvas, maxHeightPx) => {
+    const slices = [];
+    const fullW = canvas.width;
+    const fullH = canvas.height;
+    let y = 0;
+    while (y < fullH) {
+      const h = Math.min(maxHeightPx, fullH - y);
+      const tmp = document.createElement("canvas");
+      tmp.width = fullW;
+      tmp.height = h;
+      const ctx = tmp.getContext("2d");
+      ctx.drawImage(canvas, 0, y, fullW, h, 0, 0, fullW, h);
+      slices.push(tmp.toDataURL("image/png"));
+      y += h;
+    }
+    return slices;
+  };
+
+  // --- main handler ---------------------------------------------------------
 
   const handleExport = async () => {
     if (!charts || charts.length === 0) {
@@ -182,6 +185,7 @@ export default function ExportReportApex({
     setBusy(true);
 
     try {
+      // Prepare PDF
       const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
@@ -189,18 +193,19 @@ export default function ExportReportApex({
       const usableW = pageW - margin * 2;
       const usableH = pageH - margin * 2;
 
-      // header
+      // Header
       let cursorY = 20;
       pdf.setFontSize(18);
       pdf.setFont("helvetica", "bold");
       pdf.text("Data Report", margin, cursorY);
       cursorY += 10;
 
-      // business summary
+      // Business summary (text)
       if (businessSummary) {
+        const summary = cleanText(businessSummary);
         pdf.setFontSize(11);
         pdf.setFont("helvetica", "normal");
-        const lines = pdf.splitTextToSize(businessSummary, usableW);
+        const lines = pdf.splitTextToSize(summary, usableW);
         const lh = 7;
         if (cursorY + lines.length * lh > pageH - margin) {
           pdf.addPage();
@@ -210,36 +215,112 @@ export default function ExportReportApex({
         cursorY += lines.length * lh + 6;
       }
 
-      // insights (plain)
-      if (insightsText) {
-        const plain = markdownToPlain(insightsText);
-        pdf.setFontSize(11);
-        pdf.setFont("helvetica", "normal");
-        const lines = pdf.splitTextToSize(plain, usableW);
-        const lh = 7;
-        if (cursorY + lines.length * lh > pageH - margin) {
-          pdf.addPage();
-          cursorY = margin;
+      // --- INSIGHTS: render the markdown into hidden DOM (already rendered in JSX below) and capture it ---
+      let insightsPlacedHeight_mm = 0;
+      const cleanedInsights = cleanText(insightsText);
+      if (cleanedInsights) {
+        // ensure hiddenRef has updated ReactMarkdown content; it's rendered in JSX using cleanedInsights
+        // Capture the node
+        const node = hiddenRef.current?.querySelector("#pdf-insights");
+        if (node) {
+          // capture with html2canvas at good scale
+          const canvas = await captureMarkdownCanvas(node, Math.max(2, window.devicePixelRatio || 2));
+          // compute canvas height in mm
+          const canvasHeightPx = canvas.height;
+          const canvasWidthPx = canvas.width;
+          const canvasHeightMm = canvasHeightPx / PX_PER_MM;
+
+          // remaining mm on current page
+          const remainingMm = pageH - margin - cursorY;
+
+          // If canvas fits into remaining, place directly. Otherwise slice into page-height pieces.
+          if (canvasHeightMm <= remainingMm) {
+            // place entire image
+            const imgData = canvas.toDataURL("image/png");
+            // scale image to usableW width in mm, preserve aspect ratio
+            const drawW_mm = usableW;
+            const drawH_mm = (canvasHeightPx / canvasWidthPx) * drawW_mm;
+            pdf.addImage(imgData, "PNG", margin, cursorY, drawW_mm, drawH_mm);
+            cursorY += drawH_mm + 6;
+            insightsPlacedHeight_mm = drawH_mm;
+          } else {
+            // Need to split: compute max height in px corresponding to remaining and subsequent full-page heights
+            const remainingPx = Math.floor(remainingMm * PX_PER_MM);
+            // slice canvas into dataurls where each slice corresponds to max slice height (remaining + full pages)
+            // first slice height = remainingPx (may be small); subsequent slices maxHeight = Math.floor(usableH * PX_PER_MM)
+            const firstSlicePx = remainingPx > 0 ? remainingPx : 0;
+            const pageSlicePx = Math.floor(usableH * PX_PER_MM);
+
+            let slicesDataUrls = [];
+            if (firstSlicePx > 0) {
+              // take first slice from y=0
+              const fullSlices = sliceCanvasToDataUrls(canvas, pageSlicePx);
+              // if first slice px < pageSlicePx, we still used fullSlices; we'll place progressively
+              slicesDataUrls = fullSlices;
+            } else {
+              // no room on current page, use full page slices
+              slicesDataUrls = sliceCanvasToDataUrls(canvas, pageSlicePx);
+            }
+
+            // Now place slices sequentially:
+            let placed = false;
+            let yOffsetMm = cursorY;
+            for (let si = 0; si < slicesDataUrls.length; si++) {
+              const dataUrl = slicesDataUrls[si];
+              const img = new Image();
+              img.src = dataUrl;
+              // measure px dims by creating temp image object (already encoded consistent width)
+              await new Promise((res) => (img.onload = res));
+              const wPx = img.naturalWidth;
+              const hPx = img.naturalHeight;
+              const drawW_mm = usableW;
+              const drawH_mm = (hPx / wPx) * drawW_mm;
+
+              // If placing first slice and there is room, place on current page, else new page
+              if (!placed) {
+                if (cursorY + drawH_mm <= pageH - margin) {
+                  pdf.addImage(dataUrl, "PNG", margin, cursorY, drawW_mm, drawH_mm);
+                  cursorY += drawH_mm + 6;
+                  placed = true;
+                  continue;
+                } else {
+                  // start on new page
+                  pdf.addPage();
+                  cursorY = margin;
+                }
+              }
+
+              // place remaining slices each on new page top
+              if (si > 0 && cursorY !== margin) {
+                pdf.addPage();
+                cursorY = margin;
+              }
+              pdf.addImage(dataUrl, "PNG", margin, cursorY, drawW_mm, drawH_mm);
+              cursorY += drawH_mm + 6;
+            }
+            insightsPlacedHeight_mm = (canvasHeightPx / canvasWidthPx) * usableW; // approximate
+          }
         }
-        pdf.text(lines, margin, cursorY);
-        cursorY += lines.length * lh + 8;
       }
 
-      // start charts on new page if space low
-      if (cursorY > margin + usableH / 3) {
+      // After placing insights, ensure charts start on a fresh page if not enough remaining space
+      const minimalChartStartThreshold = margin + usableH * 0.25; // if cursorY past 25% of page, start charts on new page
+      if (cursorY > minimalChartStartThreshold) {
         pdf.addPage();
         cursorY = margin;
       }
 
-      // grid 2x2
+      // --- CHARTS: 2x2 grid per page ---------------------------------------------
       const cols = 2;
       const rows = 2;
       const chartsPerPage = cols * rows;
       const cellW_mm = usableW / cols;
       const cellH_mm = usableH / rows;
 
+      // choose a target px width and height that match the cell aspect ratio to avoid stretching
       const targetPxWidth = Math.round(cellW_mm * PX_PER_MM * 2); // 2x for quality
-      const targetPxHeight = Math.round(cellH_mm * PX_PER_MM * 2);
+      // compute height to match cell aspect ratio exactly
+      const targetPxHeight = Math.round(targetPxWidth * (cellH_mm / cellW_mm));
 
       let chartIndexOnPage = 0;
 
@@ -255,7 +336,8 @@ export default function ExportReportApex({
         if (!imgObj) continue;
 
         const { imgURI, widthPx, heightPx } = imgObj;
-        const aspect = heightPx / widthPx;
+        // Use the expected cell aspect (we generated at targetPxHeight matching cell ratio)
+        const aspect = (heightPx / widthPx) || (cellH_mm / cellW_mm);
         let drawW_mm = cellW_mm;
         let drawH_mm = drawW_mm * aspect;
         if (drawH_mm > cellH_mm) {
@@ -270,7 +352,7 @@ export default function ExportReportApex({
 
         pdf.addImage(imgURI, "PNG", x, y, drawW_mm, drawH_mm);
 
-        // caption
+        // caption (if fit)
         const title = desc.title || (desc.options && desc.options.title && desc.options.title.text) || "";
         if (title) {
           pdf.setFontSize(9);
@@ -298,21 +380,55 @@ export default function ExportReportApex({
     }
   };
 
+  // --- Render hidden markdown container used for capture and the button --------
+  const cleaned = cleanText(insightsText);
+
   return (
-    <button
-      onClick={handleExport}
-      disabled={busy}
-      style={{
-        background: busy ? "#94D3A2" : "#10B981",
-        color: "#fff",
-        padding: "8px 12px",
-        borderRadius: 6,
-        border: "none",
-        cursor: busy ? "wait" : "pointer",
-        marginLeft: 8
-      }}
-    >
-      {busy ? "Generating PDF..." : "Download Apex-driven PDF"}
-    </button>
+    <>
+      {/* Hidden container — styled for readable markdown when captured */}
+      <div
+        ref={hiddenRef}
+        aria-hidden
+        style={{
+          position: "absolute",
+          left: -99999,
+          top: 0,
+          width: 900,
+          padding: 12,
+          background: "#fff",
+          color: "#111",
+          boxSizing: "border-box",
+          fontFamily: "'Inter', Arial, sans-serif",
+          lineHeight: 1.5
+        }}
+      >
+        <div id="pdf-insights" style={{ color: "#111" }}>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Insights</div>
+          <div style={{ fontSize: 12 }}>
+            <ReactMarkdown
+              // For safety, we render simple markdown; ReactMarkdown won't run arbitrary HTML
+            >
+              {cleaned}
+            </ReactMarkdown>
+          </div>
+        </div>
+      </div>
+
+      <button
+        onClick={handleExport}
+        disabled={busy}
+        style={{
+          background: busy ? "#94D3A2" : "#10B981",
+          color: "#fff",
+          padding: "8px 12px",
+          borderRadius: 6,
+          border: "none",
+          cursor: busy ? "wait" : "pointer",
+          marginLeft: 8
+        }}
+      >
+        {busy ? "Generating PDF..." : "Download Apex-driven PDF"}
+      </button>
+    </>
   );
 }
