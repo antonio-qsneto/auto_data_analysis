@@ -4,6 +4,8 @@ import SideBar from "../components/layout/SideBar";
 import SparkBox from "../components/layout/SparkBox";
 import Footer from "../components/layout/Footer";
 import InsightCard from "../components/layout/InsightCard";
+import ExportReportApex from "../components/layout/ExportReportDetailed";
+
 
 function parseBusinessSummary(summary) {
   if (!summary) return [];
@@ -81,6 +83,7 @@ export default function Dashboard({ charts, theme, setTheme, businessSummary, in
           Switch to {theme === "dark" ? "Light" : "Dark"} Theme
         </button>
 
+
         <div className="sparkboxes">
           {cards.map((card, idx) => (
             <SparkBox
@@ -91,6 +94,13 @@ export default function Dashboard({ charts, theme, setTheme, businessSummary, in
             />
           ))}
         </div>
+
+        <ExportReportApex
+          businessSummary={businessSummary}
+          insightsText={insightsText}
+          charts={charts}            // see expected shapes below
+          filename="apex_report.pdf"
+        />
 
         <InsightCard insightsText={insightsText} />
 

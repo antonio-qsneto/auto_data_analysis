@@ -20,7 +20,18 @@ def process_data(df):
     # Text insights (ProfileReport -> LLM)
     insight = summarize_text_insights(df)
     insight_prompt = generate_prompt_insight(insight)
+    if(insight_prompt):
+        print("prompt insight gerado")
+    else:
+        print(f"Erro no {insight_prompt}")
+
     insight_raw = call_openRouter(insight_prompt, api_key, "insight")
+    if(insight_raw):
+        print("call_openRouter gerado")
+    else:
+        print(f"Erro no {insight_raw}")
+
+
     print(f"INSIGHT => {insight_raw}")
 
     # Charts (generate prompt -> LLM -> code -> execution)
