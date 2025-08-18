@@ -28,164 +28,288 @@ export default function ExportReportDetailed({
   const [busy, setBusy] = useState(false);
   const PX_PER_MM = 96 / 25.4; // ~3.78 px / mm
 
-  // Simple Markdown to HTML converter with proper styling
-  function markdownToHtml(markdown) {
-    if (!markdown) return "";
-    
-    let html = markdown
-      // Headers
-      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-      // Bold and Italic
-      .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      // Code blocks
-      .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-      .replace(/`(.*?)`/g, '<code>$1</code>')
-      // Lists
-      .replace(/^\s*\* (.*$)/gim, '<li>$1</li>')
-      .replace(/^\s*- (.*$)/gim, '<li>$1</li>')
-      .replace(/^\s*\+ (.*$)/gim, '<li>$1</li>')
-      .replace(/^\s*\d+\. (.*$)/gim, '<li>$1</li>')
-      // Line breaks
-      .replace(/\n\n/g, '</p><p>')
-      .replace(/\n/g, '<br>');
+  // Parse inline markdown for styles
+  function parseInline(mdText) {
+    const segments = [];
+    let i = 0;
+    while (i < mdText.length) {
+      let matched = false;
 
-    // Wrap lists in ul tags
-    html = html.replace(/(<li>.*<\/li>)/gs, (match) => {
-      return '<ul>' + match + '</ul>';
-    });
+      // Bold italic: ***text***
+      if (mdText.startsWith('***', i) && mdText.indexOf('***', i + 3) > i + 3) {
+        const end = mdText.indexOf('***', i + 3);
+        segments.push({ text: mdText.slice(i + 3, end), bold: true, italic: true, code: false });
+        i = end + 3;
+        matched = true;
+      }
+      // Bold: **text**
+      else if (mdText.startsWith('**', i) && mdText.indexOf('**', i + 2) > i + 2) {
+        const end = mdText.indexOf('**', i + 2);
+        segments.push({ text: mdText.slice(i + 2, end), bold: true, italic: false, code: false });
+        i = end + 2;
+        matched = true;
+      }
+      // Italic: *text*
+      else if (mdText.startsWith('*', i) && mdText.indexOf('*', i + 1) > i + 1) {
+        const end = mdText.indexOf('*', i + 1);
+        segments.push({ text: mdText.slice(i + 1, end), bold: false, italic: true, code: false });
+        i = end + 1;
+        matched = true;
+      }
+      // Inline code: `text`
+      else if (mdText.startsWith('`', i) && mdText.indexOf('`', i + 1) > i + 1) {
+        const end = mdText.indexOf('`', i + 1);
+        segments.push({ text: mdText.slice(i + 1, end), bold: false, italic: false, code: true });
+        i = end + 1;
+        matched = true;
+      }
+      // Bold italic: ___text___
+      else if (mdText.startsWith('___', i) && mdText.indexOf('___', i + 3) > i + 3) {
+        const end = mdText.indexOf('___', i + 3);
+        segments.push({ text: mdText.slice(i + 3, end), bold: true, italic: true, code: false });
+        i = end + 3;
+        matched = true;
+      }
+      // Bold: __text__
+      else if (mdText.startsWith('__', i) && mdText.indexOf('__', i + 2) > i + 2) {
+        const end = mdText.indexOf('__', i + 2);
+        segments.push({ text: mdText.slice(i + 2, end), bold: true, italic: false, code: false });
+        i = end + 2;
+        matched = true;
+      }
+      // Italic: _text_
+      else if (mdText.startsWith('_', i) && mdText.indexOf('_', i + 1) > i + 1) {
+        const end = mdText.indexOf('_', i + 1);
+        segments.push({ text: mdText.slice(i + 1, end), bold: false, italic: true, code: false });
+        i = end + 1;
+        matched = true;
+      }
 
-    // Wrap in paragraphs
-    html = '<p>' + html + '</p>';
-
-    // Clean up empty paragraphs
-    html = html.replace(/<p><\/p>/g, '');
-    html = html.replace(/<p><h([1-6])>/g, '<h$1>');
-    html = html.replace(/<\/h([1-6])><\/p>/g, '</h$1>');
-    html = html.replace(/<p><ul>/g, '<ul>');
-    html = html.replace(/<\/ul><\/p>/g, '</ul>');
-    html = html.replace(/<p><pre>/g, '<pre>');
-    html = html.replace(/<\/pre><\/p>/g, '</pre>');
-
-    return html;
+      if (!matched) {
+        // Find next marker
+        let next = mdText.length;
+        ['***', '**', '*', '`', '___', '__', '_'].forEach(marker => {
+          const pos = mdText.indexOf(marker, i + 1);
+          if (pos !== -1 && pos < next) next = pos;
+        });
+        segments.push({ text: mdText.slice(i, next), bold: false, italic: false, code: false });
+        i = next;
+      }
+    }
+    return segments;
   }
 
-  // Render HTML content to canvas and return as image data URL
-  async function renderHtmlToImage(htmlContent, width, maxHeight = 2000) {
-    return new Promise((resolve, reject) => {
-      // Create a temporary div to render HTML
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = htmlContent;
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '-9999px';
-      tempDiv.style.top = '0';
-      tempDiv.style.width = width + 'px';
-      tempDiv.style.fontFamily = 'Arial, sans-serif';
-      tempDiv.style.fontSize = '12px';
-      tempDiv.style.lineHeight = '1.6';
-      tempDiv.style.color = '#333';
-      tempDiv.style.backgroundColor = '#ffffff';
-      tempDiv.style.padding = '20px';
-      tempDiv.style.boxSizing = 'border-box';
+  // Render styled text with word wrap and style changes
+  function renderStyledText(pdf, segments, startX, startY, usableW, pageH, margin, baseFontSize, baseStyle = { bold: false, italic: false }) {
+    let currentY = startY;
+    let lineSegments = [];
+    let currentLineWidth = 0;
+    const lineHeight = (baseFontSize / 11) * 7; // Scale line height based on font size
 
-      // Style headers
-      const style = document.createElement('style');
-      style.textContent = `
-        h1 { font-size: 18px; font-weight: bold; margin: 16px 0 12px 0; color: #000; }
-        h2 { font-size: 16px; font-weight: bold; margin: 14px 0 10px 0; color: #000; }
-        h3 { font-size: 14px; font-weight: bold; margin: 12px 0 8px 0; color: #000; }
-        p { margin: 8px 0; }
-        ul { margin: 8px 0; padding-left: 20px; }
-        li { margin: 4px 0; }
-        code { background-color: #f5f5f5; padding: 2px 4px; border-radius: 3px; font-family: monospace; }
-        pre { background-color: #f5f5f5; padding: 12px; border-radius: 4px; overflow-x: auto; }
-        pre code { background: none; padding: 0; }
-        strong { font-weight: bold; }
-        em { font-style: italic; }
-      `;
-      document.head.appendChild(style);
-      document.body.appendChild(tempDiv);
+    for (let seg of segments) {
+      const effectiveBold = seg.code ? false : (seg.bold || baseStyle.bold);
+      const effectiveItalic = seg.code ? false : (seg.italic || baseStyle.italic);
+      const font = seg.code ? 'courier' : 'helvetica';
+      const style = seg.code ? 'normal' : (effectiveBold && effectiveItalic ? 'bolditalic' : effectiveBold ? 'bold' : effectiveItalic ? 'italic' : 'normal');
 
-      // Wait for fonts and layout
-      setTimeout(() => {
-        const actualHeight = Math.min(tempDiv.scrollHeight + 40, maxHeight);
-        
-        // Create canvas
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const scale = 2; // High DPI
-        
-        canvas.width = width * scale;
-        canvas.height = actualHeight * scale;
-        canvas.style.width = width + 'px';
-        canvas.style.height = actualHeight + 'px';
-        
-        ctx.scale(scale, scale);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, width, actualHeight);
+      pdf.setFont(font, style);
+      pdf.setFontSize(baseFontSize);
 
-        // Use html2canvas-like approach
-        try {
-          // For a more robust solution, we'll render text elements manually
-          ctx.fillStyle = '#333333';
-          ctx.font = '12px Arial, sans-serif';
-          
-          // Simple text rendering fallback
-          const textContent = tempDiv.textContent || tempDiv.innerText;
-          const lines = textContent.split('\n');
-          let y = 30;
-          const lineHeight = 18;
-          
-          lines.forEach(line => {
-            if (line.trim()) {
-              // Wrap long lines
-              const words = line.split(' ');
-              let currentLine = '';
-              
-              words.forEach(word => {
-                const testLine = currentLine + word + ' ';
-                const metrics = ctx.measureText(testLine);
-                
-                if (metrics.width > width - 40 && currentLine !== '') {
-                  ctx.fillText(currentLine.trim(), 20, y);
-                  currentLine = word + ' ';
-                  y += lineHeight;
-                } else {
-                  currentLine = testLine;
-                }
-              });
-              
-              if (currentLine.trim()) {
-                ctx.fillText(currentLine.trim(), 20, y);
-                y += lineHeight;
-              }
-            } else {
-              y += lineHeight / 2; // Empty line spacing
-            }
-          });
+      // Split into words and spaces
+      const parts = seg.text.split(/(\s+)/).filter(part => part.length > 0);
 
-          const imageData = canvas.toDataURL('image/png');
-          
-          // Cleanup
-          document.body.removeChild(tempDiv);
-          document.head.removeChild(style);
-          
-          resolve({
-            imageData,
-            width: width,
-            height: actualHeight
-          });
-          
-        } catch (error) {
-          document.body.removeChild(tempDiv);
-          document.head.removeChild(style);
-          reject(error);
+      for (let part of parts) {
+        const partWidth = pdf.getTextWidth(part);
+
+        if (currentLineWidth + partWidth > usableW && lineSegments.length > 0) {
+          // Draw current line
+          if (currentY + lineHeight > pageH - margin) {
+            pdf.addPage();
+            currentY = margin;
+          }
+          let drawX = startX;
+          for (let ls of lineSegments) {
+            pdf.setFont(ls.font, ls.style);
+            pdf.setFontSize(ls.fontSize);
+            pdf.text(ls.text, drawX, currentY);
+            drawX += pdf.getTextWidth(ls.text);
+          }
+          currentY += lineHeight;
+          lineSegments = [];
+          currentLineWidth = 0;
         }
-      }, 100);
-    });
+
+        lineSegments.push({ text: part, font, style, fontSize: baseFontSize });
+        currentLineWidth += partWidth;
+      }
+    }
+
+    // Draw last line
+    if (lineSegments.length > 0) {
+      if (currentY + lineHeight > pageH - margin) {
+        pdf.addPage();
+        currentY = margin;
+      }
+      let drawX = startX;
+      for (let ls of lineSegments) {
+        pdf.setFont(ls.font, ls.style);
+        pdf.setFontSize(ls.fontSize);
+        pdf.text(ls.text, drawX, currentY);
+        drawX += pdf.getTextWidth(ls.text);
+      }
+      currentY += lineHeight;
+    }
+
+    return currentY;
+  }
+
+  // Parse markdown into blocks
+  function parseMarkdown(md) {
+    if (!md) return [];
+    const mdLines = md.split('\n');
+    const blocks = [];
+    let currentBlock = [];
+    let inCode = false;
+    let inList = false;
+    let listType = null;
+    let listItems = [];
+
+    for (let line of mdLines) {
+      const trimmed = line.trim();
+      if (inCode) {
+        if (trimmed.startsWith('```')) {
+          blocks.push({ type: 'code', text: currentBlock.join('\n') });
+          currentBlock = [];
+          inCode = false;
+        } else {
+          currentBlock.push(line);
+        }
+        continue;
+      }
+      if (trimmed.startsWith('```')) {
+        inCode = true;
+        continue;
+      }
+      if (trimmed === '') {
+        if (currentBlock.length > 0) {
+          blocks.push({ type: 'paragraph', text: currentBlock.join(' ') });
+          currentBlock = [];
+        }
+        if (inList) {
+          blocks.push({ type: 'list', listType, items: listItems });
+          listItems = [];
+          inList = false;
+        }
+        continue;
+      }
+      if (line.startsWith('#')) {
+        if (currentBlock.length > 0) {
+          blocks.push({ type: 'paragraph', text: currentBlock.join(' ') });
+          currentBlock = [];
+        }
+        if (inList) {
+          blocks.push({ type: 'list', listType, items: listItems });
+          listItems = [];
+          inList = false;
+        }
+        let level = 1;
+        while (line[level] === '#') level++;
+        blocks.push({ type: 'header', level: Math.min(level, 3), text: line.slice(level).trim() });
+        continue;
+      }
+      const isList = line.match(/^\s*([-*+]\s|\d+\.\s)/);
+      if (isList) {
+        const isOl = !!line.match(/^\s*\d+\.\s/);
+        const itemText = line.replace(/^\s*([-*+]\s|\d+\.\s)/, '').trim();
+        if (!inList || (listType === 'ul' && isOl) || (listType === 'ol' && !isOl)) {
+          if (inList) {
+            blocks.push({ type: 'list', listType, items: listItems });
+            listItems = [];
+          }
+          inList = true;
+          listType = isOl ? 'ol' : 'ul';
+        }
+        listItems.push(itemText);
+        continue;
+      }
+      if (inList) {
+        listItems[listItems.length - 1] += ' ' + trimmed; // Continue list item if indented or something, but simple
+        continue;
+      }
+      currentBlock.push(trimmed);
+    }
+
+    if (currentBlock.length > 0) {
+      blocks.push({ type: 'paragraph', text: currentBlock.join(' ') });
+    }
+    if (inList) {
+      blocks.push({ type: 'list', listType, items: listItems });
+    }
+    if (inCode && currentBlock.length > 0) {
+      blocks.push({ type: 'code', text: currentBlock.join('\n') });
+    }
+
+    return blocks;
+  }
+
+  // Render blocks to PDF
+  function renderBlocksToPdf(blocks, pdf, x, y, usableW, pageH, margin) {
+    let cursorY = y;
+    const stdFontSize = 11;
+    const stdLh = 7;
+
+    for (let block of blocks) {
+      if (block.type === 'header') {
+        const sizes = { 1: 18, 2: 16, 3: 14 };
+        const fontSize = sizes[block.level] || 14;
+        const segments = parseInline(block.text);
+        cursorY = renderStyledText(pdf, segments, x, cursorY, usableW, pageH, margin, fontSize, { bold: true, italic: false });
+        cursorY += stdLh / 2; // Extra spacing after header
+      } else if (block.type === 'paragraph') {
+        const segments = parseInline(block.text);
+        cursorY = renderStyledText(pdf, segments, x, cursorY, usableW, pageH, margin, stdFontSize);
+        cursorY += stdLh / 2; // Paragraph spacing
+      } else if (block.type === 'list') {
+        let itemNum = 1;
+        for (let item of block.items) {
+          const segments = parseInline(item);
+          if (cursorY + stdLh > pageH - margin) {
+            pdf.addPage();
+            cursorY = margin;
+          }
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(stdFontSize);
+          let bulletText = block.listType === 'ol' ? `${itemNum}.` : '•';
+          pdf.text(bulletText, x, cursorY);
+          const bulletWidth = pdf.getTextWidth(bulletText) + 5;
+          cursorY = renderStyledText(pdf, segments, x + bulletWidth, cursorY, usableW - bulletWidth, pageH, margin, stdFontSize);
+          itemNum++;
+        }
+        cursorY += stdLh / 2; // Spacing after list
+      } else if (block.type === 'code') {
+        pdf.setFont('courier', 'normal');
+        pdf.setFontSize(10);
+        const codeLines = block.text.split('\n');
+        for (let codeLine of codeLines) {
+          if (cursorY + stdLh > pageH - margin) {
+            pdf.addPage();
+            cursorY = margin;
+          }
+          const lines = pdf.splitTextToSize(codeLine, usableW - 10);
+          for (let line of lines) {
+            if (cursorY + stdLh > pageH - margin) {
+              pdf.addPage();
+              cursorY = margin;
+            }
+            pdf.text(line, x + 5, cursorY);
+            cursorY += stdLh;
+          }
+        }
+        cursorY += stdLh / 2;
+      }
+    }
+
+    return cursorY;
   }
 
   // Build Apex config with proper sizing
@@ -245,15 +369,10 @@ export default function ExportReportDetailed({
       await chart.render();
 
       const data = await chart.dataURI();
-      const imgURI = data && (data.imgURI || data.img || data.svg || data.svgURI);
-      
-      if (!imgURI && data && data.svg) {
-        const svg = data.svg;
-        const svg64 = btoa(unescape(encodeURIComponent(svg)));
-        const img64 = "data:image/svg+xml;base64," + svg64;
-        await chart.destroy();
-        document.body.removeChild(container);
-        return { imgURI: img64, widthPx: targetPxWidth, heightPx: targetPxHeight };
+      let imgURI = data.imgURI || data.img;
+      if (!imgURI && data.svg) {
+        const svg64 = btoa(unescape(encodeURIComponent(data.svg)));
+        imgURI = "data:image/svg+xml;base64," + svg64;
       }
 
       const img = new Image();
@@ -273,7 +392,7 @@ export default function ExportReportDetailed({
     }
   }
 
-  // Main export handler with HTML-rendered markdown
+  // Main export handler with direct markdown rendering
   const handleExport = async () => {
     setBusy(true);
     try {
@@ -307,7 +426,7 @@ export default function ExportReportDetailed({
         cursorY += lines.length * lh + 10;
       }
 
-      // Insights with HTML-rendered markdown
+      // Insights with parsed markdown blocks
       if (insightsText) {
         // Add insights header
         if (cursorY + 20 > pageH - margin) {
@@ -320,44 +439,9 @@ export default function ExportReportDetailed({
         pdf.text("Insights", margin, cursorY);
         cursorY += 10;
 
-        try {
-          // Convert markdown to HTML
-          const htmlContent = markdownToHtml(insightsText);
-          
-          // Render HTML to image
-          const renderWidth = Math.round(usableW * PX_PER_MM);
-          const htmlImage = await renderHtmlToImage(htmlContent, renderWidth);
-          
-          // Calculate dimensions in mm
-          const imageWidthMm = usableW;
-          const imageHeightMm = htmlImage.height / PX_PER_MM;
-          
-          // Check if we need a new page
-          if (cursorY + imageHeightMm > pageH - margin) {
-            pdf.addPage();
-            cursorY = margin;
-          }
-          
-          // Add the rendered markdown image to PDF
-          pdf.addImage(htmlImage.imageData, 'PNG', margin, cursorY, imageWidthMm, imageHeightMm);
-          cursorY += imageHeightMm + 10;
-          
-        } catch (error) {
-          console.error("HTML rendering failed, falling back to simple text:", error);
-          // Fallback to simple text rendering
-          pdf.setFont("helvetica", "normal");
-          pdf.setFontSize(11);
-          const lines = pdf.splitTextToSize(insightsText, usableW);
-          const lh = 7;
-          
-          if (cursorY + lines.length * lh > pageH - margin) {
-            pdf.addPage();
-            cursorY = margin;
-          }
-          
-          pdf.text(lines, margin, cursorY);
-          cursorY += lines.length * lh + 10;
-        }
+        const blocks = parseMarkdown(insightsText);
+        cursorY = renderBlocksToPdf(blocks, pdf, margin, cursorY, usableW, pageH, margin);
+        cursorY += 10;
       }
 
       // Chart layout with fixed dimensions (same as before)
@@ -499,4 +583,3 @@ export default function ExportReportDetailed({
     </button>
   );
 }
-
