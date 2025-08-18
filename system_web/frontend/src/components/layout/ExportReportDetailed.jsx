@@ -347,6 +347,28 @@ export default function ExportReportDetailed({
       base.title = { text: base.title, align: "left" };
     }
 
+    const chartType = base.chart.type.toLowerCase();
+
+    // Fix overlapping X-axis labels for relevant chart types
+    if (['line', 'area', 'bar'].includes(chartType)) {
+      base.xaxis = {
+        ...(base.xaxis || {}),
+        labels: {
+          ...(base.xaxis?.labels || {}),
+          rotate: -45,
+          rotateAlways: true,
+        }
+      };
+    }
+
+    // Deactivate data labels for heatmap and bar charts
+    if (['heatmap', 'bar', 'area'].includes(chartType)) {
+      base.dataLabels = {
+        ...(base.dataLabels || {}),
+        enabled: false
+      };
+    }
+
     return base;
   }
 

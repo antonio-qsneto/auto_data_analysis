@@ -40,7 +40,7 @@ load_dotenv()
     if(chart_prompt):
         print("prompt principal gerado!")
 
-    codigo_raw = call_openRouter(chart_prompt, api_key, "chart")
+    codigo_raw = call_openRouter(chart_prompt, api_key, "insight")
 
     if(codigo_raw):
         print("Codigo gerado!")
