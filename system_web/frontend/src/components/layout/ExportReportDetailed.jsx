@@ -3,18 +3,19 @@ import ApexCharts from "apexcharts";
 import jsPDF from "jspdf";
 
 /**
- * ExportReportDetailed (v6 - HTML-Rendered Markdown)
+ * ExportReportDetailed (v7 - Markdown for Business Summary)
  *
  * Fixed Issues:
  * - Character encoding corruption completely resolved using HTML rendering
- * - Proper Markdown styling (bold, italic, headers, lists, code blocks)
+ * - Proper Markdown styling (bold, italic, headers, lists, code blocks) for both insightsText and businessSummary
  * - Preserved emojis and special characters through HTML canvas rendering
  * - Charts maintain proper aspect ratio (no vertical stretching)
  * - Line/area charts use full page width with proper height
  * - All content respects PDF boundaries
+ * - Fixed vertical stretching of pie charts by enforcing square dimensions and correcting PDF image scaling
  *
  * Props:
- *  - businessSummary: string
+ *  - businessSummary: string (markdown)
  *  - insightsText: string (markdown)
  *  - charts: array of chart descriptors
  *  - filename: string
@@ -233,7 +234,7 @@ export default function ExportReportDetailed({
         continue;
       }
       if (inList) {
-        listItems[listItems.length - 1] += ' ' + trimmed; // Continue list item if indented or something, but simple
+        listItems[listItems.length - 1] += ' ' + trimmed; // Continue list item if indented
         continue;
       }
       currentBlock.push(trimmed);
@@ -362,11 +363,18 @@ export default function ExportReportDetailed({
     }
 
     // Deactivate data labels for heatmap and bar charts
-    if (['heatmap', 'bar', 'area'].includes(chartType)) {
+    if (['heatmap', 'bar'].includes(chartType)) {
       base.dataLabels = {
         ...(base.dataLabels || {}),
         enabled: false
       };
+    }
+
+    // Ensure pie charts are square
+    if (['pie', 'donut'].includes(chartType)) {
+      const minSize = Math.min(targetPxWidth, targetPxHeight);
+      base.chart.width = minSize;
+      base.chart.height = minSize;
     }
 
     return base;
@@ -374,17 +382,20 @@ export default function ExportReportDetailed({
 
   // Render Apex chart off-screen to dataURI
   async function renderApexToDataUrl(desc, targetPxWidth, targetPxHeight) {
+    const isPieOrDonut = (desc.type || (desc.options && desc.options.chart && desc.options.chart.type) || "line").toLowerCase() === "pie" ||
+                        (desc.type || (desc.options && desc.options.chart && desc.options.chart.type) || "line").toLowerCase() === "donut";
+    const targetPxSize = isPieOrDonut ? Math.min(targetPxWidth, targetPxHeight) : targetPxWidth;
     const container = document.createElement("div");
     container.style.position = "absolute";
     container.style.left = "-99999px";
     container.style.top = "0px";
-    container.style.width = `${targetPxWidth}px`;
-    container.style.height = `${targetPxHeight}px`;
+    container.style.width = `${targetPxSize}px`;
+    container.style.height = `${isPieOrDonut ? targetPxSize : targetPxHeight}px`;
     container.style.background = "#fff";
     document.body.appendChild(container);
 
     try {
-      const config = buildApexConfig(desc, targetPxWidth, targetPxHeight);
+      const config = buildApexConfig(desc, targetPxSize, isPieOrDonut ? targetPxSize : targetPxHeight);
       if (!config.series) config.series = desc.series || [];
 
       const chart = new ApexCharts(container, config);
@@ -401,8 +412,8 @@ export default function ExportReportDetailed({
       img.src = imgURI;
       await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
 
-      const widthPx = img.naturalWidth || targetPxWidth;
-      const heightPx = img.naturalHeight || targetPxHeight;
+      const widthPx = img.naturalWidth || targetPxSize;
+      const heightPx = img.naturalHeight || (isPieOrDonut ? targetPxSize : targetPxHeight);
 
       await chart.destroy();
       document.body.removeChild(container);
@@ -432,20 +443,21 @@ export default function ExportReportDetailed({
       pdf.text("Data Report", margin, cursorY);
       cursorY += 15;
 
-      // Business summary with simple text rendering
+      // Business summary with markdown rendering
       if (businessSummary) {
-        pdf.setFont("helvetica", "normal");
-        pdf.setFontSize(11);
-        const lines = pdf.splitTextToSize(businessSummary, usableW);
-        const lh = 7;
-        
-        if (cursorY + lines.length * lh > pageH - margin) {
+        // Add business summary header
+        if (cursorY + 20 > pageH - margin) {
           pdf.addPage();
           cursorY = margin;
         }
-        
-        pdf.text(lines, margin, cursorY);
-        cursorY += lines.length * lh + 10;
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(14);
+        pdf.text("Business Summary", margin, cursorY);
+        cursorY += 10;
+
+        const blocks = parseMarkdown(businessSummary);
+        cursorY = renderBlocksToPdf(blocks, pdf, margin, cursorY, usableW, pageH, margin);
+        cursorY += 10;
       }
 
       // Insights with parsed markdown blocks
@@ -455,7 +467,6 @@ export default function ExportReportDetailed({
           pdf.addPage();
           cursorY = margin;
         }
-        
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(14);
         pdf.text("Insights", margin, cursorY);
@@ -466,13 +477,13 @@ export default function ExportReportDetailed({
         cursorY += 10;
       }
 
-      // Chart layout with fixed dimensions (same as before)
+      // Chart layout with fixed dimensions
       const fullWidthTypes = new Set(["line", "area"]);
       const fullWidthHeight_mm = 80;
       const gridCols = 2;
       const gridRows = 2;
       const chartsPerGridPage = gridCols * gridRows;
-      
+
       const availableGridWidth = usableW - 10;
       const availableGridHeight = Math.min(usableH * 0.7, 160);
       const cellW_mm = availableGridWidth / gridCols;
@@ -519,7 +530,7 @@ export default function ExportReportDetailed({
 
           const col = gridIndex % gridCols;
           const row = Math.floor(gridIndex / gridCols);
-          
+
           const gridStartX = margin + (usableW - (gridCols * cellSize_mm)) / 2;
           const cellX = gridStartX + col * cellSize_mm;
           const cellY = gridStartY + row * cellSize_mm;
@@ -547,7 +558,12 @@ export default function ExportReportDetailed({
             continue;
           }
 
-          pdf.addImage(imgObj.imgURI, "PNG", cellX, cellY, cellSize_mm, cellSize_mm);
+          // Ensure pie charts are square in PDF with correct scaling
+          const isPieOrDonut = type === "pie" || type === "donut";
+          const imgSize_mm = cellSize_mm;
+          const scale = Math.min(1, imgObj.widthPx / imgObj.heightPx); // Adjust scale to maintain aspect ratio
+
+          pdf.addImage(imgObj.imgURI, "PNG", cellX, cellY, isPieOrDonut ? imgSize_mm : cellSize_mm, isPieOrDonut ? imgSize_mm : cellSize_mm, undefined, undefined, scale);
 
           const title = desc.title || (desc.options && desc.options.title && desc.options.title.text) || "";
           if (title) {
@@ -555,7 +571,7 @@ export default function ExportReportDetailed({
             pdf.setFont("helvetica", "normal");
             const titleLines = pdf.splitTextToSize(title, cellSize_mm - 4);
             const titleY = cellY + cellSize_mm + 5;
-            
+
             if (titleLines.length <= 2) {
               for (let j = 0; j < titleLines.length; j++) {
                 pdf.text(titleLines[j], cellX + 2, titleY + j * 4);
