@@ -1,7 +1,21 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import BrandLogo from "../../assets/images/Xclarty_logo.svg";
 
 export default function Header() {
+  const navigate = useNavigate();
+  const { isAuthenticated, user, logout } = useAuth();
+
+  const handleLogin = () => {
+    navigate("/login");
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
+
   return (
     <header className="w-full bg-white shadow-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-between py-4 px-6 md:px-0">
@@ -11,7 +25,8 @@ export default function Header() {
           <img 
             src={BrandLogo} 
             alt="Brand Logo" 
-            className="h-8 md:h-10 w-auto" 
+            className="h-8 md:h-10 w-auto cursor-pointer" 
+            onClick={() => navigate("/")}
           />
         </div>
         
@@ -31,14 +46,42 @@ export default function Header() {
           </a>
         </nav>
         
-        {/* Right: Call-to-Action */}
+        {/* Right: Authentication Actions */}
         <div className="flex items-center">
-          <button className="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition mr-2">
-            Log in
-          </button>
-          <button className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">
-            Sign up
-          </button>
+          {isAuthenticated ? (
+            <>
+              <span className="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-600 mr-2">
+                Welcome, {user?.first_name || user?.email}
+              </span>
+              <button 
+                onClick={handleLogout}
+                className="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition mr-2"
+              >
+                Log out
+              </button>
+              <button 
+                onClick={() => navigate("/dashboard")}
+                className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
+              >
+                Dashboard
+              </button>
+            </>
+          ) : (
+            <>
+              <button 
+                onClick={handleLogin}
+                className="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition mr-2"
+              >
+                Log in
+              </button>
+              <button 
+                onClick={handleLogin}
+                className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
+              >
+                Sign up
+              </button>
+            </>
+          )}
           
           {/* Mobile menu button */}
           <button className="ml-2 md:hidden text-gray-600 hover:text-gray-900 focus:outline-none">

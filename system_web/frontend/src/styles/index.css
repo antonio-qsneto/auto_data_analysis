@@ -211,7 +211,7 @@ body.light .upload-area span[role="button"] {
 
 /* Light theme overrides */
 body.light {
-  --bg: #ffffff;
+  --bg: #f3f3f3;
   --card-bg: #fff;
   --text: #222;
   --border: #ccc;

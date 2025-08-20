@@ -102,7 +102,8 @@ export default function Dashboard({ charts, theme, setTheme, businessSummary, in
           filename="apex_report.pdf"
         />
 
-        <InsightCard insightsText={insightsText} />
+        {insightsText ? <InsightCard insightsText={insightsText} /> : null}
+        
 
         <div className="charts-grid">
           {charts.map((chart, idx) => (

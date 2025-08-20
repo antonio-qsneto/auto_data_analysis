@@ -1,5 +1,4 @@
 import pandas as pd
-from typing import Optional
 from typing import Optional, Union, Tuple
 
 
@@ -95,6 +94,8 @@ Your task is to generate Python code that:
    chart_data = [{{...}}, ...]
 10. Do not include comments, explanations, or markdown.
 11. Do not wrap code in ``` tags.
+12. generate at least 6 charts.
+13. only python code as answer (no string literal) - important!
 """
 
     #print(f"summary ----->: {summary}")
@@ -146,6 +147,7 @@ def generate_prompt_insight(profile_report: Optional[Union[dict, str, Tuple[str,
 You are an experienced data scientist. Read the information below (which comes from a ydata-profiling / ProfileReport summary) and produce a clear, concise, and actionable analysis.
 Use non-technical language that a layperson can understand. The idea is that a layperson can understand.
 Instructions:
+- The output is in format markdown only! -important!
 - Start with 3–6 key takeaways (one-sentence bullets).
 - Call out data-quality issues (missingness, duplicates, memory/size concerns) and which columns are affected.
 - Highlight important distributions and central-tendency points (means/medians/std) and mention any obvious outliers.
@@ -160,9 +162,6 @@ Context / ProfileReport content:
 
 Produce the analysis now.
 """.strip()
-
-    # handy debug printing (keeps behavior similar to your original function)
-    #print(f"summary text: {summary_text}")
 
     return prompt
 

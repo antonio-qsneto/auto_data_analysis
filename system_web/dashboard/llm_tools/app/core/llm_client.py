@@ -1,6 +1,8 @@
 import os
 import requests
 from openai import OpenAI # type: ignore
+from google import genai # type: ignore
+from google.genai import types # type: ignore
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -11,32 +13,23 @@ def call_openRouter(prompt: str, api_key: str, type: str) -> str:
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}"
     }
-    if(type == "chart"):
-        payload = {
-            #"model": "deepseek/deepseek-chat-v3-0324:free",
-            #"model": "qwen/qwen3-coder",
-            "model": "moonshotai/kimi-k2:free",
-            #"model": "google/gemini-2.5-flash-lite-preview-06-17",
+    model_mapping = {
+        "chart": "moonshotai/kimi-k2:free",
+        "insight": "deepseek/deepseek-chat-v3-0324:free",
+    }
+    model = model_mapping.get(type)
+    if not model:
+        raise ValueError(f"Invalid type specified: {type}. Must be 'chart' or 'insight'.")
 
-            "messages": [
-                {"role": "system", "content": "You are a data analyst."},
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.3,
-            "max_tokens": 3000,
-        }
-    elif(type == "insight"):
-        payload = {
-            "model": "deepseek/deepseek-chat-v3-0324:free",
-            #"model": "google/gemini-2.5-flash-lite-preview-06-17",
-
-            "messages": [
-                {"role": "system", "content": "You are a data analyst."},
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.3,
-            "max_tokens": 3000,
-        }
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": "You are a data analyst."},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.3,
+        "max_tokens": 3000,
+    }
 
     response = requests.post(url, json=payload, headers=headers, timeout=60)
     if response.status_code == 200:
@@ -83,3 +76,22 @@ def call_openAI(prompt: str) -> str:
     except Exception as e:
         print(f"OpenAI API error: {str(e)}")
         raise RuntimeError(f"OpenAI API error: {str(e)}")
+    
+
+def call_gemini(prompt: str) -> str:
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        raise RuntimeError("GOOGLE_API_KEY not found in environment variables.")
+
+    client = genai.Client(api_key=api_key)
+
+    response = client.models.generate_content(
+        model="gemini-2.5-flash-lite",
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            thinking_config=types.ThinkingConfig(thinking_budget=0)  # Desativa thinking
+        ),
+    )
+    
+    return response.text
+
