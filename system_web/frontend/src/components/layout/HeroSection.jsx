@@ -1,32 +1,59 @@
-import React from "react";
+import React, { useState } from "react";
 import screenFake from "../../assets/images/screen_fake.png";
 import { useNavigate } from "react-router-dom";
 
 export default function HeroSection() {
   const navigate = useNavigate();
+  const [toast, setToast] = useState(false);
+
+  const handleTryItClick = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/user/me/", {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        // User is logged in → navigate to /upload
+        navigate("/upload");
+      } else {
+        // User not logged in → show toast, then redirect
+        setToast(true);
+        setTimeout(() => {
+          window.location.href = "http://localhost:8000/accounts/google/login/";
+        }, 1500); // 1.5 seconds delay
+      }
+    } catch (err) {
+      // Network or other error → show toast, then redirect
+      setToast(true);
+      setTimeout(() => {
+        window.location.href = "http://localhost:8000/accounts/google/login/";
+      }, 1500);
+    }
+  };
+
   return (
-    <section className="w-full bg-gradient-to-r from-blue-50 via-white to-cyan-50 py-16 px-6 md:px-12">
+    <section className="w-full bg-gradient-to-r from-blue-50 via-white to-cyan-50 py-16 px-6 md:px-12 relative">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-        
         {/* Left column: Text */}
         <div className="space-y-6 justify-self-start md:pl-0">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
-            Turning Data into <br/>
-            <span className="text-blue-600">Smart Decisions</span> 
+            Turning Data into <br />
+            <span className="text-blue-600">Smart Decisions</span>
           </h1>
-          
+
           <p className="text-lg text-gray-700">
             Auto-Clean. Auto-Analyze. Auto-Visualize. Auto-Insights. Auto-Repeat. API. It’s quick, easy, human-in-the-loop or fully AI-assisted.
           </p>
-          
+
           <p className="text-base text-gray-600 max-w-md">
             Empower every department to make data-driven decisions with zero coding required. Simply upload your CSV, Excel or connect via API.
           </p>
-          
+
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <button
               className="px-6 py-3 font-semibold bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition cursor-pointer"
-              onClick={() => navigate("/upload")}
+              onClick={handleTryItClick}
             >
               Try It →
             </button>
@@ -35,7 +62,7 @@ export default function HeroSection() {
             </button>
           </div>
         </div>
-        
+
         {/* Right column: Image */}
         <div className="flex justify-end">
           <img
@@ -46,6 +73,24 @@ export default function HeroSection() {
           />
         </div>
       </div>
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-8 right-8 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg animate-slide-up">
+          You must log in first
+        </div>
+      )}
+
+      {/* Tailwind animation (add to your global CSS if needed) */}
+      <style>{`
+        @keyframes slide-up {
+          0% { transform: translateY(20px); opacity: 0; }
+          100% { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up {
+          animation: slide-up 0.5s ease-out;
+        }
+      `}</style>
     </section>
   );
 }

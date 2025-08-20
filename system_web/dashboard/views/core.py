@@ -67,7 +67,6 @@ def process_data(df):
 
     business_summary = summarize_business(df)
 
-    # Text insights (ProfileReport -> LLM)
     insight = summarize_text_insights(df)
     insight_prompt = generate_prompt_insight(insight)
     if(insight_prompt):
