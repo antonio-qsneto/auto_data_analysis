@@ -88,7 +88,7 @@ ROOT_URLCONF = 'auto_data_analysis.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "auto_data_analysis/templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

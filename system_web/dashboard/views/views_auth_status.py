@@ -3,7 +3,9 @@ from rest_framework.decorators import api_view, permission_classes # type: ignor
 from rest_framework.permissions import IsAuthenticated  # type: ignore
 from rest_framework.response import Response  # type: ignore
 from allauth.socialaccount.models import SocialAccount  # type: ignore
+from django.views.decorators.csrf import csrf_exempt
 
+@csrf_exempt
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def me(request):

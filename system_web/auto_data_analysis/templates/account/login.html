@@ -1,0 +1,40 @@
+{% load socialaccount %} 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+</head>
+<body>
+    <h1>Login</h1>
+
+    <!-- Show errors -->
+    {% if form.errors %}
+        <p style="color:red;">{{ form.errors }}</p>
+    {% endif %}
+
+    <!-- Standard login form -->
+    <h1 style="color:red;">This is my custom login page!</h1>
+    <form method="POST" action="{% url 'account_login' %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Login</button>
+    </form>
+
+
+    <hr>
+
+    <!-- Social login buttons -->
+    {% providers_media_js %}
+    {% if socialaccount_providers %}
+        <h2>Login with:</h2>
+        {% for provider in socialaccount_providers %}
+            <a href="{% provider_login_url provider.id %}">
+                {{ provider.name }}
+            </a>
+        {% endfor %}
+    {% endif %}
+
+    <p>Don't have an account? <a href="{% url 'account_signup' %}">Sign up</a></p>
+</body>
+</html>
