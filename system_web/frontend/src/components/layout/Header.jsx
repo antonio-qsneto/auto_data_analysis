@@ -9,7 +9,7 @@ export default function Header() {
   useEffect(() => {
     fetch("http://localhost:8000/api/user/me/", {
       method: "GET",
-      credentials: "include", // send Django session cookie
+      credentials: "include",
     })
       .then(async (res) => {
         if (!res.ok) throw new Error("not-authenticated");
@@ -49,7 +49,7 @@ export default function Header() {
           {!user ? (
             <>
               <button
-                onClick={() => { window.location.href = "http://localhost:8000/accounts/google/login/"; }}
+                onClick={() => { window.location.href = "http://localhost:8000/accounts/login/"; }}
                 className="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition mr-2"
               >
                 Log in

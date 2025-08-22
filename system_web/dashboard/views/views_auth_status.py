@@ -1,4 +1,4 @@
-# dashboard/views_auth_status.py
+# views_auth_status.py
 from rest_framework.decorators import api_view, permission_classes # type: ignore
 from rest_framework.permissions import IsAuthenticated  # type: ignore
 from rest_framework.response import Response  # type: ignore

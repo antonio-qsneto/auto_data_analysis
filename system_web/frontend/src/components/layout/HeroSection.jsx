@@ -20,14 +20,14 @@ export default function HeroSection() {
         // User not logged in → show toast, then redirect
         setToast(true);
         setTimeout(() => {
-          window.location.href = "http://localhost:8000/accounts/google/login/";
+          window.location.href = "http://localhost:8000/accounts/login/";
         }, 1500); // 1.5 seconds delay
       }
     } catch (err) {
       // Network or other error → show toast, then redirect
       setToast(true);
       setTimeout(() => {
-        window.location.href = "http://localhost:8000/accounts/google/login/";
+        window.location.href = "http://localhost:8000/accounts/login/";
       }, 1500);
     }
   };

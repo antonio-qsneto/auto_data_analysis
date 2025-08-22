@@ -30,6 +30,9 @@ SECRET_KEY = 'django-insecure-rzs80)3fgi1tyksk&v7kp5p^$tj0dm4ovv$gyk!azt1wal+%i$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+SOCIALACCOUNT_LOGIN_ON_GET = True
+ACCOUNT_LOGOUT_ON_GET = True
+
 ALLOWED_HOSTS = []
 
 # CORS settings for production
@@ -66,6 +69,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+    'widget_tweaks',
 ]
 
 MIDDLEWARE = [
@@ -88,7 +92,7 @@ ROOT_URLCONF = 'auto_data_analysis.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / "auto_data_analysis/templates"],
+        'DIRS': [BASE_DIR / "dashboard/templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -149,6 +153,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
