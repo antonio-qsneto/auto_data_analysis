@@ -1,0 +1,64 @@
+{% load i18n %}
+{% load account %}
+{% load socialaccount %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+<!-- Tailwind CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-500">
+  <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-8 max-w-md w-full">
+    <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">{% trans "Sign Up" %}</h1>
+
+    <p class="text-center text-gray-600 mb-6">
+      Already have an account? Then please 
+      <a href="{% url 'account_login' %}" class="text-indigo-600 hover:text-indigo-800 font-semibold">sign in</a>.
+    </p>
+
+    <form class="space-y-4" method="POST" action="{% url 'account_signup' %}">
+      {% csrf_token %}
+
+      {% for field in form %}
+        <div class="flex flex-col">
+          <label class="mb-1 font-semibold text-gray-700" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field|add_class:"border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" }}
+          {% if field.errors %}
+            <p class="text-red-500 text-sm mt-1">{{ field.errors|striptags }}</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+      {% endif %}
+
+      <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg shadow-md transition-colors duration-200" type="submit">
+        {% trans "Sign Up" %}
+      </button>
+    </form>
+
+    {% get_providers as socialaccount_providers %}
+    {% if socialaccount_providers %}
+      <div class="mt-4 text-center text-gray-600 font-semibold">or</div>
+      <div class="mt-4 flex flex-col space-y-2">
+        {% for provider in socialaccount_providers %}
+          <a href="{% provider_login_url provider.id process='signup' %}" 
+             class="flex items-center justify-center w-full bg-white border border-gray-300 rounded-lg py-2 shadow-sm hover:bg-gray-100 transition-colors">
+            {% if provider.id == "google" %}
+              <img src="{% static 'socialaccount/icons/google.svg' %}" class="w-5 h-5 mr-2">
+            {% endif %}
+            {% trans "Sign up with" %} {{ provider.name }}
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <p class="mt-6 text-center text-gray-700">
+      Already have an account? 
+      <a href="{% url 'account_login' %}" class="text-indigo-600 hover:text-indigo-800 font-semibold">{% trans "Sign In" %}</a>
+    </p>
+  </div>
+</div>
+{% endblock %}
