@@ -183,8 +183,8 @@ LOGOUT_REDIRECT_URL = 'http://localhost:5173/'
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'APP': {
-            'client_id': 'REMOVED',
-            'secret': 'REMOVED',
+            'client_id': os.getenv("GOOGLE_CLIENT_ID"),
+            'secret': os.getenv("GOOGLE_CLIENT_SECRET"),
         },
         'SCOPE': [
             'profile',

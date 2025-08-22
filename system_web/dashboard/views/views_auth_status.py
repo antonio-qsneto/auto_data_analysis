@@ -12,7 +12,6 @@ def me(request):
     user = request.user
     name = (user.get_full_name() or user.first_name or user.username or user.email.split("@")[0])
 
-    # Try to enrich with Google profile data if available
     picture = None
     try:
         sa = SocialAccount.objects.get(user=user, provider="google")
