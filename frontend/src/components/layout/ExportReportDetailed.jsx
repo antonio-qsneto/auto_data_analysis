@@ -2,24 +2,6 @@ import React, { useState } from "react";
 import ApexCharts from "apexcharts";
 import jsPDF from "jspdf";
 
-/**
- * ExportReportDetailed (v7 - Markdown for Business Summary)
- *
- * Fixed Issues:
- * - Character encoding corruption completely resolved using HTML rendering
- * - Proper Markdown styling (bold, italic, headers, lists, code blocks) for both insightsText and businessSummary
- * - Preserved emojis and special characters through HTML canvas rendering
- * - Charts maintain proper aspect ratio (no vertical stretching)
- * - Line/area charts use full page width with proper height
- * - All content respects PDF boundaries
- * - Fixed vertical stretching of pie charts by enforcing square dimensions and correcting PDF image scaling
- *
- * Props:
- *  - businessSummary: string (markdown)
- *  - insightsText: string (markdown)
- *  - charts: array of chart descriptors
- *  - filename: string
- */
 export default function ExportReportDetailed({
   businessSummary = "",
   insightsText = "",
@@ -28,6 +10,11 @@ export default function ExportReportDetailed({
 }) {
   const [busy, setBusy] = useState(false);
   const PX_PER_MM = 96 / 25.4; // ~3.78 px / mm
+
+  function getCookie(name) {
+    const match = document.cookie.match(new RegExp('(^|; )' + name + '=([^;]*)'));
+    return match ? decodeURIComponent(match[2]) : null;
+  }
 
   // Parse inline markdown for styles
   function parseInline(mdText) {
@@ -430,11 +417,11 @@ export default function ExportReportDetailed({
     setBusy(true);
     try {
       const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
-      const pageW = pdf.internal.pageSize.getWidth(); // ~210mm
-      const pageH = pdf.internal.pageSize.getHeight(); // ~297mm
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
       const margin = 15;
-      const usableW = pageW - margin * 2; // ~180mm
-      const usableH = pageH - margin * 2; // ~267mm
+      const usableW = pageW - margin * 2;
+      const usableH = pageH - margin * 2;
 
       // Header
       let cursorY = 25;
@@ -591,10 +578,45 @@ export default function ExportReportDetailed({
         cursorY = gridStartY + gridRows * cellSize_mm + 20;
       }
 
-      pdf.save(filename);
+      const pdfBlob = pdf.output("blob");
+
+      const formData = new FormData();
+      formData.append("file", pdfBlob, filename);
+
+      const csrftoken = getCookie('csrftoken');
+
+      let response;
+      try {
+        response = await fetch("/api/reports/upload/", {
+          method: "POST",
+          credentials: "include", 
+          headers: {
+            'X-CSRFToken': csrftoken, 
+          },
+          body: formData,
+        });
+      } catch (networkErr) {
+        console.error("Network error during upload:", networkErr);
+        alert("Network error during upload. See console.");
+        setBusy(false);
+        return;
+      }
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => null);
+        console.error("Upload failed:", response.status, text);
+        alert(`Upload failed: ${response.status} - ${text || "No server message"}`);
+        setBusy(false);
+        return;
+      }
+
+      const data = await response.json();
+      console.log("Report uploaded:", data);
+      alert("Report saved to cloud!");
+
     } catch (err) {
       console.error("Export failed:", err);
-      alert("Failed to generate PDF. See console for details.");
+      alert("Failed to export PDF.");
     } finally {
       setBusy(false);
     }

@@ -1,38 +1,52 @@
-from rest_framework.decorators import api_view, permission_classes # type: ignore
+from rest_framework.decorators import api_view, permission_classes, parser_classes # type: ignore
 from rest_framework.permissions import IsAuthenticated # type: ignore
 from rest_framework.response import Response # type: ignore
-from django.views.decorators.csrf import csrf_exempt
-from ..models import Report # type: ignore
+from rest_framework.parsers import MultiPartParser, FormParser # type: ignore
+from ..models import Report
+import logging
 
-@csrf_exempt
+logger = logging.getLogger(__name__)
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
 def upload_report(request):
-    user = request.user
-    file = request.FILES.get('file')
-    name = request.POST.get('name', 'report.pdf')
+    # Debugging info (will appear in your Django logs)
+    logger.info("upload_report called: user=%s, files=%s, data_keys=%s",
+                getattr(request, "user", None),
+                list(request.FILES.keys()),
+                list(request.data.keys()))
 
+    file = request.FILES.get("file")
     if not file:
-        return Response({'error': 'No file provided'}, status=400)
+        # Provide detailed response so client sees what's wrong
+        logger.warning("No file found in request.FILES; request.FILES keys: %s", list(request.FILES.keys()))
+        return Response({"error": "No file uploaded. Make sure request is multipart/form-data and 'file' key is sent."}, status=400)
 
-    report = Report.objects.create(user=user, name=name, file=file)
+    report = Report.objects.create(
+        user=request.user,
+        name=file.name,
+        file=file
+    )
+
     return Response({
-        'id': report.id, # type: ignore
-        'name': report.name,
-        'url': report.file.url,  # S3 URL (signed if private)
-        'created_at': report.created_at.isoformat()
-    }, status=201)
+        "id": report.id, # type: ignore
+        "name": report.name,
+        "url": report.file.url,
+        "created_at": report.created_at.isoformat()
+    })
 
-@api_view(['GET'])
+@api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def list_reports(request):
-    reports = Report.objects.filter(user=request.user).order_by('-created_at')
+    reports = Report.objects.filter(user=request.user).order_by("-created_at")
     data = [
         {
-            'id': r.id, # type: ignore
-            'name': r.name,
-            'url': r.file.url,
-            'created_at': r.created_at.isoformat()
-        } for r in reports
+            "id": report.id,   # type: ignore
+            "name": report.name,
+            "created_at": report.created_at,
+            "url": report.file.url, 
+        }
+        for report in reports
     ]
     return Response(data)
