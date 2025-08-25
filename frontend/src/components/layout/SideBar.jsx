@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import XLogo from "../../assets/icons/X.svg";
 import csv from "../../assets/icons/fluent_document-table-16-regular.svg";
 import database from "../../assets/icons/database.svg";
+import folder from "../../assets/icons/folder.svg";
 
 const navItems = [
   { key: "csv", icon: <img src={csv} alt="CSV Icon" className="w-8 h-8" />, label: "CSV", aria: "CSV" },
@@ -15,7 +16,6 @@ export default function SideBar() {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
-  // Fetch current user
   useEffect(() => {
     fetch("http://localhost:8000/api/user/me/", {
       method: "GET",
@@ -29,7 +29,6 @@ export default function SideBar() {
       .catch(() => setUser(null));
   }, []);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClick = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -50,7 +49,6 @@ export default function SideBar() {
         </button>
       </div>
 
-      {/* Nav icons */}
       <ul className="flex flex-col gap-4 mb-8">
         {navItems.map((item) => (
           <li key={item.key}>
@@ -74,35 +72,45 @@ export default function SideBar() {
 
       <div className="flex-1" />
 
-      {/* User avatar with dropdown */}
       {user && (
-        <div className="relative mb-6" ref={ref}>
+        <div className="flex flex-col items-center gap-4 mb-6" ref={ref}>
           <button
-            onClick={() => setOpen((v) => !v)}
-            className="w-12 h-12 flex items-center justify-center rounded-full border-2 border-cyan-400 shadow-lg overflow-hidden cursor-pointer"
-            aria-label="User Profile"
+            onClick={() => navigate("/reports")}
+            className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-cyan-600 focus:bg-cyan-600 transition cursor-pointer"
+            aria-label="My PDFs"
             tabIndex={0}
           >
-            {user.picture ? (
-              <img src={user.picture} alt="User avatar" className="w-10 h-10 rounded-full object-cover" />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-gray-200" />
-            )}
+            <img src={folder} alt="Folder Icon" className="w-7 h-7" />
           </button>
 
-          {open && (
-            <div className="absolute left-14 bottom-0 w-40 bg-white text-gray-800 rounded-xl shadow-lg overflow-hidden">
-              <div className="px-4 py-2 text-sm font-medium border-b border-gray-200">
-                {user.name || user.username}
+          <div className="relative">
+            <button
+              onClick={() => setOpen((v) => !v)}
+              className="w-12 h-12 flex items-center justify-center rounded-full border-2 border-cyan-400 shadow-lg overflow-hidden cursor-pointer"
+              aria-label="User Profile"
+              tabIndex={0}
+            >
+              {user.picture ? (
+                <img src={user.picture} alt="User avatar" className="w-10 h-10 rounded-full object-cover" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gray-200" />
+              )}
+            </button>
+
+            {open && (
+              <div className="absolute left-14 bottom-0 w-40 bg-white text-gray-800 rounded-xl shadow-lg overflow-hidden">
+                <div className="px-4 py-2 text-sm font-medium border-b border-gray-200">
+                  {user.name || user.username}
+                </div>
+                <a
+                  href="http://localhost:8000/accounts/logout/"
+                  className="block px-4 py-2 text-sm hover:bg-gray-100"
+                >
+                  Sign out
+                </a>
               </div>
-              <a
-                href="http://localhost:8000/accounts/logout/"
-                className="block px-4 py-2 text-sm hover:bg-gray-100"
-              >
-                Sign out
-              </a>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
     </nav>
