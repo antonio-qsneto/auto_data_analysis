@@ -9,7 +9,7 @@ export default function ExportReportDetailed({
   filename = "report.pdf"
 }) {
   const [busy, setBusy] = useState(false);
-  const PX_PER_MM = 96 / 25.4; // ~3.78 px / mm
+  const PX_PER_MM = 96 / 25.4;
 
   function getCookie(name) {
     const match = document.cookie.match(new RegExp('(^|; )' + name + '=([^;]*)'));

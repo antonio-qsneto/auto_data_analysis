@@ -34,21 +34,25 @@ export default function Report() {
         {reports.length === 0 && !loading && <p>No reports available.</p>}
         <div className="bg-white shadow-md rounded-lg p-6">
           <ul className="space-y-4">
-            {reports.map((report) => (
-              <li key={report.id} className="border-b pb-2">
-                <div className="flex justify-between items-center">
-                  <span>{report.name} (Created: {new Date(report.created_at).toLocaleDateString()})</span>
-                  <a
-                    href={report.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-500 hover:underline"
-                  >
-                    View/Download
-                  </a>
-                </div>
-              </li>
-            ))}
+            {reports.map((report) => {
+                const createdAt = report.created_at ? new Date(report.created_at) : null;
+                const dateStr = createdAt ? createdAt.toLocaleString() : "Unknown date";
+                return (
+                    <li key={report.id} className="border-b pb-2">
+                    <div className="flex justify-between items-center">
+                        <span>{`Report generated at ${dateStr}`}</span>
+                        <a
+                        href={report.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:underline"
+                        >
+                        View/Download
+                        </a>
+                    </div>
+                    </li>
+                );
+                })}
           </ul>
         </div>
       </main>
