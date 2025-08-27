@@ -81,22 +81,25 @@ export default function Header() {
               </button>
 
               {open && (
-                <div className="absolute right-0 mt-2 w-22 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50">
+                <div className="absolute right-0 mt-2 w-28 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50">
                   
                   <a
                     onClick={() => navigate("/reports")}
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
                   >
+                    <img src="/src/assets/icons/reports.svg" alt="Reports" className="w-4 h-4" />
                     Reports
                   </a>
 
                   <a
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
                   >
+                    <img src="/src/assets/icons/out.svg" alt="Sign out" className="w-4 h-4" />
                     Sign out
                   </a>
                 </div>
               )}
+
             </div>
           )}
 

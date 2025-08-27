@@ -64,7 +64,6 @@ export default function UploadPage({
       setCharts && setCharts(data.charts);
       setBusinessSummary && setBusinessSummary(data.business_summary || "");
       setInsightsText && setInsightsText(data.insights_text || "")
-      //console.log(data.insights_text)
       navigate("/dashboard");
     } catch (err) {
       setError && setError("Error uploading file or generating charts.");
