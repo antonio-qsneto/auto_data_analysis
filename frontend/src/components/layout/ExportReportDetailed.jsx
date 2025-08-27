@@ -639,7 +639,7 @@ export default function ExportReportDetailed({
         fontWeight: "500"
       }}
     >
-      {busy ? "Generating PDF..." : "Download PDF Report"}
+      {busy ? "Generating PDF..." : "Save PDF Report"}
     </button>
   );
 }

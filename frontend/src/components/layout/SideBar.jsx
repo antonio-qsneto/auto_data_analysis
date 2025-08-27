@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import XLogo from "../../assets/icons/X.svg";
 import csv from "../../assets/icons/fluent_document-table-16-regular.svg";
 import database from "../../assets/icons/database.svg";
@@ -12,6 +12,7 @@ const navItems = [
 
 export default function SideBar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -50,24 +51,22 @@ export default function SideBar() {
       </div>
 
       <ul className="flex flex-col gap-4 mb-8">
-        {navItems.map((item) => (
-          <li key={item.key}>
-            <button
-              className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-cyan-600 focus:bg-cyan-600 transition cursor-pointer"
-              aria-label={item.aria}
-              tabIndex={0}
-              onClick={
-                item.key === "csv"
-                  ? () => navigate("/upload")
-                  : item.key === "database"
-                  ? () => navigate("/database")
-                  : undefined
-              }
+        <button
+              className={`w-12 h-12 flex items-center justify-center rounded-full transition cursor-pointer
+                ${location.pathname === "/upload" ? "bg-cyan-600" : "hover:bg-cyan-600"}`}
+              aria-label="CSV"
+              onClick={() => navigate("/upload")}
             >
-              {item.icon}
+              <img src={csv} alt="CSV Icon" className="w-8 h-8" />
             </button>
-          </li>
-        ))}
+            <button
+              className={`w-12 h-12 flex items-center justify-center rounded-full transition cursor-pointer
+                ${location.pathname === "/database" ? "bg-cyan-600" : "hover:bg-cyan-600"}`}
+              aria-label="Database"
+              onClick={() => navigate("/database")}
+            >
+              <img src={database} alt="Database Icon" className="w-8 h-8" />
+            </button>
       </ul>
 
       <div className="flex-1" />
@@ -75,10 +74,10 @@ export default function SideBar() {
       {user && (
         <div className="flex flex-col items-center gap-4 mb-6" ref={ref}>
           <button
-            onClick={() => navigate("/reports")}
-            className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-cyan-600 focus:bg-cyan-600 transition cursor-pointer"
+            className={`w-12 h-12 flex items-center justify-center rounded-full transition cursor-pointer
+              ${location.pathname === "/reports" ? "bg-cyan-600" : "hover:bg-cyan-600"}`}
             aria-label="My PDFs"
-            tabIndex={0}
+            onClick={() => navigate("/reports")}
           >
             <img src={folder} alt="Folder Icon" className="w-7 h-7" />
           </button>

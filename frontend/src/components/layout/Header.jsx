@@ -1,7 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import BrandLogo from "../../assets/images/Xclarty_logo.svg";
+import { useNavigate } from "react-router-dom";
+
 
 export default function Header() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -19,7 +22,6 @@ export default function Header() {
       .catch(() => setUser(null));
   }, []);
 
-  // close dropdown on outside click
   useEffect(() => {
     const onDocClick = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -65,7 +67,7 @@ export default function Header() {
             <div className="relative">
               <button
                 onClick={() => setOpen((v) => !v)}
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer"
               >
                 {user.picture ? (
                   <img src={user.picture} alt="avatar" className="h-6 w-6 rounded-full" />
@@ -79,10 +81,17 @@ export default function Header() {
               </button>
 
               {open && (
-                <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50">
+                <div className="absolute right-0 mt-2 w-22 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50">
+                  
                   <a
-                    href="http://localhost:8000/accounts/logout/"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => navigate("/reports")}
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                  >
+                    Reports
+                  </a>
+
+                  <a
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
                   >
                     Sign out
                   </a>
