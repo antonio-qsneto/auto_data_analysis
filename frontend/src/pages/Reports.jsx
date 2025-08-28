@@ -152,7 +152,7 @@ export default function Report() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <a href={report.url} target="_blank" rel="noopener noreferrer"
+                      <a href={`/api/reports/${report.id}/download/`} target="_blank" rel="noopener noreferrer"
                         className={`inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm transition
                           ${theme === "dark" ? "bg-white/10 hover:bg-white/20" : "bg-blue-500/70 hover:bg-blue-600 text-white"}`}>
                         <span>View</span>

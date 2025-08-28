@@ -13,7 +13,6 @@ export default function Charts({ charts, theme = "dark" }) {
     return date.toLocaleDateString("en-US", { month: "short", day: "2-digit" });
   };
 
-  // Set colors based on theme
   const textColor = theme === "dark" ? "#fff" : "#222";
   const gridColor = theme === "dark" ? "#444" : "#ccc";
   const cardBg = theme === "dark" ? "#2B2D3E" : "#fff";
@@ -24,7 +23,6 @@ export default function Charts({ charts, theme = "dark" }) {
         const type = chart.type || "line";
         let colClass = "";
 
-        // Wide for line, area, candlestick
         const isWide = type === "area" || type === "line" || type === "candlestick";
         if (type === "line" || type === "candlestick") {
           colClass = "col-1-2";
@@ -32,7 +30,6 @@ export default function Charts({ charts, theme = "dark" }) {
           colClass = "col-2-3";
         }
 
-        // Filter candlestick data to last 3 months
         let filteredChart = chart;
         if (type === "candlestick" && chart.labels && chart.series && chart.labels.length > 0) {
           const total = chart.labels.length;
@@ -48,10 +45,8 @@ export default function Charts({ charts, theme = "dark" }) {
           };
         }
 
-        // Use filteredChart for candlestick, original for others
         const chartToUse = type === "candlestick" ? filteredChart : chart;
 
-        // Build options with correct heatmap ranges
         const options = {
           ...chartToUse.options,
           chart: {
@@ -82,7 +77,6 @@ export default function Charts({ charts, theme = "dark" }) {
             },
             y: {
               formatter: (val) => {
-                // For boxPlot, val can be a number, array, or object with a y property
                 if (type === "boxPlot") {
                   if (typeof val === "number") {
                     return val.toFixed(1);
@@ -95,7 +89,6 @@ export default function Charts({ charts, theme = "dark" }) {
                   }
                   return val;
                 }
-                // Other chart types
                 if (
                   (["line", "area", "bar", "column"].includes(type) && typeof val === "number")
                 ) {
@@ -119,7 +112,6 @@ export default function Charts({ charts, theme = "dark" }) {
                 trim: true,
                 maxHeight: 80,
                 formatter: (val) => {
-                  // Trim long labels
                   if (typeof val === "string" && val.length > 10) {
                     return val.slice(0, 10) + "...";
                   }
@@ -143,7 +135,7 @@ export default function Charts({ charts, theme = "dark" }) {
             xaxis: {
               ...chartToUse.options?.xaxis,
               categories: chart.labels,
-              tickAmount: 8, // Reduce number of ticks/labels
+              tickAmount: 8,
               labels: {
                 ...(chartToUse.options?.xaxis?.labels || {}),
                 style: { colors: textColor },
@@ -311,7 +303,6 @@ export default function Charts({ charts, theme = "dark" }) {
           },
         };
 
-        // Remove title from options so it doesn't overlap
         const { title, ...optionsWithoutTitle } = options;
 
         return (
@@ -320,11 +311,9 @@ export default function Charts({ charts, theme = "dark" }) {
             className={`chart-card${isWide ? " wide" : ""}${colClass ? " " + colClass : ""}`}
             style={{ backgroundColor: cardBg }}
           >
-            {/* Title above chart */}
             <div className="chart-title" style={{ color: textColor }}>
               {chartToUse.title || chartToUse.options?.title?.text || ""}
             </div>
-            {/* Chart */}
             <div className="chart-area">
               <ReactApexChart
                 options={optionsWithoutTitle}
@@ -334,7 +323,6 @@ export default function Charts({ charts, theme = "dark" }) {
                 height="100%"
               />
             </div>
-            {/* Options/Legend below chart */}
             {options.legend && (
               <div className="chart-options">
                 <span>

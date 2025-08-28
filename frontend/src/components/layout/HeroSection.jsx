@@ -57,9 +57,6 @@ export default function HeroSection() {
             >
               Try It →
             </button>
-            <button className="px-6 py-3 font-semibold border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition">
-              Request a Demo
-            </button>
           </div>
         </div>
 

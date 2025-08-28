@@ -16,56 +16,48 @@ export default function ExportReportDetailed({
     return match ? decodeURIComponent(match[2]) : null;
   }
 
-  // Parse inline markdown for styles
   function parseInline(mdText) {
     const segments = [];
     let i = 0;
     while (i < mdText.length) {
       let matched = false;
 
-      // Bold italic: ***text***
       if (mdText.startsWith('***', i) && mdText.indexOf('***', i + 3) > i + 3) {
         const end = mdText.indexOf('***', i + 3);
         segments.push({ text: mdText.slice(i + 3, end), bold: true, italic: true, code: false });
         i = end + 3;
         matched = true;
       }
-      // Bold: **text**
       else if (mdText.startsWith('**', i) && mdText.indexOf('**', i + 2) > i + 2) {
         const end = mdText.indexOf('**', i + 2);
         segments.push({ text: mdText.slice(i + 2, end), bold: true, italic: false, code: false });
         i = end + 2;
         matched = true;
       }
-      // Italic: *text*
       else if (mdText.startsWith('*', i) && mdText.indexOf('*', i + 1) > i + 1) {
         const end = mdText.indexOf('*', i + 1);
         segments.push({ text: mdText.slice(i + 1, end), bold: false, italic: true, code: false });
         i = end + 1;
         matched = true;
       }
-      // Inline code: `text`
       else if (mdText.startsWith('`', i) && mdText.indexOf('`', i + 1) > i + 1) {
         const end = mdText.indexOf('`', i + 1);
         segments.push({ text: mdText.slice(i + 1, end), bold: false, italic: false, code: true });
         i = end + 1;
         matched = true;
       }
-      // Bold italic: ___text___
       else if (mdText.startsWith('___', i) && mdText.indexOf('___', i + 3) > i + 3) {
         const end = mdText.indexOf('___', i + 3);
         segments.push({ text: mdText.slice(i + 3, end), bold: true, italic: true, code: false });
         i = end + 3;
         matched = true;
       }
-      // Bold: __text__
       else if (mdText.startsWith('__', i) && mdText.indexOf('__', i + 2) > i + 2) {
         const end = mdText.indexOf('__', i + 2);
         segments.push({ text: mdText.slice(i + 2, end), bold: true, italic: false, code: false });
         i = end + 2;
         matched = true;
       }
-      // Italic: _text_
       else if (mdText.startsWith('_', i) && mdText.indexOf('_', i + 1) > i + 1) {
         const end = mdText.indexOf('_', i + 1);
         segments.push({ text: mdText.slice(i + 1, end), bold: false, italic: true, code: false });
@@ -74,7 +66,6 @@ export default function ExportReportDetailed({
       }
 
       if (!matched) {
-        // Find next marker
         let next = mdText.length;
         ['***', '**', '*', '`', '___', '__', '_'].forEach(marker => {
           const pos = mdText.indexOf(marker, i + 1);
@@ -87,12 +78,11 @@ export default function ExportReportDetailed({
     return segments;
   }
 
-  // Render styled text with word wrap and style changes
   function renderStyledText(pdf, segments, startX, startY, usableW, pageH, margin, baseFontSize, baseStyle = { bold: false, italic: false }) {
     let currentY = startY;
     let lineSegments = [];
     let currentLineWidth = 0;
-    const lineHeight = (baseFontSize / 11) * 7; // Scale line height based on font size
+    const lineHeight = (baseFontSize / 11) * 7;
 
     for (let seg of segments) {
       const effectiveBold = seg.code ? false : (seg.bold || baseStyle.bold);
@@ -103,14 +93,12 @@ export default function ExportReportDetailed({
       pdf.setFont(font, style);
       pdf.setFontSize(baseFontSize);
 
-      // Split into words and spaces
       const parts = seg.text.split(/(\s+)/).filter(part => part.length > 0);
 
       for (let part of parts) {
         const partWidth = pdf.getTextWidth(part);
 
         if (currentLineWidth + partWidth > usableW && lineSegments.length > 0) {
-          // Draw current line
           if (currentY + lineHeight > pageH - margin) {
             pdf.addPage();
             currentY = margin;
@@ -132,7 +120,6 @@ export default function ExportReportDetailed({
       }
     }
 
-    // Draw last line
     if (lineSegments.length > 0) {
       if (currentY + lineHeight > pageH - margin) {
         pdf.addPage();
@@ -151,7 +138,6 @@ export default function ExportReportDetailed({
     return currentY;
   }
 
-  // Parse markdown into blocks
   function parseMarkdown(md) {
     if (!md) return [];
     const mdLines = md.split('\n');
@@ -221,7 +207,7 @@ export default function ExportReportDetailed({
         continue;
       }
       if (inList) {
-        listItems[listItems.length - 1] += ' ' + trimmed; // Continue list item if indented
+        listItems[listItems.length - 1] += ' ' + trimmed;
         continue;
       }
       currentBlock.push(trimmed);
@@ -240,7 +226,6 @@ export default function ExportReportDetailed({
     return blocks;
   }
 
-  // Render blocks to PDF
   function renderBlocksToPdf(blocks, pdf, x, y, usableW, pageH, margin) {
     let cursorY = y;
     const stdFontSize = 11;
@@ -252,11 +237,11 @@ export default function ExportReportDetailed({
         const fontSize = sizes[block.level] || 14;
         const segments = parseInline(block.text);
         cursorY = renderStyledText(pdf, segments, x, cursorY, usableW, pageH, margin, fontSize, { bold: true, italic: false });
-        cursorY += stdLh / 2; // Extra spacing after header
+        cursorY += stdLh / 2;
       } else if (block.type === 'paragraph') {
         const segments = parseInline(block.text);
         cursorY = renderStyledText(pdf, segments, x, cursorY, usableW, pageH, margin, stdFontSize);
-        cursorY += stdLh / 2; // Paragraph spacing
+        cursorY += stdLh / 2; 
       } else if (block.type === 'list') {
         let itemNum = 1;
         for (let item of block.items) {
@@ -273,7 +258,7 @@ export default function ExportReportDetailed({
           cursorY = renderStyledText(pdf, segments, x + bulletWidth, cursorY, usableW - bulletWidth, pageH, margin, stdFontSize);
           itemNum++;
         }
-        cursorY += stdLh / 2; // Spacing after list
+        cursorY += stdLh / 2;
       } else if (block.type === 'code') {
         pdf.setFont('courier', 'normal');
         pdf.setFontSize(10);
@@ -300,7 +285,6 @@ export default function ExportReportDetailed({
     return cursorY;
   }
 
-  // Build Apex config with proper sizing
   function buildApexConfig(desc, targetPxWidth, targetPxHeight) {
     const base = desc && desc.config && typeof desc.config === "object"
       ? { ...desc.config }
@@ -337,7 +321,6 @@ export default function ExportReportDetailed({
 
     const chartType = base.chart.type.toLowerCase();
 
-    // Fix overlapping X-axis labels for relevant chart types
     if (['line', 'area', 'bar'].includes(chartType)) {
       base.xaxis = {
         ...(base.xaxis || {}),
@@ -349,7 +332,6 @@ export default function ExportReportDetailed({
       };
     }
 
-    // Deactivate data labels for heatmap and bar charts
     if (['heatmap', 'bar'].includes(chartType)) {
       base.dataLabels = {
         ...(base.dataLabels || {}),
@@ -357,7 +339,6 @@ export default function ExportReportDetailed({
       };
     }
 
-    // Ensure pie charts are square
     if (['pie', 'donut'].includes(chartType)) {
       const minSize = Math.min(targetPxWidth, targetPxHeight);
       base.chart.width = minSize;
@@ -367,7 +348,6 @@ export default function ExportReportDetailed({
     return base;
   }
 
-  // Render Apex chart off-screen to dataURI
   async function renderApexToDataUrl(desc, targetPxWidth, targetPxHeight) {
     const isPieOrDonut = (desc.type || (desc.options && desc.options.chart && desc.options.chart.type) || "line").toLowerCase() === "pie" ||
                         (desc.type || (desc.options && desc.options.chart && desc.options.chart.type) || "line").toLowerCase() === "donut";
@@ -412,7 +392,6 @@ export default function ExportReportDetailed({
     }
   }
 
-  // Main export handler with direct markdown rendering
   const handleExport = async () => {
     setBusy(true);
     try {
@@ -423,16 +402,13 @@ export default function ExportReportDetailed({
       const usableW = pageW - margin * 2;
       const usableH = pageH - margin * 2;
 
-      // Header
       let cursorY = 25;
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(18);
       pdf.text("Data Report", margin, cursorY);
       cursorY += 15;
 
-      // Business summary with markdown rendering
       if (businessSummary) {
-        // Add business summary header
         if (cursorY + 20 > pageH - margin) {
           pdf.addPage();
           cursorY = margin;
@@ -447,9 +423,7 @@ export default function ExportReportDetailed({
         cursorY += 10;
       }
 
-      // Insights with parsed markdown blocks
       if (insightsText) {
-        // Add insights header
         if (cursorY + 20 > pageH - margin) {
           pdf.addPage();
           cursorY = margin;
@@ -464,7 +438,6 @@ export default function ExportReportDetailed({
         cursorY += 10;
       }
 
-      // Chart layout with fixed dimensions
       const fullWidthTypes = new Set(["line", "area"]);
       const fullWidthHeight_mm = 80;
       const gridCols = 2;
@@ -545,10 +518,9 @@ export default function ExportReportDetailed({
             continue;
           }
 
-          // Ensure pie charts are square in PDF with correct scaling
           const isPieOrDonut = type === "pie" || type === "donut";
           const imgSize_mm = cellSize_mm;
-          const scale = Math.min(1, imgObj.widthPx / imgObj.heightPx); // Adjust scale to maintain aspect ratio
+          const scale = Math.min(1, imgObj.widthPx / imgObj.heightPx); 
 
           pdf.addImage(imgObj.imgURI, "PNG", cellX, cellY, isPieOrDonut ? imgSize_mm : cellSize_mm, isPieOrDonut ? imgSize_mm : cellSize_mm, undefined, undefined, scale);
 

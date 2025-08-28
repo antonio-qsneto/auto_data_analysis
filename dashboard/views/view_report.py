@@ -16,6 +16,8 @@ from rest_framework.response import Response # type: ignore
 from rest_framework.parsers import MultiPartParser, FormParser # type: ignore
 from django.shortcuts import get_object_or_404
 from rest_framework import status # type: ignore
+from django.http import FileResponse, HttpResponseNotFound, HttpResponseForbidden
+
 
 
 
@@ -158,3 +160,51 @@ def delete_report(request, report_id):
     except Exception as e:
         logger.exception("Error deleting report: %s", e)
         return Response({"error": "Failed to delete report"}, status=500)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def download_report(request, report_id):
+    """
+    Proxy download: stream the S3 object to the authenticated user without exposing the S3 URL.
+    """
+    try:
+        # Ensure the report exists and belongs to the requesting user
+        report = Report.objects.get(id=report_id, user=request.user)
+    except Report.DoesNotExist:
+        return HttpResponseNotFound("Report not found")
+
+    storage_key = report.file.name
+    if not storage_key:
+        return HttpResponseNotFound("Report file not available")
+
+    # Use boto3 client (boto3 will pick up credentials from env/profile/role)
+    s3 = boto3.client("s3", region_name=getattr(settings, "AWS_S3_REGION_NAME", None))
+
+    try:
+        obj = s3.get_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=storage_key)
+        body = obj["Body"]  # StreamingBody
+
+        # Prefer user friendly filename
+        filename = report.name or os.path.basename(storage_key)
+
+        # FileResponse will stream the body
+        response = FileResponse(body, content_type=obj.get("ContentType", "application/octet-stream"))
+
+        # show inline so PDF opens in-browser. Use 'attachment;' to force download.
+        response["Content-Disposition"] = f'inline; filename="{filename}"'
+        return response
+
+    except ClientError as e:
+        code = e.response.get("Error", {}).get("Code", "")
+        logger.exception("S3 get_object failed for key=%s: %s", storage_key, e)
+        # If object not found or access denied
+        if code in ("NoSuchKey", "404"):
+            return HttpResponseNotFound("File not found in storage")
+        # For AccessDenied show forbidden (you may want to log details)
+        if code in ("403", "AccessDenied"):
+            return HttpResponseForbidden("Access denied")
+        return HttpResponseNotFound("File not available")
+    except Exception as e:
+        logger.exception("Unexpected error streaming report %s: %s", storage_key, e)
+        return HttpResponseNotFound("Unable to retrieve file")

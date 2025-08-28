@@ -3,7 +3,7 @@ import React from "react";
 export default function Footer() {
   return (
     <footer className="w-full bg-gradient-to-r from-blue-100 via-cyan-100 to-blue-300 text-gray-800 pt-12 pb-6 px-4">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* About */}
         <div>
           <h3 className="text-lg font-bold mb-2 text-cyan-700">About XClarity</h3>
@@ -14,21 +14,11 @@ export default function Footer() {
             Turning datasets into decisions, powered by AI.
           </span>
         </div>
-        {/* Navigation */}
-        <div>
-          <h3 className="text-lg font-bold mb-2 text-cyan-700">Navigation</h3>
-          <ul className="space-y-2">
-            <li><a href="/" className="hover:text-cyan-600 transition">Home</a></li>
-            <li><a href="#howitworks" className="hover:text-cyan-600 transition">How It Works</a></li>
-            <li><a href="#features" className="hover:text-cyan-600 transition">Features</a></li>
-            <li><a href="#contact" className="hover:text-cyan-600 transition">Contact</a></li>
-          </ul>
-        </div>
         {/* Contact */}
         <div>
           <h3 className="text-lg font-bold mb-2 text-cyan-700">Contact</h3>
           <ul className="space-y-2 text-sm">
-            <li>Email: <a href="mailto:youremail@example.com" className="hover:text-cyan-600 transition">youremail@example.com</a></li>
+            <li>Email: <a href="mailto:xclarity.ai@gmail.com" className="hover:text-cyan-600 transition">xclarity.ai@gmail.com</a></li>
             <li>
               LinkedIn: <a href="https://linkedin.com/in/yourprofile" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-600 transition">Profile</a>
             </li>

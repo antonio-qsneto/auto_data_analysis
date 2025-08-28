@@ -17,7 +17,6 @@ def report_upload_to(instance, filename):
         str(instance.user.id)
     )
 
-    # File name pattern: DD_MM_YYYY_HH_MM_data_report.pdf
     date_str = today.strftime("%d_%m_%Y_%H_%M")
     unique_name = f"{date_str}_data_report.pdf"
 
@@ -31,7 +30,6 @@ class Report(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
-        """Ensure that the name is always saved in the DD_MM_YYYY_HH_MM_data_report.pdf format"""
         if not self.name or self.name == 'data_report.pdf':
             self.name = timezone.now().strftime("%d_%m_%Y_%H_%M") + "_data_report.pdf"
         super().save(*args, **kwargs)
