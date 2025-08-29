@@ -15,7 +15,7 @@ def handle_csv(request):
         if not uploaded_file.name.endswith(".csv"):
             return JsonResponse({"error": "Only CSV files allowed"}, status=400)
 
-        df = pd.read_csv(uploaded_file).reset_index(drop=True)
+        df = pd.read_csv(uploaded_file, nrows=1000).reset_index(drop=True)
         df["index"] = df.index
 
         data = process_data(df)

@@ -43,7 +43,7 @@ def get_tables(request):
 
         tables_df = pd.read_sql(table_query, engine)
         tables = table_filter(tables_df["table_name"].tolist())
-        engine.dispose()  # <-- Add this line to close the connection
+        engine.dispose()
         if not tables:
             return JsonResponse({"error": "No user tables found in the database"}, status=400)
 
@@ -75,24 +75,26 @@ def fetch_and_process_table(request):
         if db_type == "postgresql":
             conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
             identifier_quote = '"'
+            query = f'SELECT * FROM {identifier_quote}{table}{identifier_quote} LIMIT 1000'
+
         elif db_type in ["mysql", "mariadb"]:
             driver = "pymysql"
             dialect = "mysql" if db_type == "mysql" else "mariadb"
             conn_str = f"{dialect}+{driver}://{user}:{password}@{host}:{port}/{database}"
             identifier_quote = '`'
+            query = f'SELECT * FROM {identifier_quote}{table}{identifier_quote} LIMIT 1000'
+
         elif db_type == "sqlserver":
             conn_str = f"mssql+pyodbc://{user}:{password}@{host}:{port}/{database}?driver=ODBC+Driver+17+for+SQL+Server"
             identifier_quote_start = '['
             identifier_quote_end = ']'
+            query = f"SELECT TOP 1000 * FROM {identifier_quote_start}{table}{identifier_quote_end}"
+
         else:
             return JsonResponse({"error": f"Unsupported database type: {db_type}"}, status=400)
 
         engine = sa.create_engine(conn_str)
 
-        if db_type == "sqlserver":
-            query = f"SELECT * FROM {identifier_quote_start}{table}{identifier_quote_end}"
-        else:
-            query = f"SELECT * FROM {identifier_quote}{table}{identifier_quote}"
         df = pd.read_sql(query, engine).reset_index(drop=True)
         df["index"] = df.index
 
