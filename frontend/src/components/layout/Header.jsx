@@ -1,27 +1,25 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useContext } from "react";
 import BrandLogo from "../../assets/images/Xclarty_logo.svg";
 import { useNavigate } from "react-router-dom";
+import { getAccessToken, clearTokens } from "../../utils/auth";
+import { UserContext } from "../../context/UserContext";
 
 export default function Header() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const { user, setUser, loadUser } = useContext(UserContext);
   const [open, setOpen] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const ref = useRef(null);
 
-  // Fetch user info
+  // Preload user picture
   useEffect(() => {
-    fetch("http://localhost:8000/api/user/me/", {
-      method: "GET",
-      credentials: "include",
-    })
-      .then(async (res) => {
-        if (!res.ok) throw new Error("not-authenticated");
-        return res.json();
-      })
-      .then((data) => setUser(data))
-      .catch(() => setUser(null));
-  }, []);
+    if (user?.picture) {
+      const img = new Image();
+      img.src = user.picture;
+      img.onload = () => setImageLoaded(true);
+      img.onerror = () => setImageLoaded(false);
+    }
+  }, [user?.picture]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -32,14 +30,14 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
-  useEffect(() => {
-    if (user?.picture) {
-      const img = new Image();
-      img.src = user.picture;
-      img.onload = () => setImageLoaded(true);
-      img.onerror = () => setImageLoaded(false);
-    }
-  }, [user?.picture]);
+  // Logout
+  const handleLogout = () => {
+    clearTokens();
+    setUser(null);
+    navigate("/login");
+  };
+
+  console.log(user.picture);
 
   return (
     <header className="w-full bg-white shadow-sm">
@@ -52,13 +50,13 @@ export default function Header() {
           {!user ? (
             <>
               <button
-                onClick={() => (window.location.href = "http://localhost:8000/accounts/login/")}
+                onClick={() => navigate("/login")}
                 className="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition mr-2"
               >
                 Log in
               </button>
               <button
-                onClick={() => (window.location.href = "http://localhost:8000/accounts/signup/")}
+                onClick={() => navigate("/signup")}
                 className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
               >
                 Sign up
@@ -96,10 +94,10 @@ export default function Header() {
               </button>
 
               {open && (
-                <div className="absolute right-0 mt-2 w-28 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50">
-                  <a
+                <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50">
+                  <button
                     onClick={() => navigate("/reports")}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full"
                   >
                     <img
                       src="/src/assets/icons/reports.svg"
@@ -107,15 +105,19 @@ export default function Header() {
                       className="w-4 h-4"
                     />
                     Reports
-                  </a>
+                  </button>
 
-                  <a
-                    href="http://localhost:8000/accounts/logout/"
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full"
                   >
-                    <img src="/src/assets/icons/out.svg" alt="Sign out" className="w-4 h-4" />
+                    <img
+                      src="/src/assets/icons/out.svg"
+                      alt="Sign out"
+                      className="w-4 h-4"
+                    />
                     Sign out
-                  </a>
+                  </button>
                 </div>
               )}
             </div>

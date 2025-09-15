@@ -2,7 +2,8 @@ import os
 from django.utils import timezone
 from django.utils.text import get_valid_filename
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
+
 
 
 def report_upload_to(instance, filename):
@@ -23,8 +24,12 @@ def report_upload_to(instance, filename):
     return os.path.join(base_path, unique_name)
 
 
+class CustomUser(AbstractUser):
+    google_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    profile_picture = models.URLField(max_length=500, null=True, blank=True)
+
 class Report(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reports')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='reports')
     name = models.CharField(max_length=255, default='data_report.pdf')
     file = models.FileField(upload_to=report_upload_to)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -36,3 +41,5 @@ class Report(models.Model):
 
     def __str__(self):
         return f"{self.name} for {self.user.email}"
+
+
