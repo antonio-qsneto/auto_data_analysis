@@ -1,4 +1,3 @@
-# app/core/serializers.py
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
@@ -18,10 +17,8 @@ class UserSerializer(serializers.ModelSerializer):
         if not picture:
             return None
 
-        # Caso seja um ImageField/FileField
         if hasattr(picture, "url"):
             return request.build_absolute_uri(picture.url) if request else picture.url
 
-        # Caso já seja string (URL externa)
         return picture
 

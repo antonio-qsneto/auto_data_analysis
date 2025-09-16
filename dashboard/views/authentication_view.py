@@ -7,7 +7,6 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from ..serializers.user_serializer import UserSerializer
 from ..serializers.auth_serializer import SignupSerializer
-from rest_framework.generics import CreateAPIView
 
 
 User = get_user_model()

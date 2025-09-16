@@ -18,7 +18,7 @@ axiosInstance.interceptors.request.use((config) => {
     console.log("[Axios][Request] Enviando request:", {
       url: config.url,
       method: config.method,
-      token: token.slice(0, 10) + "...", // só loga o começo do token
+      token: token.slice(0, 10) + "...",
     });
   } else {
     console.log("[Axios][Request] Sem token, request:", {

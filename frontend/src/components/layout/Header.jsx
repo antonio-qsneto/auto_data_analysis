@@ -37,8 +37,6 @@ export default function Header() {
     navigate("/login");
   };
 
-  console.log(user.picture);
-
   return (
     <header className="w-full bg-white shadow-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-between py-4 px-6 md:px-0">

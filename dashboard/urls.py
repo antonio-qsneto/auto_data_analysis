@@ -2,6 +2,8 @@ from django.urls import path
 from .views import chart_views
 from .views.authentication_view import GoogleLoginView, SignupView
 from .views import views_auth_status
+from .views.custom_token_serializer import MyTokenObtainPairView
+
 
 
 from rest_framework_simplejwt.views import (
@@ -24,7 +26,7 @@ urlpatterns = [
     path("fetch_table_data/", chart_views.get_table_data, name="fetch_table_data"),
 
     # JWT via e-mail/senha
-    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     # Login
