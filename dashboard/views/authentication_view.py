@@ -1,4 +1,3 @@
-# dashboard/views/authentication_view.py
 import requests
 from django.contrib.auth import get_user_model
 from rest_framework.views import APIView
@@ -8,8 +7,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from ..serializers.user_serializer import UserSerializer
 from ..serializers.auth_serializer import SignupSerializer
 
-
 User = get_user_model()
+
 
 class GoogleLoginView(APIView):
     authentication_classes = [] 
@@ -30,7 +29,6 @@ class GoogleLoginView(APIView):
         if google_resp.status_code != 200:
             return Response({"error": "Token inválido"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        payload = google_resp.json()
         email = payload.get("email")
         name = payload.get("name")
         picture = payload.get("picture")
@@ -39,27 +37,35 @@ class GoogleLoginView(APIView):
         if not email:
             return Response({"error": "E-mail não encontrado no token"}, status=status.HTTP_400_BAD_REQUEST)
 
-       
-        user, created = User.objects.get_or_create(
-            google_id=google_id,
-            defaults={
-                "username": email,  
-                "email": email,
-                "first_name": name or "",
-                "profile_picture": picture,
-            }
-        )
+        # Verifica se já existe usuário com esse e-mail
+        user = User.objects.filter(email=email).first()
 
-        updated = False
-        if not user.first_name and name:
-            user.first_name = name
-            updated = True
-        if (not user.profile_picture or user.profile_picture != picture) and picture: # type: ignore
-            user.profile_picture = picture # type: ignore
-            updated = True
-        if updated:
-            user.save()
+        if user:
+            # Caso já exista um usuário com este e-mail
+            if not user.google_id: # type: ignore
+                # Associa a conta Google ao usuário existente
+                user.google_id = google_id # type: ignore
+                if name and not user.first_name:
+                    user.first_name = name
+                if picture:
+                    user.profile_picture = picture # type: ignore
+                user.save()
+            elif user.google_id != google_id: # type: ignore
+                return Response(
+                    {"error": "Este e-mail já está vinculado a outra conta Google."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            # Se não existe, cria novo usuário
+            user = User.objects.create(
+                username=email,
+                email=email,
+                first_name=name or "",
+                google_id=google_id,
+                profile_picture=picture,
+            )
 
+        # Gera os tokens JWT
         refresh = RefreshToken.for_user(user)
 
         return Response(
@@ -82,10 +88,22 @@ class SignupView(APIView):
             user = serializer.save()
             return Response(
                 {
-                    "id": user.id, # type: ignore
-                    "username": user.username, # type: ignore
-                    "email": user.email, # type: ignore
+                    "id": user.id,  # type: ignore
+                    "username": user.username,  # type: ignore
+                    "email": user.email,  # type: ignore
                 },
                 status=status.HTTP_201_CREATED,
             )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # Captura mensagens personalizadas
+        errors = serializer.errors
+        if "email" in errors:
+            return Response({"error": errors["email"][0]}, status=status.HTTP_400_BAD_REQUEST) # type: ignore
+        if "username" in errors:
+            return Response({"error": errors["username"][0]}, status=status.HTTP_400_BAD_REQUEST) # type: ignore
+        if "password" in errors:
+            return Response({"error": errors["password"][0]}, status=status.HTTP_400_BAD_REQUEST) # type: ignore
+
+        # fallback para erros inesperados
+        return Response({"error": "Erro no cadastro."}, status=status.HTTP_400_BAD_REQUEST)
+

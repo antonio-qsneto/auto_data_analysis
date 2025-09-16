@@ -11,7 +11,26 @@ class SignupSerializer(serializers.ModelSerializer):
         model = User
         fields = ["email", "username", "password", "password2"]
 
+    def validate_email(self, value):
+        """
+        Garante que o e-mail seja único.
+        """
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Este e-mail já está em uso.")
+        return value
+
+    def validate_username(self, value):
+        """
+        Garante que o username seja único.
+        """
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("Este username já está em uso.")
+        return value
+
     def validate(self, attrs):
+        """
+        Valida se as senhas coincidem.
+        """
         if attrs["password"] != attrs["password2"]:
             raise serializers.ValidationError({"password": "As senhas não coincidem."})
         return attrs

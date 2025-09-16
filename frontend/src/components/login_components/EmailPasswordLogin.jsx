@@ -18,9 +18,13 @@ export default function EmailPasswordLogin({ onLoginSuccess }) {
       await loadUser();
 
       onLoginSuccess && onLoginSuccess();
-    } catch {
-      setError("E-mail ou senha inválidos");
-    }
+    } catch (err) {
+        if (err.response?.data?.error) {
+          setError(err.response.data.error);
+        } else {
+          setError("E-mail ou senha inválidos");
+        }
+      }
   };
 
   return (

@@ -1,34 +1,23 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useContext } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import XLogo from "../../assets/icons/X.svg";
 import csv from "../../assets/icons/fluent_document-table-16-regular.svg";
 import database from "../../assets/icons/database.svg";
 import folder from "../../assets/icons/folder.svg";
-
-const navItems = [
-  { key: "csv", icon: <img src={csv} alt="CSV Icon" className="w-8 h-8" />, label: "CSV", aria: "CSV" },
-  { key: "database", icon: <img src={database} alt="Database Icon" className="w-8 h-8" />, label: "Database", aria: "Database" },
-];
+import { UserContext } from "../../context/UserContext";
+import { clearTokens } from "../../utils/auth";
 
 export default function SideBar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [user, setUser] = useState(null);
+  const { user, loadUser } = useContext(UserContext);
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/user/me/", {
-      method: "GET",
-      credentials: "include",
-    })
-      .then(async (res) => {
-        if (!res.ok) throw new Error("not-authenticated");
-        return res.json();
-      })
-      .then((data) => setUser(data))
-      .catch(() => setUser(null));
-  }, []);
+    // Atualiza o usuário quando o componente monta
+    loadUser().catch(() => {}); 
+  }, [loadUser]);
 
   useEffect(() => {
     const handleClick = (e) => {
@@ -37,6 +26,12 @@ export default function SideBar() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  const handleLogout = () => {
+    clearTokens();       // Remove access & refresh tokens
+    loadUser();           // Atualiza contexto
+    navigate("/login");   // Redireciona para login
+  };
 
   return (
     <nav
@@ -52,21 +47,22 @@ export default function SideBar() {
 
       <ul className="flex flex-col gap-4 mb-8">
         <button
-              className={`w-12 h-12 flex items-center justify-center rounded-full transition cursor-pointer
-                ${location.pathname === "/upload" ? "bg-cyan-600" : "hover:bg-cyan-600"}`}
-              aria-label="CSV"
-              onClick={() => navigate("/upload")}
-            >
-              <img src={csv} alt="CSV Icon" className="w-8 h-8" />
-            </button>
-            <button
-              className={`w-12 h-12 flex items-center justify-center rounded-full transition cursor-pointer
-                ${location.pathname === "/database" ? "bg-cyan-600" : "hover:bg-cyan-600"}`}
-              aria-label="Database"
-              onClick={() => navigate("/database")}
-            >
-              <img src={database} alt="Database Icon" className="w-8 h-8" />
-            </button>
+          className={`w-12 h-12 flex items-center justify-center rounded-full transition cursor-pointer
+            ${location.pathname === "/upload" ? "bg-cyan-600" : "hover:bg-cyan-600"}`}
+          aria-label="CSV"
+          onClick={() => navigate("/upload")}
+        >
+          <img src={csv} alt="CSV Icon" className="w-8 h-8" />
+        </button>
+
+        <button
+          className={`w-12 h-12 flex items-center justify-center rounded-full transition cursor-pointer
+            ${location.pathname === "/database" ? "bg-cyan-600" : "hover:bg-cyan-600"}`}
+          aria-label="Database"
+          onClick={() => navigate("/database")}
+        >
+          <img src={database} alt="Database Icon" className="w-8 h-8" />
+        </button>
       </ul>
 
       <div className="flex-1" />
@@ -99,14 +95,14 @@ export default function SideBar() {
             {open && (
               <div className="absolute left-14 bottom-0 w-40 bg-white text-gray-800 rounded-xl shadow-lg overflow-hidden">
                 <div className="px-4 py-2 text-sm font-medium border-b border-gray-200">
-                  {user.name || user.username}
+                  {user.username}
                 </div>
-                <a
-                  href="http://localhost:8000/accounts/logout/"
-                  className="block px-4 py-2 text-sm hover:bg-gray-100"
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                 >
                   Sign out
-                </a>
+                </button>
               </div>
             )}
           </div>

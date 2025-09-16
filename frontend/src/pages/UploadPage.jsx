@@ -44,6 +44,7 @@ export default function UploadPage({
     handleFileChange(e);
   };
 
+  
   const handleFileUpload = async () => {
     if (!selectedFile) {
       setError && setError("Please select a CSV file to upload.");
@@ -55,15 +56,13 @@ export default function UploadPage({
     formData.append("file", selectedFile);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/gerar_chart/", {
-        method: "POST",
-        body: formData,
+      const response = await axiosInstance.post("/gerar_chart/", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
-      if (!response.ok) throw new Error("Failed to generate charts");
-      const data = await response.json();
-      setCharts && setCharts(data.charts);
-      setBusinessSummary && setBusinessSummary(data.business_summary || "");
-      setInsightsText && setInsightsText(data.insights_text || "")
+
+      setCharts && setCharts(response.data.charts);
+      setBusinessSummary && setBusinessSummary(response.data.business_summary || "");
+      setInsightsText && setInsightsText(response.data.insights_text || "");
       navigate("/dashboard");
     } catch (err) {
       setError && setError("Error uploading file or generating charts.");
@@ -73,6 +72,7 @@ export default function UploadPage({
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
+
 
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";

@@ -1,34 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import screenFake from "../../assets/images/screen_fake.png";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "../../context/UserContext";
 
 export default function HeroSection() {
   const navigate = useNavigate();
   const [toast, setToast] = useState(false);
+  const { user } = useContext(UserContext);
 
-  const handleTryItClick = async () => {
-    try {
-      const res = await fetch("http://localhost:8000/api/user/me/", {
-        method: "GET",
-        credentials: "include",
-      });
-
-      if (res.ok) {
-        // User is logged in → navigate to /upload
-        navigate("/upload");
-      } else {
-        // User not logged in → show toast, then redirect
-        setToast(true);
-        setTimeout(() => {
-          window.location.href = "http://localhost:8000/accounts/login/";
-        }, 1500); // 1.5 seconds delay
-      }
-    } catch (err) {
-      // Network or other error → show toast, then redirect
+  const handleTryItClick = () => {
+    if (user) {
+      // Usuário logado → vai para upload
+      navigate("/upload");
+    } else {
+      // Usuário não logado → mostra aviso e manda para login
       setToast(true);
-      setTimeout(() => {
-        window.location.href = "http://localhost:8000/accounts/login/";
-      }, 1500);
+      setTimeout(() => setToast(false), 3000);
+      navigate("/login");
     }
   };
 
@@ -78,7 +66,7 @@ export default function HeroSection() {
         </div>
       )}
 
-      {/* Tailwind animation (add to your global CSS if needed) */}
+      {/* Tailwind animation */}
       <style>{`
         @keyframes slide-up {
           0% { transform: translateY(20px); opacity: 0; }
