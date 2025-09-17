@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SideBar from "../components/layout/SideBar";
 import loadingGif from "../assets/images/loading.gif";
+import axiosInstance from "../utils/axiosInstance";
 
 export default function UploadPage({
   setCharts,
@@ -44,7 +45,6 @@ export default function UploadPage({
     handleFileChange(e);
   };
 
-  
   const handleFileUpload = async () => {
     if (!selectedFile) {
       setError && setError("Please select a CSV file to upload.");
@@ -65,6 +65,7 @@ export default function UploadPage({
       setInsightsText && setInsightsText(response.data.insights_text || "");
       navigate("/dashboard");
     } catch (err) {
+      //console.log("Erro: ", err);
       setError && setError("Error uploading file or generating charts.");
     } finally {
       setLoading && setLoading(false);
@@ -72,6 +73,8 @@ export default function UploadPage({
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
+
+  
 
 
   const toggleTheme = () => {

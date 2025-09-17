@@ -94,7 +94,7 @@ Your task is to generate Python code that:
    chart_data = [{{...}}, ...]
 10. Do not include comments, explanations, or markdown.
 11. Do not wrap code in ``` tags.
-12. generate at least 6 charts.
+12. generate at least 6 charts. [important!]
 13. only python code as answer (no string literal) - important!
 """
 

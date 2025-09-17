@@ -71,15 +71,24 @@ def process_data(df):
     insight_prompt = generate_prompt_insight(insight)
     if(insight_prompt):
         print("prompt insight gerado")
+        print(insight_prompt)
+        print(f"Tamanho do prompt: {len(insight_prompt)} caracteres")
     else:
         print(f"Erro no {insight_prompt}")
 
-    insight_raw = call_gemini(insight_prompt)
+    try:
+        insight_raw = call_gemini(insight_prompt)
+    except Exception as e:
+        print(f"[DEBUG] Erro ao chamar Gemini: {e}")
+        insight_raw = ""
+
+
+    print("insight_raw: ", insight_raw)
     if(insight_raw):
-        print("call_openRouter gerado")
+        print("call_gemini gerado para insights")
     else:
         print(f"Erro no {insight_raw}")
-
+        insight_raw = "" # Garante que insight_raw seja uma string
 
     print(f"INSIGHT => {insight_raw}")
 
@@ -93,7 +102,12 @@ def process_data(df):
     if(codigo_raw):
         print("Codigo gerado!")
 
-    codigo = extrair_codigo_puro(codigo_raw)
+    codigo = extrair_codigo_puro(codigo_raw or "")
+
+    print("------------------------ CODIGO ------------------------")
+    print(codigo)
+    print("--------------------------------------------------------")
+
     result = executar_codigo_ia(codigo, df)
     if(result):
         print("Codigo executado!")

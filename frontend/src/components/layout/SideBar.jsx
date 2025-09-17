@@ -1,11 +1,12 @@
-import React, { useEffect, useState, useRef, useContext } from "react";
+// frontend/src/components/layout/SideBar.jsx
+import React, { useContext, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { UserContext } from "../../context/UserContext";
+
 import XLogo from "../../assets/icons/X.svg";
 import csv from "../../assets/icons/fluent_document-table-16-regular.svg";
 import database from "../../assets/icons/database.svg";
 import folder from "../../assets/icons/folder.svg";
-import { UserContext } from "../../context/UserContext";
-import { clearTokens } from "../../utils/auth";
 
 export default function SideBar() {
   const navigate = useNavigate();
@@ -14,12 +15,8 @@ export default function SideBar() {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
-  useEffect(() => {
-    // Atualiza o usuário quando o componente monta
-    loadUser().catch(() => {}); 
-  }, [loadUser]);
-
-  useEffect(() => {
+  // Fecha dropdown quando clica fora
+  React.useEffect(() => {
     const handleClick = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
     };
@@ -27,10 +24,12 @@ export default function SideBar() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  // Função de logout
   const handleLogout = () => {
-    clearTokens();       // Remove access & refresh tokens
-    loadUser();           // Atualiza contexto
-    navigate("/login");   // Redireciona para login
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    navigate("/login");
+    loadUser(); // atualiza contexto
   };
 
   return (
@@ -40,11 +39,16 @@ export default function SideBar() {
     >
       {/* Logo */}
       <div className="mt-8 mb-10 flex items-center justify-center">
-        <button onClick={() => navigate("/")} aria-label="Go to Home" className="focus:outline-none">
+        <button
+          onClick={() => navigate("/")}
+          aria-label="Go to Home"
+          className="focus:outline-none"
+        >
           <img src={XLogo} alt="Logo" className="w-8 h-8 cursor-pointer" />
         </button>
       </div>
 
+      {/* Navegação */}
       <ul className="flex flex-col gap-4 mb-8">
         <button
           className={`w-12 h-12 flex items-center justify-center rounded-full transition cursor-pointer
@@ -67,6 +71,7 @@ export default function SideBar() {
 
       <div className="flex-1" />
 
+      {/* Usuário logado */}
       {user && (
         <div className="flex flex-col items-center gap-4 mb-6" ref={ref}>
           <button
@@ -86,7 +91,11 @@ export default function SideBar() {
               tabIndex={0}
             >
               {user.picture ? (
-                <img src={user.picture} alt="User avatar" className="w-10 h-10 rounded-full object-cover" />
+                <img
+                  src={user.picture}
+                  alt="User avatar"
+                  className="w-10 h-10 rounded-full object-cover"
+                />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-gray-200" />
               )}
@@ -95,11 +104,11 @@ export default function SideBar() {
             {open && (
               <div className="absolute left-14 bottom-0 w-40 bg-white text-gray-800 rounded-xl shadow-lg overflow-hidden">
                 <div className="px-4 py-2 text-sm font-medium border-b border-gray-200">
-                  {user.username}
+                  {user.first_name || user.username}
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                  className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                 >
                   Sign out
                 </button>

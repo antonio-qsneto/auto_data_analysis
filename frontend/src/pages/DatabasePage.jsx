@@ -1,8 +1,9 @@
-// DatabasePage.jsx (updated)
+// frontend/src/pages/DatabasePage.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SideBar from "../components/layout/SideBar";
 import loadingGif from "../assets/images/loading.gif";
+import axiosInstance from "../utils/axiosInstance";
 
 export default function DatabasePage({
   setCharts,
@@ -24,32 +25,30 @@ export default function DatabasePage({
   const [selectedTable, setSelectedTable] = useState("");
   const navigate = useNavigate();
 
+  // Conectar ao banco e listar tabelas
   const handleConnect = async () => {
     if (!dbHost || !dbPort || !dbUser || !dbPassword || !dbName) {
       setError && setError("Please fill in all database credentials.");
       return;
     }
+
     setLoading && setLoading(true);
     setError && setError("");
-    setTables([]); 
+    setTables([]);
+
     try {
-      const response = await fetch("http://127.0.0.1:8000/connect_database/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          host: dbHost,
-          port: dbPort,
-          user: dbUser,
-          password: dbPassword,
-          database: dbName,
-          db_type: dbType,
-        }),
+      const response = await axiosInstance.post("/connect_database/", {
+        host: dbHost,
+        port: dbPort,
+        user: dbUser,
+        password: dbPassword,
+        database: dbName,
+        db_type: dbType,
       });
-      if (!response.ok) throw new Error("Failed to connect to database");
-      const data = await response.json();
-      if (data.tables && data.tables.length > 0) {
-        setTables(data.tables);
-        setSelectedTable(data.tables[0]);
+
+      if (response.data.tables && response.data.tables.length > 0) {
+        setTables(response.data.tables);
+        setSelectedTable(response.data.tables[0]);
       } else {
         throw new Error("No tables found");
       }
@@ -60,31 +59,29 @@ export default function DatabasePage({
     }
   };
 
+  // Buscar dados da tabela selecionada
   const handleFetchData = async () => {
     if (!selectedTable) {
       setError && setError("Please select a table.");
       return;
     }
+
     setLoading && setLoading(true);
     setError && setError("");
+
     try {
-      const response = await fetch("http://127.0.0.1:8000/fetch_table_data/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          host: dbHost,
-          port: dbPort,
-          user: dbUser,
-          password: dbPassword,
-          database: dbName,
-          db_type: dbType,
-          table: selectedTable,
-        }),
+      const response = await axiosInstance.post("/fetch_table_data/", {
+        host: dbHost,
+        port: dbPort,
+        user: dbUser,
+        password: dbPassword,
+        database: dbName,
+        db_type: dbType,
+        table: selectedTable,
       });
-      if (!response.ok) throw new Error("Failed to fetch table data");
-      const data = await response.json();
-      setCharts && setCharts(data.charts);
-      setBusinessSummary && setBusinessSummary(data.business_summary || "");
+
+      setCharts && setCharts(response.data.charts);
+      setBusinessSummary && setBusinessSummary(response.data.business_summary || "");
       navigate("/dashboard");
     } catch (err) {
       setError && setError("Error fetching table data: " + err.message);
@@ -93,6 +90,7 @@ export default function DatabasePage({
     }
   };
 
+  // Tema claro/escuro
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
     setTheme(newTheme);
@@ -109,7 +107,7 @@ export default function DatabasePage({
             : "bg-gradient-to-br from-orange-100 via-white to-orange-200 text-gray-900"}
         `}
       >
-        {/* Theme Switch Button */}
+        {/* Botão de alternar tema */}
         <button
           onClick={toggleTheme}
           className={`absolute top-6 right-10 flex items-center gap-2 px-4 py-2 rounded-full font-semibold shadow-lg transition-all duration-200
@@ -129,6 +127,7 @@ export default function DatabasePage({
           <span className="hidden sm:inline">{theme === "dark" ? "Dark" : "Light"} Mode</span>
         </button>
 
+        {/* Card de conexão */}
         <div className="relative w-full max-w-xl mx-auto mt-24">
           <div className="border-4 border-dashed border-gray-300 bg-white rounded-2xl shadow-xl flex flex-col items-center justify-center py-12 px-8 transition-all duration-200">
             <h2 className="text-2xl font-bold mb-6 text-blue-700">Connect to your Database</h2>
@@ -136,52 +135,21 @@ export default function DatabasePage({
               className="w-full flex flex-col gap-4"
               onSubmit={e => { e.preventDefault(); tables.length > 0 ? handleFetchData() : handleConnect(); }}
             >
-              <select
-                value={dbType}
-                onChange={e => setDbType(e.target.value)}
-                className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none"
-              >
+              {/* Campos do formulário */}
+              <select value={dbType} onChange={e => setDbType(e.target.value)} className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none">
                 <option value="postgresql">PostgreSQL</option>
                 <option value="mysql">MySQL</option>
                 <option value="mariadb">MariaDB</option>
                 <option value="sqlserver">SQL Server</option>
               </select>
-              <input
-                type="text"
-                placeholder="Host"
-                value={dbHost}
-                onChange={e => setDbHost(e.target.value)}
-                className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none"
-              />
-              <input
-                type="text"
-                placeholder="Port"
-                value={dbPort}
-                onChange={e => setDbPort(e.target.value)}
-                className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none"
-              />
-              <input
-                type="text"
-                placeholder="User"
-                value={dbUser}
-                onChange={e => setDbUser(e.target.value)}
-                className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none"
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                value={dbPassword}
-                onChange={e => setDbPassword(e.target.value)}
-                className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none"
-              />
-              <input
-                type="text"
-                placeholder="Database Name"
-                value={dbName}
-                onChange={e => setDbName(e.target.value)}
-                className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none"
-              />
 
+              <input type="text" placeholder="Host" value={dbHost} onChange={e => setDbHost(e.target.value)} className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none" />
+              <input type="text" placeholder="Port" value={dbPort} onChange={e => setDbPort(e.target.value)} className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none" />
+              <input type="text" placeholder="User" value={dbUser} onChange={e => setDbUser(e.target.value)} className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none" />
+              <input type="password" placeholder="Password" value={dbPassword} onChange={e => setDbPassword(e.target.value)} className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none" />
+              <input type="text" placeholder="Database Name" value={dbName} onChange={e => setDbName(e.target.value)} className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none" />
+
+              {/* Seleção de tabelas */}
               {tables.length > 0 && (
                 <select
                   value={selectedTable}
@@ -190,13 +158,12 @@ export default function DatabasePage({
                 >
                   <option value="">Select a table</option>
                   {tables.map((table) => (
-                    <option key={table} value={table}>
-                      {table}
-                    </option>
+                    <option key={table} value={table}>{table}</option>
                   ))}
                 </select>
               )}
 
+              {/* Botão principal */}
               <button
                 type="submit"
                 disabled={loading}
@@ -219,6 +186,7 @@ export default function DatabasePage({
           </div>
         </div>
 
+        {/* Exibe erro */}
         {error && (
           <div className={`mt-8 text-center font-semibold text-lg transition-colors duration-300
             ${theme === "dark" ? "text-red-400" : "text-red-500"}
