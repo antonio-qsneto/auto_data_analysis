@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState, useContext } from "react";
 import BrandLogo from "../../assets/images/Xclarty_logo.svg";
 import { useNavigate } from "react-router-dom";
-import { getAccessToken, clearTokens } from "../../utils/auth";
+import { clearTokens } from "../../utils/auth";
 import { UserContext } from "../../context/UserContext";
 
 export default function Header() {
   const navigate = useNavigate();
-  const { user, setUser, loadUser } = useContext(UserContext);
+  const { user, setUser } = useContext(UserContext);
   const [open, setOpen] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const ref = useRef(null);
@@ -61,11 +61,9 @@ export default function Header() {
               </button>
             </>
           ) : (
-            <div className="relative">
-              <button
-                onClick={() => setOpen((v) => !v)}
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer"
-              >
+            <div className="relative flex items-center gap-3">
+              {/* Avatar + Nome + Créditos */}
+              <div className="flex items-center gap-2">
                 {user.picture && imageLoaded ? (
                   <img
                     src={user.picture}
@@ -76,7 +74,25 @@ export default function Header() {
                 ) : (
                   <div className="h-6 w-6 rounded-full bg-gray-200" />
                 )}
-                <span>Hello, {user.name || user.username}</span>
+
+                <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  Hello, {user.name || user.username}
+                  <span className="flex items-center gap-1 text-yellow-600 font-semibold">
+                    <img
+                      src="/src/assets/icons/coin.svg"
+                      alt="Credits"
+                      className="w-4 h-4"
+                    />
+                    {user.quota ?? 0}
+                  </span>
+                </span>
+              </div>
+
+              {/* Botão do Dropdown */}
+              <button
+                onClick={() => setOpen((v) => !v)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className={`h-4 w-4 transition ${open ? "rotate-180" : ""}`}
@@ -91,8 +107,9 @@ export default function Header() {
                 </svg>
               </button>
 
+              {/* Dropdown */}
               {open && (
-                <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50">
+                <div className="absolute right-0 top-10 w-36 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50">
                   <button
                     onClick={() => navigate("/reports")}
                     className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full"

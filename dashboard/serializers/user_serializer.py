@@ -8,7 +8,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "username", "email", "first_name", "picture"]
+        fields = ["id", "username", "email", "first_name", "picture", "quota"]
 
     def get_picture(self, obj):
         request = self.context.get("request")

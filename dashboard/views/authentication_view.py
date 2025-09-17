@@ -41,9 +41,7 @@ class GoogleLoginView(APIView):
         user = User.objects.filter(email=email).first()
 
         if user:
-            # Caso já exista um usuário com este e-mail
             if not user.google_id: # type: ignore
-                # Associa a conta Google ao usuário existente
                 user.google_id = google_id # type: ignore
                 if name and not user.first_name:
                     user.first_name = name

@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import axiosInstance from "../../utils/axiosInstance";
+import { getAccessToken } from "../../utils/auth";
 import ApexCharts from "apexcharts";
 import jsPDF from "jspdf";
 
@@ -559,39 +561,24 @@ export default function ExportReportDetailed({
 
       let response;
       try {
-        response = await fetch("/api/reports/upload/", {
-          method: "POST",
-          credentials: "include", 
-          headers: {
-            'X-CSRFToken': csrftoken, 
-          },
-          body: formData,
-        });
-      } catch (networkErr) {
-        console.error("Network error during upload:", networkErr);
-        alert("Network error during upload. See console.");
+          const response = await axiosInstance.post("/reports/upload/", formData, {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          });
+
+          console.log("Report uploaded:", response.data);
+          alert("Export successful!");
+        } catch (err) {
+          console.error("Upload failed:", err.response?.data || err.message);
+          alert("Export failed: " + (err.response?.data?.error || err.message));
+        }
+      } catch (err) {
+        console.error("Export failed:", err);
+        alert("Export failed: " + err.message);
+      } finally {
         setBusy(false);
-        return;
       }
-
-      if (!response.ok) {
-        const text = await response.text().catch(() => null);
-        console.error("Upload failed:", response.status, text);
-        alert(`Upload failed: ${response.status} - ${text || "No server message"}`);
-        setBusy(false);
-        return;
-      }
-
-      const data = await response.json();
-      console.log("Report uploaded:", data);
-      alert("Report saved to cloud!");
-
-    } catch (err) {
-      console.error("Export failed:", err);
-      alert("Failed to export PDF.");
-    } finally {
-      setBusy(false);
-    }
   };
 
   return (

@@ -19,10 +19,7 @@ def handle_csv(request):
         df["index"] = df.index
 
         data = process_data(df)
-        return JsonResponse(data)
+        return data, 200
 
     except Exception as e:
-        return JsonResponse({
-            "error": str(e),
-            "traceback": traceback.format_exc()
-        }, status=500)
+        return {"error": str(e), "traceback": traceback.format_exc()}, 500

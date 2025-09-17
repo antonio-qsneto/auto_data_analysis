@@ -28,7 +28,7 @@ class CustomUser(AbstractUser):
     google_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
     profile_picture = models.URLField(max_length=500, null=True, blank=True)
     email = models.EmailField(unique=True)
-
+    quota = models.PositiveIntegerField(default=10)
 
 class Report(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='reports')

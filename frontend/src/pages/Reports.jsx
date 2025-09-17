@@ -1,8 +1,9 @@
+// frontend/src/pages/Reports.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import SideBar from "../components/layout/SideBar";
-import getCookie from "../utils/helper";
 import pdfDark from "../assets/icons/pdf_dark.svg";
 import pdfWhite from "../assets/icons/pdf_white.svg";
+import axiosInstance from "../utils/axiosInstance";
 
 export default function Report() {
   const [reports, setReports] = useState([]);
@@ -14,23 +15,21 @@ export default function Report() {
 
   useEffect(() => {
     fetchReports();
-    document.body.className = theme; // set initial body class
+    document.body.className = theme;
   }, []);
 
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/reports/", { credentials: "include" });
-      if (!res.ok) throw new Error(`Failed to fetch reports: ${res.status}`);
-      const data = await res.json();
-      const normalized = data.map((r) => ({
+      const res = await axiosInstance.get("/reports/");
+      const normalized = res.data.map((r) => ({
         ...r,
         created_at: r.created_at ? new Date(r.created_at) : null,
       }));
       setReports(normalized);
     } catch (err) {
       console.error(err);
-      setError(err.message || "Unknown error");
+      setError(err.response?.data?.error || err.message || "Unknown error");
     } finally {
       setLoading(false);
     }
@@ -39,22 +38,10 @@ export default function Report() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this report?")) return;
     try {
-      const csrfToken = getCookie("csrftoken");
-      const res = await fetch(`/api/reports/${id}/delete/`, {
-        method: "DELETE",
-        headers: { "X-CSRFToken": csrfToken, "Content-Type": "application/json" },
-        credentials: "include",
-      });
-      if (res.status === 204) {
-        setReports((prev) => prev.filter((r) => r.id !== id));
-        return;
-      }
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to delete report");
-      }
+      await axiosInstance.delete(`/reports/${id}/delete/`);
+      setReports((prev) => prev.filter((r) => r.id !== id));
     } catch (err) {
-      alert("Error deleting report: " + err.message);
+      alert("Error deleting report: " + (err.response?.data?.error || err.message));
     }
   };
 
@@ -81,36 +68,19 @@ export default function Report() {
       <SideBar />
 
       <div className="flex flex-col items-center justify-start w-full px-6 py-12 relative">
-        {/* Theme toggle button */}
         <button
           onClick={toggleTheme}
           className={`absolute top-6 right-10 flex items-center gap-2 px-4 py-2 rounded-full font-semibold shadow-lg transition-all duration-200
             ${theme === "dark" ? "bg-gray-900 text-cyan-300 hover:bg-gray-800" : "bg-blue-600 text-white hover:bg-blue-700"}`}
           aria-label="Switch theme"
         >
-          {theme === "dark" ? (
-            <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="inline-block">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" />
-            </svg>
-          ) : (
-            <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="inline-block">
-              <circle cx="12" cy="12" r="5" />
-              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-            </svg>
-          )}
-          <span className="hidden sm:inline">{theme === "dark" ? "Dark" : "Light"} Mode</span>
+          {theme === "dark" ? "Dark Mode" : "Light Mode"}
         </button>
 
-        {/* Header */}
         <div className="max-w-7xl w-full mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              Your Reports
-            </h1>
-          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Your Reports</h1>
         </div>
 
-        {/* Main content */}
         <div className="w-full max-w-7xl">
           <div className={`rounded-2xl shadow-lg p-6 ${theme === "dark" ? "bg-white/6" : "bg-white/30"}`}>
             <div className="mb-4 flex items-center justify-between">
@@ -136,13 +106,11 @@ export default function Report() {
                         : "bg-white/40 hover:bg-white/50"} transition`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="flex-shrink-0 h-12 w-12 flex items-center justify-center">
-                        <img
-                            src={theme === "dark" ? pdfWhite : pdfDark}
-                            alt="PDF Icon"
-                            className="h-12 w-12"
-                        />
-                        </div>
+                      <img
+                        src={theme === "dark" ? pdfWhite : pdfDark}
+                        alt="PDF Icon"
+                        className="h-12 w-12"
+                      />
                       <div className="min-w-0">
                         <div className="text-sm font-medium truncate">{report.name}</div>
                         <div className={`text-xs mt-1 ${theme === "dark" ? "text-white/70" : "text-gray-700"}`}>
@@ -152,7 +120,7 @@ export default function Report() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <a href={`/api/reports/${report.id}/download/`} target="_blank" rel="noopener noreferrer"
+                      <a href={report.url} target="_blank" rel="noopener noreferrer"
                         className={`inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm transition
                           ${theme === "dark" ? "bg-white/10 hover:bg-white/20" : "bg-blue-500/70 hover:bg-blue-600 text-white"}`}>
                         <span>View</span>
