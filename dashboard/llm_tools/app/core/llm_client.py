@@ -2,23 +2,13 @@ import os
 import requests
 from openai import OpenAI # type: ignore
 from google import genai # type: ignore
-from google.genai import types # type: ignore
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
 def call_openAI(prompt: str) -> str | None:
-    """
-    Chama o modelo GPT-5 Nano usando o SDK oficial do OpenAI.
-    Utiliza a chave de API armazenada na variável de ambiente OPENAI_API_KEY.
 
-    Args:
-        prompt (str): O prompt fornecido pelo usuário para o modelo.
-
-    Retorna:
-        str | None: O conteúdo da resposta do modelo, ou None se não houver conteúdo.
-    """
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError("Variável de ambiente OPENAI_API_KEY não encontrada.")
@@ -45,7 +35,8 @@ def call_openAI(prompt: str) -> str | None:
         raise RuntimeError(f"Erro na API do OpenAI: {str(e)}")
 
 
-def call_openRouter(prompt: str, api_key: str, type: str) -> str:
+def call_openRouter(prompt: str, model="insight") -> str:
+    api_key = os.getenv("OPENROUTER_API_KEY")
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
         "Content-Type": "application/json",
@@ -55,7 +46,7 @@ def call_openRouter(prompt: str, api_key: str, type: str) -> str:
         "chart": "moonshotai/kimi-k2:free",
         "insight": "deepseek/deepseek-chat-v3-0324:free",
     }
-    model = model_mapping.get(type)
+    model = model_mapping.get(model)
     if not model:
         raise ValueError(f"Tipo inválido especificado: {type}. Deve ser 'chart' ou 'insight'.")
 
@@ -92,8 +83,18 @@ def call_gemini(prompt: str) -> str:
             model="gemini-2.5-pro",
             contents=prompt,
         )
-        return response.text
+        return response.text # type: ignore
     except Exception as e:
         print(f"[Gemini] Erro na API: {e}")
         return ""  # Retorna string vazia para não quebrar o fluxo
 
+
+def switch_model(model: str):
+    if model == "gemini":
+        return call_gemini
+    elif model == "openai":
+        return call_openAI
+    elif model == "openrouter":
+        return call_openRouter
+    else:
+        raise ValueError(f"Modelo não suportado: {model}")

@@ -5,16 +5,21 @@ import matplotlib.pyplot as plt
 import re
 import numpy as np # type: ignore
 
-
-
 def extrair_codigo_puro(resposta_llm: str) -> str:
     if "```python" in resposta_llm:
         codigo = re.findall(r"```python(.*?)```", resposta_llm, re.DOTALL)
-        return codigo[0].strip() if codigo else resposta_llm.strip()
+        codigo_extraido = codigo[0].strip() if codigo else resposta_llm.strip()
     else:
         linhas = resposta_llm.strip().splitlines()
         linhas_filtradas = [linha for linha in linhas if not linha.strip().startswith("🔧")]
-        return "\n".join(linhas_filtradas).strip()
+        codigo_extraido = "\n".join(linhas_filtradas).strip()
+
+    # 🔹 Sanitize unwanted control markers like <ctrl63>, <ctrl...>, invisible chars, etc.
+    codigo_extraido = re.sub(r"<ctrl\d+>", "", codigo_extraido)   # remove <ctrlXX>
+    #codigo_extraido = re.sub(r"[\x00-\x1F\x7F]", "", codigo_extraido)  # remove ASCII control chars
+
+    return codigo_extraido.strip()
+
 
 def executar_codigo_ia(codigo: str, df: pd.DataFrame) -> dict:
     stdout = io.StringIO()
