@@ -53,6 +53,7 @@ atlassian-ide-plugin.xml
 # Python # 
 *.py[cod] 
 *$py.class 
+000*_initial.py
 
 # Distribution / packaging 
 .Python build/ 
@@ -295,3 +296,4 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+data_output.json

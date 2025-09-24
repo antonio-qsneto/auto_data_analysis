@@ -24,5 +24,12 @@ export default function GoogleLoginButton({ onLoginSuccess }) {
     }
   };
 
-  return <GoogleLogin onSuccess={handleSuccess} onError={() => console.error("Login Google falhou")} useOneTap />;
+  return (
+    <GoogleLogin
+      onSuccess={handleSuccess}
+      onError={() => console.error("Login Google falhou")}
+      ux_mode="popup"   // força popup em vez de redirect
+      auto_select={false}
+    />
+  );
 }
