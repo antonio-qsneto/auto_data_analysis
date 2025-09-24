@@ -65,5 +65,4 @@ def process_data(df, model_name="gemini"):
         "business_summary": business_summary,
         "charts": charts_serializable,
         "insights_text": insight_raw,
-        #"stdout": result.get("stdout", ""),
     }

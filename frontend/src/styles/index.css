@@ -27,7 +27,7 @@ body {
   text-align: center;
   font-size: 2rem;
   font-weight: bold;
-  color: var(--text); /* <-- Use the variable */
+  color: var(--text); 
   margin-bottom: 20px;
 }
 
@@ -117,6 +117,8 @@ body.light .upload-area span[role="button"] {
   color: #0396FF;
 }
 
+/* ------------------------ Charts area ------------------------------------ */
+
 /* Charts Grid */
 .charts-grid {
   display: grid;
@@ -152,7 +154,6 @@ body.light .upload-area span[role="button"] {
 .chart-card .chart-area {
   flex: 1 1 auto;
   min-height: 0;
-  /* Ensures chart doesn't overflow */
 }
 
 .chart-card .chart-options {
@@ -196,6 +197,27 @@ body.light .upload-area span[role="button"] {
   grid-column: 2 / span 2;
 }
 
+.apexcharts-boxPlot-whisker {
+  stroke: #b8e3e7 !important; /* lighter blue for dark theme */
+}
+.apexcharts-boxPlot-median {
+  stroke: #FFD3A5 !important; /* orange for median line */
+}
+body.light .apexcharts-boxPlot-whisker {
+  stroke: #222 !important;
+}
+body.light .apexcharts-boxPlot-median {
+  stroke: #FD6585 !important;
+}
+body.dark .apexcharts-boxPlot-whisker {
+  stroke: #e0e0e0 !important; /* light gray for whiskers */
+}
+body.dark .apexcharts-boxPlot-median {
+  stroke: #FFD3A5 !important; /* orange for median line */
+}
+
+/* --------------------------------- end chart area --------------------------------------------- */
+
 /* Loading & Error */
 .loading {
   text-align: center;
@@ -217,24 +239,7 @@ body.light {
   --border: #ccc;
 }
 
-.apexcharts-boxPlot-whisker {
-  stroke: #b8e3e7 !important; /* lighter blue for dark theme */
-}
-.apexcharts-boxPlot-median {
-  stroke: #FFD3A5 !important; /* orange for median line */
-}
-body.light .apexcharts-boxPlot-whisker {
-  stroke: #222 !important;
-}
-body.light .apexcharts-boxPlot-median {
-  stroke: #FD6585 !important;
-}
-body.dark .apexcharts-boxPlot-whisker {
-  stroke: #e0e0e0 !important; /* light gray for whiskers */
-}
-body.dark .apexcharts-boxPlot-median {
-  stroke: #FFD3A5 !important; /* orange for median line */
-}
+
 
 
 .insight-card h1 {

@@ -14,9 +14,7 @@ def extrair_codigo_puro(resposta_llm: str) -> str:
         linhas_filtradas = [linha for linha in linhas if not linha.strip().startswith("🔧")]
         codigo_extraido = "\n".join(linhas_filtradas).strip()
 
-    # 🔹 Sanitize unwanted control markers like <ctrl63>, <ctrl...>, invisible chars, etc.
     codigo_extraido = re.sub(r"<ctrl\d+>", "", codigo_extraido)   # remove <ctrlXX>
-    #codigo_extraido = re.sub(r"[\x00-\x1F\x7F]", "", codigo_extraido)  # remove ASCII control chars
 
     return codigo_extraido.strip()
 

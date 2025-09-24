@@ -4,7 +4,6 @@ import SideBar from "../components/layout/SideBar";
 import SparkBox from "../components/layout/SparkBox";
 import Footer from "../components/layout/Footer";
 import InsightCard from "../components/layout/InsightCard";
-import ExportReportApex from "../components/layout/ExportReportDetailed";
 
 
 function parseBusinessSummary(summary) {
@@ -63,7 +62,7 @@ export default function Dashboard({ charts, theme, setTheme, businessSummary, in
   return (
     <>
       <SideBar />
-      <div className="content-area" style={{ marginLeft: 72, maxWidth: 1200, marginInline: "auto", padding: 20 }}>
+      <div className="content-area" style={{ marginLeft: 72, maxWidth: 1500, marginInline: "auto", padding: 30 }}>
         <button
           onClick={toggleTheme}
           style={{
@@ -80,7 +79,7 @@ export default function Dashboard({ charts, theme, setTheme, businessSummary, in
             zIndex: 10
           }}
         >
-          Switch to {theme === "dark" ? "Light" : "Dark"} Theme
+          {theme === "dark" ? "Light" : "Dark"} Theme
         </button>
 
 
@@ -95,14 +94,7 @@ export default function Dashboard({ charts, theme, setTheme, businessSummary, in
           ))}
         </div>
 
-        <ExportReportApex
-          businessSummary={businessSummary}
-          insightsText={insightsText}
-          charts={charts}            // see expected shapes below
-          filename="apex_report.pdf"
-        />
-
-        {insightsText ? <InsightCard insightsText={insightsText} /> : null}
+        
         
 
         <div className="charts-grid">
@@ -110,6 +102,11 @@ export default function Dashboard({ charts, theme, setTheme, businessSummary, in
             <Charts key={idx} charts={[chart]} theme={theme} />
           ))}
         </div>
+
+        <div className="mb-50">
+          {insightsText ? <InsightCard insightsText={insightsText} /> : null}
+        </div>
+
       </div>
       <Footer />
     </>

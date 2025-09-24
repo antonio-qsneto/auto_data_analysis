@@ -73,7 +73,7 @@ export default function HowItWorks() {
       </span>
       {/* Heading */}
       <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 mb-12 text-center">
-        Dataset <span className="text-blue-600">&rarr;</span> Intelligence in 3 clicks
+        Dataset <span className="text-blue-600">&rarr;</span> Intelligence in 1 click
       </h2>
       {/* Features */}
       <div className="w-full max-w-5xl flex flex-wrap justify-center gap-8">

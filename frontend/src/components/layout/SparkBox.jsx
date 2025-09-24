@@ -1,4 +1,3 @@
-// frontend/src/components/SparkBox.jsx
 import React from "react";
 
 export default function SparkBox({ value, label, gradient }) {

@@ -7,6 +7,7 @@ import Reports from '../pages/Reports';
 import LoginPage from '../pages/Login';
 import SignUp from '../pages/SignUp';
 import PrivateRoute from './PrivateRoute';
+import ReportDetail from "../pages/ReportDetail";
 
 export default function AppRoutes(props) {
   return (
@@ -17,7 +18,9 @@ export default function AppRoutes(props) {
       <Route path="/upload" element={<PrivateRoute><UploadPage {...props} /></PrivateRoute>} />
       <Route path="/dashboard" element={<PrivateRoute><DashboardPage {...props} /></PrivateRoute>} />
       <Route path="/database" element={<PrivateRoute><DatabasePage {...props} /></PrivateRoute>} />
-      <Route path="/reports" element={<PrivateRoute><Reports {...props} /></PrivateRoute>} />
+      <Route path="/reports" element={<PrivateRoute><Reports {...props}/> </PrivateRoute>} />
+      <Route path="/reports/:id" element={<PrivateRoute><ReportDetail {...props}/> </PrivateRoute>} />
+
     </Routes>
   );
 }

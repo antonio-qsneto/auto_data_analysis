@@ -2,21 +2,9 @@ from django.urls import path
 from .views import chart_views
 from .views.authentication_view import GoogleLoginView, SignupView
 from .views import views_auth_status
+from .views.report_views import list_reports, get_report_detail
 from .views.custom_token_serializer import MyTokenObtainPairView
-
-
-
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
-
-from .views.view_report import (
-    delete_report,
-    download_report,
-    list_reports,
-    upload_report,
-)
+from rest_framework_simplejwt.views import TokenRefreshView
 
 
 urlpatterns = [
@@ -34,9 +22,8 @@ urlpatterns = [
     path("auth/signup/", SignupView.as_view(), name="signup"),   
     path("user/me/", views_auth_status.me, name="me"),
 
-    # Report management URLs
+    # Report
     path("reports/", list_reports, name="list_reports"),
-    path("reports/upload/", upload_report, name="upload_report"),
-    path("reports/<int:report_id>/delete/", delete_report, name="delete_report"),
-    path("reports/<int:report_id>/download/", download_report, name="download_report"),
+    path("reports/<int:pk>/", get_report_detail, name="report_detail"),
+
 ]
