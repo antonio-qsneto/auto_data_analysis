@@ -1,13 +1,12 @@
 // frontend/src/pages/ReportDetail.jsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axiosInstance";
 import SideBar from "../components/layout/SideBar";
 import SparkBox from "../components/layout/SparkBox";
 import Charts from "../components/charts/Charts";
 import Footer from "../components/layout/Footer";
-import InsightCardAutoHeight from "../components/layout/InsightCardAutoHeight";
-import { useState, useEffect } from "react";
+import {parseInsightsToCards, InsightTextCard} from './utils/utils';
 
 function parseBusinessSummary(summary) {
   if (!summary) return [];
@@ -16,30 +15,31 @@ function parseBusinessSummary(summary) {
   let match;
   while ((match = metricLineRegex.exec(summary)) !== null) {
     const label = match[1].trim();
-    const metrics = match[2].split('|').map(s => s.trim());
-    metrics.forEach(metric => {
-      let [key, value] = metric.split('=');
-      if (!value && metric.includes(':')) [key, value] = metric.split(':');
+    const metrics = match[2].split("|").map((s) => s.trim());
+    metrics.forEach((metric) => {
+      let [key, value] = metric.split("=");
+      if (!value && metric.includes(":")) [key, value] = metric.split(":");
       if (value) {
         cards.push({
           title: `${label} ${key.trim()}`,
-          value: value.trim()
+          value: value.trim(),
         });
       }
     });
   }
   if (cards.length === 0) {
-    summary.split('\n').forEach(line => {
+    summary.split("\n").forEach((line) => {
       if (line.trim()) {
         cards.push({
           title: line.slice(0, 20),
-          value: line
+          value: line,
         });
       }
     });
   }
   return cards;
 }
+
 
 export default function ReportDetail({ theme, setTheme }) {
   const { id } = useParams();
@@ -88,13 +88,15 @@ export default function ReportDetail({ theme, setTheme }) {
   }
 
   const cards = parseBusinessSummary(report.business_summary);
+  const insightsCards = parseInsightsToCards(report.insights_text);
+
   const gradients = [
     "linear-gradient(135deg, #ABDCFF 10%, #0396FF 100%)",
     "linear-gradient(135deg, #2AFADF 10%, #4C83FF 100%)",
     "linear-gradient(135deg, #FFD3A5 10%, #FD6585 100%)",
     "linear-gradient(135deg, #EE9AE5 10%, #5961F9 100%)",
     "linear-gradient(135deg, #B2FEFA 10%, #0ED2F7 100%)",
-    "linear-gradient(135deg, #F6D365 10%, #FDA085 100%)"
+    "linear-gradient(135deg, #F6D365 10%, #FDA085 100%)",
   ];
 
   return (
@@ -107,16 +109,18 @@ export default function ReportDetail({ theme, setTheme }) {
           maxWidth: 1500,
           marginInline: "auto",
           marginTop: 20,
-          paddingLeft: 92
+          paddingLeft: 92,
         }}
       >
         {/* Botão de alternar tema */}
         <button
           onClick={toggleTheme}
           className={`absolute top-6 right-10 flex items-center gap-2 px-4 py-2 rounded-full font-semibold shadow-lg transition-all duration-200
-            ${theme === "dark"
-              ? "bg-gray-900 text-cyan-300 hover:bg-gray-800"
-              : "bg-blue-600 text-white hover:bg-blue-700"}`}
+            ${
+              theme === "dark"
+                ? "bg-gray-900 text-cyan-300 hover:bg-gray-800"
+                : "bg-blue-600 text-white hover:bg-blue-700"
+            }`}
           aria-label="Switch theme"
         >
           {theme === "dark" ? (
@@ -150,38 +154,47 @@ export default function ReportDetail({ theme, setTheme }) {
           </span>
         </button>
 
-
-        {/* Botão de voltar e título da página */}
+        {/* Título */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-6">
           <h2 className="text-2xl font-bold">
-            Relatório {report.id} - {new Date(report.created_at).toLocaleString()}
+            Relatório {report.id} -{" "}
+            {new Date(report.created_at).toLocaleString()}
           </h2>
         </div>
 
         {/* SparkBoxes */}
         <div className="sparkboxes w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
           {cards.map((card, idx) => (
-            <SparkBox key={idx} value={card.value} label={card.title} gradient={gradients[idx % gradients.length]} />
+            <SparkBox
+              key={idx}
+              value={card.value}
+              label={card.title}
+              gradient={gradients[idx % gradients.length]}
+            />
           ))}
         </div>
 
-       
-
-    
+        {/* Charts */}
         <div className="charts-grid w-full grid gap-6 mt-6 mb-10">
-          {report.charts?.map((chart, idx) => (
-            <Charts key={idx} charts={[chart]} theme={theme} />
-          ))}
+          <Charts charts={report.charts || []} theme={theme} />
         </div>
 
-        <div className="mb-50">
-          {report.insights_text && (
-          <InsightCardAutoHeight insightsText={report.insights_text} />
+        {/* Insights */}
+        {insightsCards.length > 0 && (
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            {insightsCards.map((card, idx) => (
+              <InsightTextCard
+                key={idx}
+                title={card.title}
+                blocks={card.blocks}
+                theme={theme}
+              />
+
+            ))}
+          </div>
         )}
-        </div>
-
-         
-
+        
+        
       </div>
       <Footer />
     </>

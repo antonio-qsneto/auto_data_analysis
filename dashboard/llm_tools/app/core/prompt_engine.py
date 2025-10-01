@@ -43,7 +43,7 @@ Your task is to generate Python code that:
    - **Histogram** (represented as 'bar'): For numeric distributions.
    - **Correlation Heatmap** (type: 'heatmap'): For numeric correlations.
    - **Box & Whisker** (type: 'boxPlot'): For numeric spread by category.
-   - Optional extra charts if possible: 'radar', 'bubble', 'scatter', 'candlestick (if candlestick, use Ticker column name as title)'.
+   - Optional extra charts if possible: 'radar', 'bubble', 'scatter', 'candlestick (if candlestick, use Ticker column name as title)'. (if candlestick, put the candlestick first in the list)
 3. Clean data before plotting:
    - Convert date columns: df[col] = pd.to_datetime(df[col], errors='coerce')
    - Convert numeric columns: df[col] = pd.to_numeric(df[col], errors='coerce')
@@ -94,8 +94,11 @@ Your task is to generate Python code that:
    chart_data = [{{...}}, ...]
 10. Do not include comments, explanations, or markdown.
 11. Do not wrap code in ``` tags.
-12. generate at least 6 charts. [important!]
+12. generate at least 8 charts. [important!]
 13. only python code as answer (no string literal) - important!
+14. generate Mixed Chart or a Combo Chart to area charts.
+15. Display charts in a 3-column grid. Wide charts ('area', 'line', 'candlestick') span 2 columns and must be placed beside normal charts. 
+If a wide chart starts in one column, the next wide chart should be aligned to another column in the row above.
 """
 
     #print(f"summary ----->: {summary}")
@@ -147,15 +150,18 @@ def generate_prompt_insight(profile_report: Optional[Union[dict, str, Tuple[str,
 You are an experienced data scientist. Read the information below (which comes from a ydata-profiling / ProfileReport summary) and produce a clear, concise, and actionable analysis.
 Use non-technical language that a layperson can understand. The idea is that a layperson can understand.
 Instructions:
-- The output is in format markdown only! -important!
-- Start with 3–6 key takeaways (one-sentence bullets).
+- The output is in json format only! -important!
+- Start with 3-6 key takeaways (one-sentence bullets).
 - Call out data-quality issues (missingness, duplicates, memory/size concerns) and which columns are affected.
 - Highlight important distributions and central-tendency points (means/medians/std) and mention any obvious outliers.
 - Report notable correlations or multicollinearity concerns and name the variable pairs.
 - Give 3 concrete next steps (e.g., cleaning actions, features to engineer, checks to run) prioritized by impact.
 - Keep the whole output short and scannable (use bullets and short paragraphs). Use plain language—avoid excessive jargon.
-- generate text in markdown format. style the markdown for a beautiful and elegant style.
-- dont put ```markdown or ```python in output. only the markdown code (important!)
+- generate the content in json format with content keys.
+- don't include the "analysis_summary" key in json.
+- Don't include the empty keys or objects or arrays.
+- create a very well defined hierarchy in JSON.
+- dont put ```python or ```json in output. only the pure json code(important!).
 
 Context / ProfileReport content:
 {summary_text}

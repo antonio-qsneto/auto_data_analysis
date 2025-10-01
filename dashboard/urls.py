@@ -2,7 +2,7 @@ from django.urls import path
 from .views import chart_views
 from .views.authentication_view import GoogleLoginView, SignupView
 from .views import views_auth_status
-from .views.report_views import list_reports, get_report_detail
+from .views.report_views import list_reports, get_report_detail, delete_report
 from .views.custom_token_serializer import MyTokenObtainPairView
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -25,5 +25,6 @@ urlpatterns = [
     # Report
     path("reports/", list_reports, name="list_reports"),
     path("reports/<int:pk>/", get_report_detail, name="report_detail"),
+    path("reports/<int:pk>/delete/", delete_report, name="report_delete"),
 
 ]

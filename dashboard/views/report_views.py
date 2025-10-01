@@ -46,3 +46,22 @@ def get_report_detail(request, pk):
         "insights_text": data.get("insights_text"),
         "charts": data.get("charts"),
     })
+
+
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def delete_report(request, pk):
+    try:
+        report = Report.objects.get(pk=pk, user=request.user)
+    except Report.DoesNotExist:
+        return Response({"error": "Report não encontrado"}, status=404)
+
+    s3 = boto3.client("s3")
+    try:
+        s3.delete_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=report.s3_key)
+    except Exception as e:
+        return Response({"error": f"Erro ao deletar arquivo do S3: {str(e)}"}, status=500)
+
+    report.delete()
+    return Response({"success": "Report deletado com sucesso."})

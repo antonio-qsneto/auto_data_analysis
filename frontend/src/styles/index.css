@@ -1,18 +1,35 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=Lato:wght@400;500;600&family=Source+Code+Pro:wght@400;600&display=swap');
 
-/* Color Variables */
+/* -------------------- Font Variables -------------------- */
 :root {
-  --bg: #343E59;
+  --font-title: 'IBM Plex Sans', sans-serif;
+  --font-body: 'Lato', sans-serif;
+  --font-code: 'Source Code Pro', monospace;
+
+  --bg: #344057;
   --card-bg: #2B2D3E;
   --text: #fff;
   --border: #444;
+
+  /* Gradient dinâmico dos chart-cards */
+  --card-gradient: linear-gradient(135deg, #2b2d3d 0%, #2a2e4d 100%);
+}
+
+/* Theme light overrides */
+body.light {
+  --bg: #eff4f7;
+  --card-bg: #fff;
+  --text: #222;
+  --border: #ccc;
+  --card-gradient: linear-gradient(135deg, #fff 0%, #f3f3f3 100%);
 }
 
 /* Background and Typography */
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: Montserrat, Arial, sans-serif;
+  font-family: var(--font-body);
   margin: 0;
   padding: 0;
 }
@@ -29,9 +46,10 @@ body {
   font-weight: bold;
   color: var(--text); 
   margin-bottom: 20px;
+  font-family: var(--font-title);
 }
 
-/* KPI Cards */
+/* ---------------- KPI Cards ---------------- */
 .sparkboxes {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -69,7 +87,7 @@ body {
   background-image: linear-gradient(135deg, #EE9AE5 10%, #5961F9 100%);
 }
 
-/* File Upload */
+/* ---------------- File Upload ---------------- */
 .upload-area {
   text-align: center;
   margin-bottom: 30px;
@@ -84,7 +102,6 @@ body {
   cursor: pointer;
 }
 
-/* Add to index.css */
 .upload-area.drag-active {
   border-color: #2AFADF !important;
   background: #23263a !important;
@@ -94,7 +111,6 @@ body {
   border-color: #2AFADF !important;
 }
 
-/* Input phrase and button use theme variables */
 .upload-area p,
 .upload-area .upload-btn,
 .upload-area span[role="button"] {
@@ -107,118 +123,53 @@ body {
   border: 1px solid var(--border);
 }
 
-
 .upload-area span[role="button"] {
   color: #2AFADF;
 }
-
 
 body.light .upload-area span[role="button"] {
   color: #0396FF;
 }
 
-/* ------------------------ Charts area ------------------------------------ */
+/* ---------------- Charts area ---------------- */
+@layer components {
+  .charts-grid {
+    @apply grid grid-cols-3;
+    grid-auto-rows: 450px;
+    row-gap: 70px;
+    column-gap: 20px;
+    grid-auto-flow: dense;
+  }
 
-/* Charts Grid */
-.charts-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-auto-rows: 450px;
-  row-gap: 70px;
-  column-gap: 20px;
-  grid-auto-flow: dense;
-}
+  .chart-card {
+    @apply flex flex-col justify-start h-[450px]
+      rounded-2xl p-6 border shadow-md hover:shadow-xl
+      transform hover:-translate-y-1 transition-all duration-300 ease-out;
+    background: var(--card-gradient);
+    border-color: var(--border);
+  }
 
-.chart-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  height: 450px;
-  background-color: var(--card-bg);
-  border-radius: 5px;
-  padding: 15px;
-  box-shadow: 0 50px 50px 0 rgba(0,0,0,0.18); /* <-- Add this line */
-}
+  .chart-title {
+    @apply text-xl font-extrabold tracking-wide mb-4;
+    color: var(--text);
+    font-family: var(--font-title);
+  }
 
-.chart-card .chart-title {
-  flex: 0 0 32px;
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 8px;
-  text-align: left;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+  .chart-area {
+    @apply flex-1 min-h-0;
+  }
 
-.chart-card .chart-area {
-  flex: 1 1 auto;
-  min-height: 0;
-}
+  .chart-options {
+    @apply text-sm mt-2 truncate;
+    color: var(--text);
+  }
 
-.chart-card .chart-options {
-  flex: 0 0 28px;
-  margin-top: 8px;
-  font-size: 14px;
-  color: inherit;
-  text-align: left;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  .row-2 {
+    @apply row-span-2;
+  }
 }
 
-.chart-card .apexcharts-canvas {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-.chart-card.wide {
-  grid-column: span 2;
-}
-.chart-card.tall {
-  grid-row: span 2;
-}
-.chart-card.col-1 {
-  grid-column: 1;
-}
-.chart-card.col-2 {
-  grid-column: 2;
-}
-.chart-card.wide.col-1 {
-  grid-column: 1 / span 2;
-}
-.chart-card.wide.col-2 {
-  grid-column: 2 / span 2;
-}
-.chart-card.wide.col-1-2 {
-  grid-column: 1 / span 2;
-}
-.chart-card.wide.col-2-3 {
-  grid-column: 2 / span 2;
-}
-
-.apexcharts-boxPlot-whisker {
-  stroke: #b8e3e7 !important; /* lighter blue for dark theme */
-}
-.apexcharts-boxPlot-median {
-  stroke: #FFD3A5 !important; /* orange for median line */
-}
-body.light .apexcharts-boxPlot-whisker {
-  stroke: #222 !important;
-}
-body.light .apexcharts-boxPlot-median {
-  stroke: #FD6585 !important;
-}
-body.dark .apexcharts-boxPlot-whisker {
-  stroke: #e0e0e0 !important; /* light gray for whiskers */
-}
-body.dark .apexcharts-boxPlot-median {
-  stroke: #FFD3A5 !important; /* orange for median line */
-}
-
-/* --------------------------------- end chart area --------------------------------------------- */
-
-/* Loading & Error */
+/* ---------------- Loading & Error ---------------- */
 .loading {
   text-align: center;
   color: #4C83FF;
@@ -231,22 +182,13 @@ body.dark .apexcharts-boxPlot-median {
   font-weight: bold;
 }
 
-/* Light theme overrides */
-body.light {
-  --bg: #f3f3f3;
-  --card-bg: #fff;
-  --text: #222;
-  --border: #ccc;
-}
-
-
-
-
+/* ---------------- Insight Cards ---------------- */
 .insight-card h1 {
   font-size: 1.75rem;
   font-weight: 700;
   margin-bottom: 1rem;
   color: var(--text);
+  font-family: var(--font-title);
 }
 
 .insight-card h2 {
@@ -255,6 +197,7 @@ body.light {
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
   color: var(--text);
+  font-family: var(--font-title);
 }
 
 .insight-card h3 {
@@ -263,32 +206,37 @@ body.light {
   margin-top: 1.25rem;
   margin-bottom: 0.5rem;
   color: var(--text);
+  font-family: var(--font-title);
 }
 
 .insight-card p {
   margin-bottom: 0.75rem;
   line-height: 1.6;
+  font-family: var(--font-body);
 }
 
 .insight-card ul {
   list-style-type: disc;
   margin-left: 1.5rem;
   margin-bottom: 1rem;
+  font-family: var(--font-body);
 }
 
 .insight-card ol {
   list-style-type: decimal;
   margin-left: 1.5rem;
   margin-bottom: 1rem;
+  font-family: var(--font-body);
 }
 
 .insight-card li {
   margin-bottom: 0.25rem;
+  font-family: var(--font-body);
 }
 
 .insight-card code {
   background: rgba(255, 255, 255, 0.1);
   padding: 2px 6px;
   border-radius: 4px;
-  font-family: monospace;
+  font-family: var(--font-code);
 }

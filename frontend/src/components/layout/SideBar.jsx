@@ -35,7 +35,7 @@ export default function SideBar() {
   return (
     <nav
       className="fixed left-0 top-0 bottom-0 w-20 text-white flex flex-col items-center z-50 shadow-2xl"
-      style={{ background: "linear-gradient(to bottom, #2F324A 0%, #5b709aff 100%)" }}
+      style={{ background: "linear-gradient(to bottom, #2b2d3d 0%, #2b2d3d 100%)" }}
     >
       {/* Logo */}
       <div className="mt-8 mb-10 flex items-center justify-center">

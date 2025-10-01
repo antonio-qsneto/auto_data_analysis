@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axiosInstance";
 import SideBar from "../components/layout/SideBar";
 import Footer from "../components/layout/Footer";
@@ -7,18 +7,23 @@ import Footer from "../components/layout/Footer";
 export default function Reports({ theme, setTheme }) {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const REPORTS_PER_PAGE = 10;
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function loadReports() {
       try {
+        setLoading(true);
         const res = await axiosInstance.get("/reports/");
-        setReports(res.data);
+        setReports(res.data); // todos os reports
       } catch (err) {
         console.error("Error loading reports", err);
       } finally {
         setLoading(false);
       }
     }
+
     loadReports();
     document.body.className = theme;
   }, [theme]);
@@ -28,6 +33,12 @@ export default function Reports({ theme, setTheme }) {
     setTheme(newTheme);
     document.body.className = newTheme;
   };
+
+  // === Paginação frontend ===
+  const indexOfLastReport = currentPage * REPORTS_PER_PAGE;
+  const indexOfFirstReport = indexOfLastReport - REPORTS_PER_PAGE;
+  const currentReports = reports.slice(indexOfFirstReport, indexOfLastReport);
+  const totalPages = Math.ceil(reports.length / REPORTS_PER_PAGE);
 
   if (loading)
     return (
@@ -100,46 +111,115 @@ export default function Reports({ theme, setTheme }) {
         >
           <div className="mb-10">
             <h2 className="text-4xl font-extrabold text-blue-900 tracking-tight text-left">
-              \     Reports
+              Reports
             </h2>
           </div>
 
-          {reports.length === 0 ? (
+          {currentReports.length === 0 ? (
             <p className="text-gray-600 text-center py-20 italic">
               No reports available at the moment.
             </p>
           ) : (
             <div className="flex flex-col gap-6">
-              {reports.map((report) => (
-                <Link
+              {currentReports.map((report) => (
+                <div
                   key={report.id}
-                  to={`/reports/${report.id}`}
                   className="group relative overflow-hidden rounded-xl border border-blue-200/60 
-                             bg-white/60 backdrop-blur-md shadow-md hover:shadow-2xl transition-all p-6"
+                            bg-white/60 backdrop-blur-md shadow-md hover:shadow-2xl transition-all p-6 flex justify-between items-start"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-blue-900 group-hover:text-blue-700 transition-colors">
-                      Report {report.id}
-                    </h3>
-                    <span className="text-sm text-gray-500">
-                      {new Date(report.created_at).toLocaleDateString("en-US", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
+                  <div
+                    className="flex-1 cursor-pointer"
+                    onClick={() => navigate(`/reports/${report.id}`)}
+                  >
+                    <div className="mb-3">
+                      <h3 className="text-lg font-semibold text-blue-900 group-hover:text-blue-700 transition-colors">
+                        Report {report.id}
+                      </h3>
+                      <span className="text-sm text-gray-500">
+                        {new Date(report.created_at).toLocaleDateString("en-US", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      Click to view report details.
+                    </p>
                   </div>
 
-                  <p className="text-sm text-gray-600">
-                    Click to view report details.
-                  </p>
-                </Link>
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (!window.confirm("Are you sure you want to delete this report?")) return;
+                      try {
+                        await axiosInstance.delete(`/reports/${report.id}/delete/`);
+                        setReports((prev) => prev.filter((r) => r.id !== report.id));
+                      } catch (err) {
+                        alert("Error deleting report: " + (err.response?.data?.error || err.message));
+                      }
+                    }}
+                    className="ml-4 text-red-600 hover:text-red-800 font-semibold text-sm transition self-start"
+                  >
+                    Delete
+                  </button>
+                </div>
               ))}
             </div>
+          )}
+
+          {/* Paginação */}
+          {totalPages > 1 && (
+
+            <div className="flex justify-center mt-6 gap-3">
+              {/* Previous */}
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 rounded-xl font-semibold shadow-md transition flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed
+                          bg-gray-800 text-white hover:bg-gray-700"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Previous
+              </button>
+
+              {/* Página atual */}
+              <span className="px-4 py-2 rounded-xl shadow-md bg-gray-700 text-white font-semibold">
+                {currentPage} / {totalPages}
+              </span>
+
+              {/* Next */}
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 rounded-xl font-semibold shadow-md transition flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed
+                          bg-gray-800 text-white hover:bg-gray-700"
+              >
+                Next
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+
+
+
           )}
         </div>
       </div>

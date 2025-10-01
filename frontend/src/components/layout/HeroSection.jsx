@@ -31,11 +31,11 @@ export default function HeroSection() {
           </h1>
 
           <p className="text-lg text-gray-700">
-            Auto-Clean. Auto-Analyze. Auto-Visualize. Auto-Insights. Auto-Repeat. API. It’s quick, easy, human-in-the-loop or fully AI-assisted.
+            Auto-Clean. Auto-Analyze. Auto-Visualize. Auto-Insights. Upload your CSV or connect your database, and let the AI handle the rest. 
           </p>
 
           <p className="text-base text-gray-600 max-w-md">
-            Empower every department to make data-driven decisions with zero coding required. Simply upload your CSV, Excel or connect via API.
+            It automatically cleans your data, generates charts, and provides insights—repeating the process as many times as you need, fully automated.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 pt-4">

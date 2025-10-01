@@ -45,7 +45,7 @@ const features = [
   {
     icon: DocumentTableIcon,
     title: "Upload Your Dataset",
-    description: "Send or upload your dataset in CSV format with a single click. No complex setup required",
+    description: "Upload your dataset in CSV format or connect to a database with a single click. No complex setup required",
   },
   {
     icon: MagicWandIcon,
