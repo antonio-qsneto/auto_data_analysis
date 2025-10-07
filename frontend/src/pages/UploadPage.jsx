@@ -1,3 +1,4 @@
+// frontend/src/pages/UploadPage.jsx
 import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SideBar from "../components/layout/SideBar";
@@ -65,7 +66,6 @@ export default function UploadPage({
       setInsightsText && setInsightsText(response.data.insights_text || "");
       navigate("/dashboard");
     } catch (err) {
-      //console.log("Erro: ", err);
       setError && setError("Error uploading file or generating charts.");
     } finally {
       setLoading && setLoading(false);
@@ -73,9 +73,6 @@ export default function UploadPage({
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
-
-  
-
 
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
@@ -87,42 +84,39 @@ export default function UploadPage({
     <>
       <SideBar />
       <div
-        className={`flex flex-col items-center justify-center min-h-screen relative transition-colors duration-300
+        className={`flex flex-col items-center justify-center min-h-screen relative transition-all duration-700
           ${theme === "dark"
-            ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-cyan-100"
-            : "bg-gradient-to-br from-blue-50 via-white to-cyan-100 text-gray-900"}
+            ? "bg-gradient-to-br from-[#0a0a0f] via-[#1b1d26] to-[#0e0e14] text-gray-100"
+            : "bg-gradient-to-br from-[#3b5998] via-[#6395c7] to-[#f7a99c] text-gray-900"}
         `}
       >
-        {/* Theme Switch Button */}
+
+        {/* Botão de alternância de tema */}
         <button
           onClick={toggleTheme}
-          className={`absolute top-6 right-10 flex items-center gap-2 px-4 py-2 rounded-full font-semibold shadow-lg transition-all duration-200
-            ${theme === "dark" ? "bg-gray-900 text-cyan-300 hover:bg-gray-800" : "bg-blue-600 text-white hover:bg-blue-700"}`}
+          className={`absolute top-6 right-10 flex items-center gap-2 px-4 py-2 rounded-full font-semibold shadow-lg backdrop-blur-md transition-all duration-300
+            ${theme === "dark"
+              ? "bg-white/10 text-cyan-300 hover:bg-white/20"
+              : "bg-white/60 text-gray-800 hover:bg-white/80"}`}
           aria-label="Switch theme"
         >
-          {theme === "dark" ? (
-            <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="inline-block">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" />
-            </svg>
-          ) : (
-            <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="inline-block">
-              <circle cx="12" cy="12" r="5" />
-              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-            </svg>
-          )}
-          <span className="hidden sm:inline">{theme === "dark" ? "Dark" : "Light"} Mode</span>
+          {theme === "dark" ? "☾ Dark" : "☀ Light"}
         </button>
 
-        <div
-          className={`relative w-full max-w-xl mx-auto mt-24`}
-        >
+        {/* Card de upload */}
+        <div className="relative w-full max-w-xl mx-auto mt-24">
           <div
-            className={`border-4 ${dragActive ? "border-blue-400 bg-blue-50" : "border-dashed border-gray-300 bg-white"} rounded-2xl shadow-xl flex flex-col items-center justify-center py-16 px-8 transition-all duration-200`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            style={{ cursor: "pointer" }}
             onClick={() => fileInputRef.current && fileInputRef.current.click()}
+            className={`rounded-3xl backdrop-blur-xl border transition-all duration-300 shadow-2xl p-12 flex flex-col items-center cursor-pointer ${
+              dragActive
+                ? "border-cyan-400 scale-105"
+                : theme === "dark"
+                ? "border-white/20 bg-white/10 text-gray-100"
+                : "border-white/50 bg-white/70 text-gray-900"
+            }`}
           >
             <input
               ref={fileInputRef}
@@ -131,27 +125,56 @@ export default function UploadPage({
               style={{ display: "none" }}
               onChange={handleFileChange}
             />
-            <div className="flex flex-col items-center gap-4">
-              <svg width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500 mb-2" viewBox="0 0 24 24">
+
+            <div className="flex flex-col items-center gap-4 text-center">
+              <svg
+                width="60"
+                height="60"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className={`${theme === "dark" ? "text-cyan-300" : "text-blue-600"} mb-2`}
+                viewBox="0 0 24 24"
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 16v-8m0 0l-4 4m4-4l4 4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
               </svg>
-              <p className="text-xl font-semibold text-gray-700">
-                Drag &amp; drop your <span className="text-blue-600 font-bold">CSV</span> file here, or <span className="underline text-blue-500 cursor-pointer">browse</span>
+
+              <h2 className="text-2xl font-semibold">
+                Drag & drop your{" "}
+                <span className={`${theme === "dark" ? "text-cyan-400" : "text-blue-600"} font-bold`}>
+                  CSV
+                </span>{" "}
+                file here
+              </h2>
+
+              <p className={`text-sm ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
+                or click to browse — only CSV files are supported.
               </p>
-              <p className="text-sm text-gray-500">Only CSV files are supported.</p>
+
               {selectedFile && (
-                <div className="mt-2 text-blue-600 font-medium">
+                <div
+                  className={`mt-3 font-medium ${
+                    theme === "dark" ? "text-cyan-300" : "text-blue-600"
+                  }`}
+                >
                   Selected: <span className="font-bold">{selectedFile.name}</span>
                 </div>
               )}
+
+              {/* Botão Upload */}
               <button
                 type="button"
-                onClick={e => { e.stopPropagation(); handleFileUpload(); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleFileUpload();
+                }}
                 disabled={!selectedFile || loading}
-                className={`mt-6 px-8 py-3 rounded-lg font-bold text-white shadow transition ${
+                className={`mt-8 px-8 py-3 rounded-2xl font-bold text-white shadow-lg backdrop-blur-md transition-all duration-300 ${
                   selectedFile && !loading
-                    ? "bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 cursor-pointer"
-                    : "bg-gray-300 cursor-not-allowed opacity-70"
+                    ? theme === "dark"
+                      ? "bg-gradient-to-r from-cyan-600 to-blue-500 hover:from-cyan-500 hover:to-blue-400"
+                      : "bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500"
+                    : "bg-gray-400/50 cursor-not-allowed"
                 }`}
               >
                 {loading ? (
@@ -167,10 +190,13 @@ export default function UploadPage({
           </div>
         </div>
 
+        {/* Exibe erro */}
         {error && (
-          <div className={`mt-8 text-center font-semibold text-lg transition-colors duration-300
-            ${theme === "dark" ? "text-red-400" : "text-red-500"}
-          `}>
+          <div
+            className={`mt-8 text-center font-semibold text-lg ${
+              theme === "dark" ? "text-red-400" : "text-red-600"
+            }`}
+          >
             {error}
           </div>
         )}

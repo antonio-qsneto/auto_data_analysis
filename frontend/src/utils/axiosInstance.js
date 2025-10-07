@@ -29,7 +29,6 @@ axiosInstance.interceptors.request.use((config) => {
   return config;
 });
 
-// Interceptor de RESPONSE
 axiosInstance.interceptors.response.use(
   (response) => {
     console.log("[Axios][Response] Sucesso:", {
@@ -85,5 +84,6 @@ axiosInstance.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
 
 export default axiosInstance;

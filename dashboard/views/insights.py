@@ -6,20 +6,27 @@ from ydata_profiling import ProfileReport  # type: ignore
 def summarize_business(df) -> str:
     summary_lines = []
 
-    numeric_cols = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
+    excluded_cols = {"id", "index", "idx", "rowid", "Unnamed: 0"}
+    numeric_cols = [
+        c for c in df.columns
+        if pd.api.types.is_numeric_dtype(df[c]) and c.lower() not in excluded_cols
+    ]
 
-    if numeric_cols:
-        col = numeric_cols[0]
-        vals = df[col].dropna()
-
-        summary_lines.extend([
-            "**Central Tendency and Dispersion**",
-            f"- {col}: Mean={vals.mean():.2f} | Median={vals.median():.2f} | "
-            f"Std Dev={vals.std():.2f} | Range=({vals.min():.2f}, {vals.max():.2f})\n"
-        ])
-    else:
+    # Caso não haja colunas numéricas úteis
+    if not numeric_cols:
         summary_lines.append("**Central Tendency and Dispersion**")
-        summary_lines.append("No numeric columns detected.")
+        summary_lines.append("No numeric columns detected (excluding ID and index).")
+        return "\n".join(summary_lines)
+
+    # ✅ Pega a primeira coluna numérica válida
+    col = numeric_cols[0]
+    vals = df[col].dropna()
+
+    summary_lines.extend([
+        "**Central Tendency and Dispersion**",
+        f"- {col}: Mean={vals.mean():.2f} | Median={vals.median():.2f} | "
+        f"Std Dev={vals.std():.2f} | Range=({vals.min():.2f}, {vals.max():.2f})\n"
+    ])
 
     return "\n".join(summary_lines)
 

@@ -1,4 +1,3 @@
-// frontend/src/pages/DatabasePage.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SideBar from "../components/layout/SideBar";
@@ -13,7 +12,8 @@ export default function DatabasePage({
   error,
   theme,
   setTheme,
-  setBusinessSummary
+  setBusinessSummary,
+  setInsightsText,
 }) {
   const [dbHost, setDbHost] = useState("");
   const [dbPort, setDbPort] = useState("");
@@ -25,15 +25,15 @@ export default function DatabasePage({
   const [selectedTable, setSelectedTable] = useState("");
   const navigate = useNavigate();
 
-  // Conectar ao banco e listar tabelas
+  // ======================== CONECTAR AO BANCO ========================
   const handleConnect = async () => {
     if (!dbHost || !dbPort || !dbUser || !dbPassword || !dbName) {
       setError && setError("Please fill in all database credentials.");
       return;
     }
 
-    setLoading && setLoading(true);
-    setError && setError("");
+    setLoading(true);
+    setError("");
     setTables([]);
 
     try {
@@ -46,31 +46,43 @@ export default function DatabasePage({
         db_type: dbType,
       });
 
-      if (response.data.tables && response.data.tables.length > 0) {
+      if (response.data.tables?.length > 0) {
         setTables(response.data.tables);
         setSelectedTable(response.data.tables[0]);
       } else {
-        throw new Error("No tables found");
+        throw new Error("No tables found in the database.");
       }
     } catch (err) {
-      setError && setError("Error connecting to database: " + err.message);
+      console.error("❌ Connection error:", err);
+
+      if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else if (err.response?.data) {
+        setError(
+          typeof err.response.data === "string"
+            ? err.response.data
+            : JSON.stringify(err.response.data)
+        );
+      } else {
+        setError("Unable to connect to the database. Please verify your credentials.");
+      }
     } finally {
-      setLoading && setLoading(false);
+      setLoading(false);
     }
   };
 
-  // Buscar dados da tabela selecionada
+  // ======================== BUSCAR DADOS ========================
   const handleFetchData = async () => {
     if (!selectedTable) {
-      setError && setError("Please select a table.");
+      setError("Please select a table.");
       return;
     }
 
-    setLoading && setLoading(true);
-    setError && setError("");
+    setLoading(true);
+    setError("");
 
     try {
-      const response = await axiosInstance.post("/fetch_table_data/", {
+      const response = await axiosInstance.post("/generate_chart_from_database/", {
         host: dbHost,
         port: dbPort,
         user: dbUser,
@@ -80,118 +92,219 @@ export default function DatabasePage({
         table: selectedTable,
       });
 
-      setCharts && setCharts(response.data.charts);
-      setBusinessSummary && setBusinessSummary(response.data.business_summary || "");
+      // 🧠 Verificações de erro / resposta vazia
+      if (response.data?.error) {
+        setError(response.data.error);
+        return; // não navega
+      }
+
+      if (
+        !response.data?.charts ||
+        response.data.charts.length === 0 ||
+        !response.data.business_summary
+      ) {
+        setError("No analytical results were returned. Please try again or select another table.");
+        return; // não navega
+      }
+
+      // ✅ sucesso
+      setCharts(response.data.charts);
+      setBusinessSummary(response.data.business_summary || "");
+      setInsightsText(response.data.insights_text || "");
       navigate("/dashboard");
+
     } catch (err) {
-      setError && setError("Error fetching table data: " + err.message);
+      console.error("❌ Fetch data error:", err);
+
+      if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else if (err.response?.data) {
+        setError(
+          typeof err.response.data === "string"
+            ? err.response.data
+            : JSON.stringify(err.response.data)
+        );
+      } else {
+        setError("Error fetching table data. Please try again.");
+      }
     } finally {
-      setLoading && setLoading(false);
+      setLoading(false);
     }
   };
 
-  // Tema claro/escuro
+  // ======================== TEMA ========================
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
     setTheme(newTheme);
     document.body.className = newTheme;
   };
 
+  // ======================== JSX ========================
   return (
     <>
       <SideBar />
+
       <div
-        className={`flex flex-col items-center justify-center min-h-screen relative transition-colors duration-300
+        className={`flex flex-col items-center justify-center min-h-screen relative transition-all duration-700
           ${theme === "dark"
-            ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-cyan-100"
-            : "bg-gradient-to-br from-orange-100 via-white to-orange-200 text-gray-900"}
+            ? "bg-gradient-to-br from-[#0a0a0f] via-[#1b1d26] to-[#0e0e14] text-gray-100"
+            : "bg-gradient-to-br from-[#cce2ff] via-[#f4d9ff] to-[#ffd6c2] text-gray-900"}
         `}
       >
-        {/* Botão de alternar tema */}
+        {/* Botão de tema */}
         <button
           onClick={toggleTheme}
-          className={`absolute top-6 right-10 flex items-center gap-2 px-4 py-2 rounded-full font-semibold shadow-lg transition-all duration-200
-            ${theme === "dark" ? "bg-gray-900 text-cyan-300 hover:bg-gray-800" : "bg-blue-600 text-white hover:bg-blue-700"}`}
+          className={`absolute top-6 right-10 flex items-center gap-2 px-4 py-2 rounded-full font-semibold shadow-lg backdrop-blur-md transition-all duration-300
+            ${theme === "dark"
+              ? "bg-white/10 text-cyan-300 hover:bg-white/20"
+              : "bg-white/50 text-gray-800 hover:bg-white/70"}`}
           aria-label="Switch theme"
         >
-          {theme === "dark" ? (
-            <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="inline-block">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" />
-            </svg>
-          ) : (
-            <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="inline-block">
-              <circle cx="12" cy="12" r="5" />
-              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-            </svg>
-          )}
-          <span className="hidden sm:inline">{theme === "dark" ? "Dark" : "Light"} Mode</span>
+          {theme === "dark" ? "☾ Dark" : "☀ Light"}
         </button>
 
-        {/* Card de conexão */}
+        {/* Card principal */}
         <div className="relative w-full max-w-xl mx-auto mt-24">
-          <div className="border-4 border-dashed border-gray-300 bg-white rounded-2xl shadow-xl flex flex-col items-center justify-center py-12 px-8 transition-all duration-200">
-            <h2 className="text-2xl font-bold mb-6 text-blue-700">Connect to your Database</h2>
+          <div
+            className={`rounded-3xl backdrop-blur-xl border border-white/30 shadow-2xl p-10 flex flex-col items-center transition-all duration-300 ${
+              theme === "dark"
+                ? "bg-white/10 text-gray-200"
+                : "bg-white/60 text-gray-900"
+            }`}
+          >
+            <h2
+              className={`text-3xl font-bold mb-6 ${
+                theme === "dark" ? "text-cyan-300" : "text-blue-700"
+              }`}
+            >
+              Connect to your Database
+            </h2>
+
             <form
               className="w-full flex flex-col gap-4"
-              onSubmit={e => { e.preventDefault(); tables.length > 0 ? handleFetchData() : handleConnect(); }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                tables.length > 0 ? handleFetchData() : handleConnect();
+              }}
             >
-              {/* Campos do formulário */}
-              <select value={dbType} onChange={e => setDbType(e.target.value)} className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none">
+              {/* Tipo de banco */}
+              <select
+                value={dbType}
+                onChange={(e) => setDbType(e.target.value)}
+                className={`px-4 py-3 rounded-xl border focus:outline-none backdrop-blur-md appearance-none transition-colors duration-200
+                  ${theme === "dark"
+                    ? "bg-gray-800/80 text-gray-100 border-white/20 focus:border-cyan-400"
+                    : "bg-white/70 text-gray-900 border-gray-300 focus:border-blue-400"}
+                `}
+              >
                 <option value="postgresql">PostgreSQL</option>
                 <option value="mysql">MySQL</option>
                 <option value="mariadb">MariaDB</option>
                 <option value="sqlserver">SQL Server</option>
               </select>
 
-              <input type="text" placeholder="Host" value={dbHost} onChange={e => setDbHost(e.target.value)} className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none" />
-              <input type="text" placeholder="Port" value={dbPort} onChange={e => setDbPort(e.target.value)} className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none" />
-              <input type="text" placeholder="User" value={dbUser} onChange={e => setDbUser(e.target.value)} className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none" />
-              <input type="password" placeholder="Password" value={dbPassword} onChange={e => setDbPassword(e.target.value)} className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none" />
-              <input type="text" placeholder="Database Name" value={dbName} onChange={e => setDbName(e.target.value)} className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none" />
+              {/* Campos de conexão */}
+              {[
+                { placeholder: "Host", value: dbHost, setter: setDbHost },
+                { placeholder: "Port", value: dbPort, setter: setDbPort },
+                { placeholder: "User", value: dbUser, setter: setDbUser },
+                { placeholder: "Password", value: dbPassword, setter: setDbPassword, type: "password" },
+                { placeholder: "Database Name", value: dbName, setter: setDbName },
+              ].map((f, i) => (
+                <input
+                  key={i}
+                  type={f.type || "text"}
+                  placeholder={f.placeholder}
+                  value={f.value}
+                  onChange={(e) => f.setter(e.target.value)}
+                  className={`px-4 py-3 rounded-xl border focus:outline-none backdrop-blur-md transition ${
+                    theme === "dark"
+                      ? "bg-white/10 border-white/20 text-gray-100 placeholder-gray-400 focus:border-cyan-400"
+                      : "bg-white/60 border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-400"
+                  }`}
+                />
+              ))}
 
-              {/* Seleção de tabelas */}
+              {/* Select de tabelas */}
               {tables.length > 0 && (
-                <select
-                  value={selectedTable}
-                  onChange={e => setSelectedTable(e.target.value)}
-                  className="px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none"
-                >
-                  <option value="">Select a table</option>
-                  {tables.map((table) => (
-                    <option key={table} value={table}>{table}</option>
-                  ))}
-                </select>
+                <div className="w-full relative">
+                  <label
+                    htmlFor="tableSelect"
+                    className={`block text-sm font-semibold mb-2 ${
+                      theme === "dark" ? "text-cyan-300" : "text-blue-700"
+                    } animate-pulse`}
+                  >
+                    🔍 Choose the table to analyze
+                  </label>
+
+                  <select
+                    id="tableSelect"
+                    value={selectedTable}
+                    onChange={(e) => setSelectedTable(e.target.value)}
+                    className={`px-4 py-3 rounded-xl border focus:outline-none appearance-none transition-all duration-300 w-full shadow-lg 
+                      ${theme === "dark"
+                        ? "bg-gray-800/80 text-gray-100 border-cyan-400/40 focus:border-cyan-300 ring-2 ring-cyan-400/30"
+                        : "bg-white/80 text-gray-900 border-blue-300 focus:border-blue-400 ring-2 ring-blue-400/30"}
+                      animate-[pulse_2s_ease-in-out_infinite]
+                    `}
+                  >
+                    <option value="">Select a table</option>
+                    {tables.map((table) => (
+                      <option
+                        key={table}
+                        value={table}
+                        className={
+                          theme === "dark"
+                            ? "bg-gray-900 text-white"
+                            : "bg-white text-gray-900"
+                        }
+                      >
+                        {table}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               )}
 
               {/* Botão principal */}
               <button
                 type="submit"
                 disabled={loading}
-                className={`mt-6 px-8 py-3 rounded-lg font-bold text-white shadow transition ${
+                className={`mt-6 px-8 py-3 rounded-2xl font-bold text-white shadow-lg backdrop-blur-md transition-all duration-300 ${
                   !loading
-                    ? "bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 cursor-pointer"
-                    : "bg-gray-300 cursor-not-allowed opacity-70"
+                    ? theme === "dark"
+                      ? "bg-gradient-to-r from-cyan-600 to-blue-500 hover:from-cyan-500 hover:to-blue-400"
+                      : "bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500"
+                    : "bg-gray-400/50 cursor-not-allowed"
                 }`}
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
-                    <img src={loadingGif} alt="Loading..." className="w-6 h-6 animate-spin" />
+                    <img
+                      src={loadingGif}
+                      alt="Loading..."
+                      className="w-6 h-6 animate-spin"
+                    />
                     {tables.length > 0 ? "Fetching..." : "Connecting..."}
                   </span>
+                ) : tables.length > 0 ? (
+                  "Fetch Data"
                 ) : (
-                  tables.length > 0 ? "Fetch Data" : "Connect"
+                  "Connect"
                 )}
               </button>
             </form>
           </div>
         </div>
 
-        {/* Exibe erro */}
+        {/* Mensagem de erro */}
         {error && (
-          <div className={`mt-8 text-center font-semibold text-lg transition-colors duration-300
-            ${theme === "dark" ? "text-red-400" : "text-red-500"}
-          `}>
-            {error}
+          <div
+            className={`mt-8 text-center font-semibold text-lg max-w-xl px-6 break-words ${
+              theme === "dark" ? "text-red-400" : "text-red-600"
+            }`}
+          >
+            ⚠️ {error}
           </div>
         )}
       </div>

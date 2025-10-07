@@ -1,10 +1,16 @@
-# handle_db.py (refactored for DRF style)
 import json
 import pandas as pd
 import traceback
-import sqlalchemy as sa  # type: ignore
+import sqlalchemy as sa
 from .core import process_data
 
+try:
+    import psycopg2
+except ImportError:
+    raise ImportError("O driver psycopg2 não está instalado. Execute: pip install psycopg2-binary")
+
+
+# ==================== GET TABLES ====================
 
 def get_tables(request):
     if request.method != "POST":
@@ -22,29 +28,52 @@ def get_tables(request):
         if not all([host, port, user, password, database]):
             return {"error": "All database fields are required"}, 400
 
+        # ========== PostgreSQL ==========
         if db_type == "postgresql":
             conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
-            table_query = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'"
+            table_query = """
+            SELECT table_schema || '.' || table_name AS table_name
+            FROM information_schema.tables 
+            WHERE table_type = 'BASE TABLE' 
+            AND table_schema NOT IN ('pg_catalog', 'information_schema')
+            ORDER BY table_schema, table_name
+            """
             table_filter = lambda tables: [t for t in tables if not t.startswith("pg_")]
 
+        # ========== MySQL / MariaDB ==========
         elif db_type in ["mysql", "mariadb"]:
             driver = "pymysql"
             dialect = "mysql" if db_type == "mysql" else "mariadb"
             conn_str = f"{dialect}+{driver}://{user}:{password}@{host}:{port}/{database}"
-            table_query = "SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE'"
+            table_query = """
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE'
+            """
             table_filter = lambda tables: tables
 
+        # ========== SQL Server ==========
         elif db_type == "sqlserver":
-            conn_str = f"mssql+pyodbc://{user}:{password}@{host}:{port}/{database}?driver=ODBC+Driver+17+for+SQL+Server"
+            conn_str = (
+                f"mssql+pyodbc://{user}:{password}@{host}:{port}/{database}"
+                "?driver=ODBC+Driver+17+for+SQL+Server"
+            )
             table_query = "SELECT name AS table_name FROM sys.tables WHERE type = 'U'"
             table_filter = lambda tables: tables
 
         else:
             return {"error": f"Unsupported database type: {db_type}"}, 400
 
+        # ========== Executa e corrige nome da coluna ==========
         engine = sa.create_engine(conn_str)
         tables_df = pd.read_sql(table_query, engine)
-        tables = table_filter(tables_df["table_name"].tolist())
+
+        # Compatibilidade entre PostgreSQL, MySQL e SQL Server
+        colname = [c for c in tables_df.columns if c.lower() == "table_name"]
+        if not colname:
+            return {"error": f"Unexpected table list columns: {tables_df.columns.tolist()}"}, 500
+
+        tables = table_filter(tables_df[colname[0]].tolist())
         engine.dispose()
 
         if not tables:
@@ -56,6 +85,8 @@ def get_tables(request):
         print("error =>", e)
         return {"error": str(e), "traceback": traceback.format_exc()}, 500
 
+
+# ==================== FETCH & PROCESS TABLE ====================
 
 def fetch_and_process_table(request):
     if request.method != "POST":
@@ -74,31 +105,42 @@ def fetch_and_process_table(request):
         if not all([host, port, user, password, database, table]):
             return {"error": "All database fields and table name are required"}, 400
 
+        # ========== PostgreSQL ==========
         if db_type == "postgresql":
             conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
-            identifier_quote = '"'
-            query = f'SELECT * FROM {identifier_quote}{table}{identifier_quote} LIMIT 1000'
 
+            # ✅ Corrige schema + tabela
+            if "." in table:
+                schema, table_name = table.split(".", 1)
+                query = f'SELECT * FROM {schema}."{table_name}" LIMIT 1000'
+            else:
+                query = f'SELECT * FROM "{table}" LIMIT 1000'
+
+        # ========== MySQL / MariaDB ==========
         elif db_type in ["mysql", "mariadb"]:
             driver = "pymysql"
             dialect = "mysql" if db_type == "mysql" else "mariadb"
             conn_str = f"{dialect}+{driver}://{user}:{password}@{host}:{port}/{database}"
-            identifier_quote = '`'
-            query = f'SELECT * FROM {identifier_quote}{table}{identifier_quote} LIMIT 1000'
+            query = f"SELECT * FROM `{table}` LIMIT 1000"
 
+        # ========== SQL Server ==========
         elif db_type == "sqlserver":
-            conn_str = f"mssql+pyodbc://{user}:{password}@{host}:{port}/{database}?driver=ODBC+Driver+17+for+SQL+Server"
-            identifier_quote_start = '['
-            identifier_quote_end = ']'
-            query = f"SELECT TOP 1000 * FROM {identifier_quote_start}{table}{identifier_quote_end}"
+            conn_str = (
+                f"mssql+pyodbc://{user}:{password}@{host}:{port}/{database}"
+                "?driver=ODBC+Driver+17+for+SQL+Server"
+            )
+            query = f"SELECT TOP 1000 * FROM [{table}]"
 
         else:
             return {"error": f"Unsupported database type: {db_type}"}, 400
 
+        # ========== Executa a Query ==========
+        print(f"[DEBUG] Executando query:\n{query}")
         engine = sa.create_engine(conn_str)
         df = pd.read_sql(query, engine).reset_index(drop=True)
         df["index"] = df.index
 
+        # ========== Processa com IA ==========
         data = process_data(df)
         engine.dispose()
         return data, 200

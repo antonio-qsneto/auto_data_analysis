@@ -1,31 +1,40 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axiosInstance";
 import GoogleLoginButton from "../components/login_components/GoogleLoginButton";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import XLogo from "../assets/icons/X.svg";
 
-export default function Signup({ onSignupSuccess }) {
+export default function Signup() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(""); // para feedback positivo
+  const navigate = useNavigate();
 
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
 
     try {
-      const res = await axiosInstance.post("/auth/signup/", {
+      await axiosInstance.post("/auth/signup/", {
         username,
         email,
         password,
         password2,
       });
 
-      onSignupSuccess && onSignupSuccess();
+      setSuccess("Cadastro realizado com sucesso! Redirecionando para login...");
+      
+      // Redireciona após 2 segundos
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
     } catch (err) {
       if (err.response?.data?.error) {
         setError(err.response.data.error);
@@ -40,18 +49,16 @@ export default function Signup({ onSignupSuccess }) {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-200 via-slate-100 to-slate-300 p-4">
         <div className="w-full max-w-md p-8 rounded-3xl bg-white/70 backdrop-blur-xl border border-white/40 shadow-lg flex flex-col items-center gap-6">
           
-          {/* Logo circular com glass effect */}
+          {/* Logo circular */}
           <div className="w-20 h-20 rounded-full bg-white/50 backdrop-blur-lg border border-white/50 flex items-center justify-center shadow-md">
             <img src={XLogo} alt="Logo" className="w-12 h-12" />
           </div>
 
-          {/* Título */}
           <h1 className="text-2xl font-semibold text-gray-900 text-center">Cadastrar</h1>
           <p className="text-gray-700 text-center text-sm mb-4">
             Crie sua conta para começar
           </p>
 
-          {/* Formulário de cadastro */}
           <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
             <input
               type="text"
@@ -98,7 +105,9 @@ export default function Signup({ onSignupSuccess }) {
             </button>
           </form>
 
+          {/* Feedback */}
           {error && <p className="text-red-600 text-sm text-center">{error}</p>}
+          {success && <p className="text-green-600 text-sm text-center">{success}</p>}
 
           {/* Divisor */}
           <div className="flex items-center gap-3 w-full my-4">
@@ -109,7 +118,7 @@ export default function Signup({ onSignupSuccess }) {
 
           {/* Botão Google */}
           <div className="w-full">
-            <GoogleLoginButton onLoginSuccess={onSignupSuccess} />
+            <GoogleLoginButton onLoginSuccess={() => navigate("/")} />
           </div>
         </div>
       </div>

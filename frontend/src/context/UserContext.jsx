@@ -21,10 +21,10 @@ export const UserProvider = ({ children }) => {
     } catch {
       setUser(null);
     }
-  }, []); // ✅ referência estável, sem dependências que mudam
+  }, []);
 
   useEffect(() => {
-    loadUser(); // chamado apenas 1 vez ao montar o contexto
+    loadUser(); 
   }, [loadUser]);
 
   return (

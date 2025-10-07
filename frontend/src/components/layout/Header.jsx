@@ -72,11 +72,22 @@ export default function Header() {
                     className="h-6 w-6 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="h-6 w-6 rounded-full bg-gray-200" />
+                  <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center">
+                    <span className="text-gray-700 font-semibold text-sm">
+                      {user.first_name
+                        ? user.first_name[0].toUpperCase()
+                        : user.username
+                        ? user.username[0].toUpperCase()
+                        : "?"}
+                    </span>
+                  </div>
                 )}
 
-                <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                  Hello, {user.name || user.username}
+                <button
+                  onClick={() => navigate("/profile")}
+                  className="flex items-center gap-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition px-3 py-1 rounded-full shadow-sm focus:outline-none"
+                >
+                  <span>{user.first_name || user.username}</span>
                   <span className="flex items-center gap-1 text-yellow-600 font-semibold">
                     <img
                       src="/src/assets/icons/coin.svg"
@@ -85,27 +96,25 @@ export default function Header() {
                     />
                     {user.quota ?? 0}
                   </span>
-                </span>
+                </button>
               </div>
+
+
 
               {/* Botão do Dropdown */}
               <button
                 onClick={() => setOpen((v) => !v)}
-                className="p-2 hover:bg-gray-100 rounded-full"
+                className="p-2 hover:bg-gray-100 rounded-full transition"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className={`h-4 w-4 transition ${open ? "rotate-180" : ""}`}
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <img
+                  src="/src/assets/icons/arrow-down.svg"
+                  alt="Abrir menu"
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    open ? "rotate-180" : ""
+                  }`}
+                />
               </button>
+
 
               {/* Dropdown */}
               {open && (

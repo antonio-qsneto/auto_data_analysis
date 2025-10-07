@@ -1,5 +1,6 @@
 # dashboard/views/report_views.py
-import boto3, json
+import boto3
+import json
 from django.conf import settings
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -10,20 +11,15 @@ from ..serializers.report_serializer import ReportSerializer
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def list_reports(request):
-    """
-    Lista relatórios do usuário (só metadados + link do S3).
-    """
+
     reports = Report.objects.filter(user=request.user).order_by("-created_at")
     serializer = ReportSerializer(reports, many=True)
     return Response(serializer.data)
 
-
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_report_detail(request, pk):
-    """
-    Retorna os dados completos de um report, baixando o JSON do S3.
-    """
+
     try:
         report = Report.objects.get(pk=pk, user=request.user)
     except Report.DoesNotExist:
@@ -37,7 +33,6 @@ def get_report_detail(request, pk):
     except Exception as e:
         return Response({"error": f"Erro ao buscar JSON no S3: {str(e)}"}, status=500)
 
-    # Junta metadados + conteúdo
     return Response({
         "id": report.id, # type: ignore
         "created_at": report.created_at,
@@ -46,8 +41,6 @@ def get_report_detail(request, pk):
         "insights_text": data.get("insights_text"),
         "charts": data.get("charts"),
     })
-
-
 
 @api_view(["DELETE"])
 @permission_classes([IsAuthenticated])

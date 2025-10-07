@@ -8,6 +8,11 @@ import LoginPage from '../pages/Login';
 import SignUp from '../pages/SignUp';
 import PrivateRoute from './PrivateRoute';
 import ReportDetail from "../pages/ReportDetail";
+import PasswordResetRequest from "../pages/PasswordResetRequest";
+import PasswordResetConfirm from "../pages/PasswordResetConfirm";
+import UserProfile from "../pages/UserProfile";
+
+
 
 export default function AppRoutes(props) {
   return (
@@ -26,6 +31,9 @@ export default function AppRoutes(props) {
       <Route path="/database" element={<PrivateRoute><DatabasePage {...props} /></PrivateRoute>} />
       <Route path="/reports" element={<PrivateRoute><Reports {...props}/> </PrivateRoute>} />
       <Route path="/reports/:id" element={<PrivateRoute><ReportDetail {...props}/> </PrivateRoute>} />
+      <Route path="/reset-password" element={<PasswordResetRequest />} />
+      <Route path="/reset-password-confirm/:token" element={<PasswordResetConfirm />} />
+      <Route path="/profile" element={<PrivateRoute><UserProfile {...props} /></PrivateRoute>} />
 
     </Routes>
   );

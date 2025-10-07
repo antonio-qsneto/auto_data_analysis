@@ -53,7 +53,7 @@ export default function EmailPasswordLogin({ onLoginSuccess }) {
         className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-500 to-indigo-500
                    shadow-md hover:shadow-lg hover:from-blue-600 hover:to-indigo-600 transition"
       >
-        Entrar
+        Login
       </button>
       {error && (
         <p className="text-red-600 text-sm mt-1 text-center">{error}</p>

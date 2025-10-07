@@ -34,11 +34,10 @@ def process_data(df, model_name="gemini"):
         print("model gerado para insights")
     else:
         print(f"Erro no {insight_raw}")
-        insight_raw = "" # Garante que insight_raw seja uma string
+        insight_raw = ""
 
     print(f"INSIGHT => {insight_raw}")
 
-    # Charts (generate prompt -> LLM -> code -> execution)
     chart_prompt = gerar_prompt_dinamico(df)
     if(chart_prompt):
         print("prompt principal gerado!")

@@ -55,14 +55,13 @@ export default function Dashboard({ charts, theme, setTheme, businessSummary, in
         {/* Botão alternar tema */}
         <button
           onClick={toggleTheme}
-          className={`absolute top-6 right-10 flex items-center gap-2 px-4 py-2 rounded-full font-semibold shadow-lg transition-all duration-200
-            ${
-              theme === "dark"
-                ? "bg-gray-900 text-cyan-300 hover:bg-gray-800"
-                : "bg-blue-600 text-white hover:bg-blue-700"
-            }`}
+          className={`absolute top-6 right-10 flex items-center gap-2 px-4 py-2 rounded-full font-semibold shadow-lg backdrop-blur-md transition-all duration-300
+            ${theme === "dark"
+              ? "bg-white/10 text-cyan-300 hover:bg-white/20"
+              : "bg-white/50 text-gray-800 hover:bg-white/70"}`}
+          aria-label="Switch theme"
         >
-          {theme === "dark" ? "Dark Mode" : "Light Mode"}
+          {theme === "dark" ? "☾ Dark" : "☀ Light"}
         </button>
 
         {/* Business Summary Cards */}

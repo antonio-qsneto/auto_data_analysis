@@ -1,7 +1,7 @@
 import GoogleLoginButton from "../components/login_components/GoogleLoginButton";
 import EmailPasswordLogin from "../components/login_components/EmailPasswordLogin";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import XLogo from "../assets/icons/X.svg";
 
 export default function LoginPage() {
@@ -24,10 +24,10 @@ export default function LoginPage() {
 
           {/* Título */}
           <h1 className="text-3xl font-semibold text-gray-900 text-center">
-            Bem-vindo
+            Welcome
           </h1>
           <p className="text-gray-700 text-center text-sm mb-4">
-            Acesse sua conta para continuar
+            Log in to your account to continue
           </p>
 
           {/* Formulário de login */}
@@ -38,12 +38,22 @@ export default function LoginPage() {
                 className="w-full"
               />
             </div>
+
+            {/* Link "Esqueceu a senha?" */}
+            <div className="text-right mt-2">
+              <Link
+                to="/reset-password"
+                className="text-blue-500 hover:text-blue-700 text-sm font-medium"
+              >
+                Forgot your password?
+              </Link>
+            </div>
           </div>
 
           {/* Divisor */}
           <div className="flex items-center gap-3 w-full my-4">
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent"></div>
-            <span className="text-gray-500 text-sm">ou</span>
+            <span className="text-gray-500 text-sm">or</span>
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent"></div>
           </div>
 

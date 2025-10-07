@@ -11,8 +11,6 @@ import boto3
 import json
 from ..models import Report
 
-
-
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @require_quota
@@ -43,8 +41,6 @@ def generate_chart_from_csv(request):
         })
         if(body):
             print("body gerado: ===>", body)
-
-
 
         s3.put_object(
             Bucket=settings.AWS_STORAGE_BUCKET_NAME,
@@ -89,10 +85,52 @@ def list_database_tables(request):
     data, status_code = get_tables(request)
     return Response(data, status=status_code)
 
-
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @require_quota
-def get_table_data(request):
-    data, status_code = fetch_and_process_table(request)
-    return Response(data, status=status_code)
+def generate_chart_from_database(request):
+    """
+    Conecta ao DB, busca a tabela, processa, salva no S3 e no banco.
+    """
+    try:
+        # 1. Processar tabela
+        result, status_code = fetch_and_process_table(request)
+        if status_code != 200:
+            return Response(result, status=status_code)
+
+        # 2. Salvar no S3
+        s3 = boto3.client("s3")
+        file_key = f"reports/{request.user.id}/{timezone.now().isoformat()}.json"
+        body = json.dumps({
+            "business_summary": result["business_summary"],
+            "insights_text": result["insights_text"],
+            "charts": result["charts"]
+        })
+
+        s3.put_object(
+            Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+            Key=file_key,
+            Body=body,
+            ContentType="application/json"
+        )
+
+        s3_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{file_key}"
+
+        # 3. Salvar no banco
+        Report.objects.create(
+            user=request.user,
+            s3_key=file_key,
+            s3_url=s3_url
+        )
+
+        # 4. Retornar resposta
+        return Response({
+            "business_summary": result["business_summary"],
+            "charts": result["charts"],
+            "insights_text": result["insights_text"],
+            "s3_url": s3_url,
+        }, status=200)
+
+    except Exception as e:
+        print("Erro em generate_chart_from_database =>", e)
+        return Response({"error": str(e)}, status=500)

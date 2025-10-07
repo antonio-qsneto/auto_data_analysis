@@ -2,10 +2,10 @@ import os
 import requests
 from openai import OpenAI # type: ignore
 from google import genai # type: ignore
+import json
 from dotenv import load_dotenv
 
 load_dotenv()
-
 
 def call_openAI(prompt: str) -> str | None:
 
@@ -75,7 +75,6 @@ def call_gemini(prompt: str) -> str:
     if not api_key:
         raise RuntimeError("GOOGLE_API_KEY não encontrada nas variáveis de ambiente.")
 
-    # Cliente correto com google-genai
     client = genai.Client(api_key=api_key)
 
     try:
@@ -83,10 +82,21 @@ def call_gemini(prompt: str) -> str:
             model="gemini-2.5-pro",
             contents=prompt,
         )
-        return response.text # type: ignore
+        return response.text  # type: ignore
+
     except Exception as e:
-        print(f"[Gemini] Erro na API: {e}")
-        return ""  # Retorna string vazia para não quebrar o fluxo
+        # Se for um erro do Google API com dicionário de erro, extrai a mensagem
+        msg = str(e)
+        if hasattr(e, "args") and isinstance(e.args[0], dict):
+            details = e.args[0].get("error", {})
+            msg = f"{details.get('status', 'Error')}: {details.get('message', str(e))}"
+
+        print(f"[Gemini] Erro na API: {msg}")
+        # Retorna um JSON com erro para o frontend
+        return json.dumps({
+            "error": f"Gemini API error: {msg}",
+            "status": "failed"
+        })
 
 
 def switch_model(model: str):

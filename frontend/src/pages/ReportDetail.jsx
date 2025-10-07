@@ -115,43 +115,13 @@ export default function ReportDetail({ theme, setTheme }) {
         {/* Botão de alternar tema */}
         <button
           onClick={toggleTheme}
-          className={`absolute top-6 right-10 flex items-center gap-2 px-4 py-2 rounded-full font-semibold shadow-lg transition-all duration-200
-            ${
-              theme === "dark"
-                ? "bg-gray-900 text-cyan-300 hover:bg-gray-800"
-                : "bg-blue-600 text-white hover:bg-blue-700"
-            }`}
+          className={`absolute top-6 right-10 flex items-center gap-2 px-4 py-2 rounded-full font-semibold shadow-lg backdrop-blur-md transition-all duration-300
+            ${theme === "dark"
+              ? "bg-white/10 text-cyan-300 hover:bg-white/20"
+              : "bg-white/50 text-gray-800 hover:bg-white/70"}`}
           aria-label="Switch theme"
         >
-          {theme === "dark" ? (
-            <svg
-              width="22"
-              height="22"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              className="inline-block"
-            >
-              <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" />
-            </svg>
-          ) : (
-            <svg
-              width="22"
-              height="22"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              className="inline-block"
-            >
-              <circle cx="12" cy="12" r="5" />
-              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-            </svg>
-          )}
-          <span className="hidden sm:inline">
-            {theme === "dark" ? "Dark" : "Light"} Mode
-          </span>
+          {theme === "dark" ? "☾ Dark" : "☀ Light"}
         </button>
 
         {/* Título */}
