@@ -109,7 +109,6 @@ def fetch_and_process_table(request):
         if db_type == "postgresql":
             conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
 
-            # ✅ Corrige schema + tabela
             if "." in table:
                 schema, table_name = table.split(".", 1)
                 query = f'SELECT * FROM {schema}."{table_name}" LIMIT 1000'
