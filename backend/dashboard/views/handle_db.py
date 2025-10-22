@@ -4,10 +4,16 @@ import traceback
 import sqlalchemy as sa
 from .core import process_data
 
+# ==================== DEPENDÊNCIAS ====================
 try:
-    import psycopg2
+    import psycopg
 except ImportError:
-    raise ImportError("O driver psycopg2 não está instalado. Execute: pip install psycopg2-binary")
+    try:
+        import psycopg_binary as psycopg  # fallback se o pacote estiver com nome alternativo
+    except ImportError:
+        raise ImportError(
+            "O driver psycopg3 não está instalado. Execute: pip install psycopg[binary] ou pip install psycopg-binary"
+        )
 
 
 # ==================== GET TABLES ====================
@@ -30,11 +36,11 @@ def get_tables(request):
 
         # ========== PostgreSQL ==========
         if db_type == "postgresql":
-            conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
+            conn_str = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
             table_query = """
             SELECT table_schema || '.' || table_name AS table_name
-            FROM information_schema.tables 
-            WHERE table_type = 'BASE TABLE' 
+            FROM information_schema.tables
+            WHERE table_type = 'BASE TABLE'
             AND table_schema NOT IN ('pg_catalog', 'information_schema')
             ORDER BY table_schema, table_name
             """
@@ -46,8 +52,8 @@ def get_tables(request):
             dialect = "mysql" if db_type == "mysql" else "mariadb"
             conn_str = f"{dialect}+{driver}://{user}:{password}@{host}:{port}/{database}"
             table_query = """
-            SELECT table_name 
-            FROM information_schema.tables 
+            SELECT table_name
+            FROM information_schema.tables
             WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE'
             """
             table_filter = lambda tables: tables
@@ -68,7 +74,6 @@ def get_tables(request):
         engine = sa.create_engine(conn_str)
         tables_df = pd.read_sql(table_query, engine)
 
-        # Compatibilidade entre PostgreSQL, MySQL e SQL Server
         colname = [c for c in tables_df.columns if c.lower() == "table_name"]
         if not colname:
             return {"error": f"Unexpected table list columns: {tables_df.columns.tolist()}"}, 500
@@ -107,7 +112,7 @@ def fetch_and_process_table(request):
 
         # ========== PostgreSQL ==========
         if db_type == "postgresql":
-            conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
+            conn_str = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
 
             if "." in table:
                 schema, table_name = table.split(".", 1)

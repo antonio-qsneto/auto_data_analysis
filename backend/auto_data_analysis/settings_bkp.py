@@ -3,39 +3,26 @@ from dotenv import load_dotenv  # type: ignore
 import os
 from datetime import timedelta
 
-# ===========================
-# ⚙️ Inicialização básica
-# ===========================
 load_dotenv()
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# ===========================
-# 🔐 Segurança
-# ===========================
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "fallback-secret-key")
 DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() in ("1", "true", "yes")
-ALLOWED_HOSTS = [h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,backend").split(",") if h.strip()]
 
-# ===========================
-# 🌐 CORS / CSRF
-# ===========================
+ALLOWED_HOSTS = [h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
+
+# Site & CORS
 SITE_ID = 1
 CORS_ALLOWED_ORIGINS = [
-    o.strip()
-    for o in os.getenv(
-        "CORS_ALLOWED_ORIGINS",
-        "http://localhost:5173,http://127.0.0.1:5173,http://frontend,http://localhost",
-    ).split(",")
-    if o.strip()
+    o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,http://frontend,http://localhost,https://ec2-3-129-52-245.us-east-2.compute.amazonaws.com").split(",") if o.strip()
 ]
 CORS_ALLOW_CREDENTIALS = os.getenv("CORS_ALLOW_CREDENTIALS", "True").lower() in ("1", "true", "yes")
-CSRF_TRUSTED_ORIGINS = [origin for origin in CORS_ALLOWED_ORIGINS]
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS.copy()
 
-# ===========================
-# 📦 Apps instalados
-# ===========================
+# Aplicativos instalados
 INSTALLED_APPS = [
-    # Django padrão
+    # Padrão Django
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -44,7 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
 
-    # REST / Auth
+    # REST e Autenticação
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_simplejwt',
@@ -64,9 +51,6 @@ INSTALLED_APPS = [
     'storages',
 ]
 
-# ===========================
-# 🧱 Middleware
-# ===========================
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -82,9 +66,6 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'auto_data_analysis.urls'
 
-# ===========================
-# 🧩 Templates
-# ===========================
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -102,37 +83,27 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'auto_data_analysis.wsgi.application'
 
-# ===========================
-# 🗄️ Banco de dados (PostgreSQL ou SQLite)
-# ===========================
 
-POSTGRES_REQUIRED_VARS = ["POSTGRES_HOST", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD"]
-
-if all(os.getenv(v) for v in POSTGRES_REQUIRED_VARS):
-    # PostgreSQL
+if os.getenv("POSTGRES_HOST"):
     DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("POSTGRES_DB"),
-            "USER": os.getenv("POSTGRES_USER"),
-            "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
-            "HOST": os.getenv("POSTGRES_HOST"),
-            "PORT": int(os.getenv("POSTGRES_PORT", 5432)),
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('POSTGRES_DB', 'xclarity'),
+            'USER': os.getenv('POSTGRES_USER', 'postgres'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+            'HOST': os.getenv('POSTGRES_HOST', 'db'),
+            'PORT': os.getenv('POSTGRES_PORT', '5432'),
         }
     }
 else:
-    # SQLite fallback
     DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 
 
-# ===========================
-# 🔑 Validação de senhas
-# ===========================
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -140,26 +111,18 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# ===========================
-# 🌎 Internacionalização
-# ===========================
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# ===========================
-# 📁 Arquivos estáticos
-# ===========================
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else []
+STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ===========================
-# 👤 Autenticação / Allauth
-# ===========================
+# Allauth configuration
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
@@ -184,9 +147,6 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-# ===========================
-# 🔒 Django REST + JWT
-# ===========================
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -205,9 +165,7 @@ SIMPLE_JWT = {
     'SIGNING_KEY': os.getenv('JWT_SECRET_KEY', SECRET_KEY),
 }
 
-# ===========================
-# ☁️ AWS / S3
-# ===========================
+# S3 / storages (opcional)
 AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
 if AWS_STORAGE_BUCKET_NAME:
     AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
@@ -223,9 +181,7 @@ if AWS_STORAGE_BUCKET_NAME:
             "OPTIONS": {"bucket_name": AWS_STORAGE_BUCKET_NAME},
         },
         "staticfiles": {
-            "BACKEND": "storages.backends.s3boto3.S3StaticStorage"
-            if os.getenv("USE_S3_FOR_STATIC", "False").lower() in ("1", "true")
-            else "django.contrib.staticfiles.storage.StaticFilesStorage",
+            "BACKEND": "storages.backends.s3boto3.S3StaticStorage" if os.getenv("USE_S3_FOR_STATIC","False").lower() in ("1","true") else "django.contrib.staticfiles.storage.StaticFilesStorage",
         },
     }
 else:
@@ -234,9 +190,11 @@ else:
         "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
     }
 
-# ===========================
-# 📧 E-mail
-# ===========================
+GOOGLE_OAUTH_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_OAUTH_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+
+AUTH_USER_MODEL = "dashboard.CustomUser"
+
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
@@ -245,11 +203,9 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 
-# ===========================
-# ⚙️ Modelos / Logging
-# ===========================
-AUTH_USER_MODEL = "dashboard.CustomUser"
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
+# Logging
 LOG_LEVEL = os.getenv("DJANGO_LOG_LEVEL", "INFO")
 LOGGING = {
     "version": 1,
@@ -258,9 +214,6 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": LOG_LEVEL},
 }
 
-# ===========================
-# 🧱 Segurança (produção)
-# ===========================
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
