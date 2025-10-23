@@ -14,6 +14,9 @@ RUN npm run build
 # Etapa 2 - Servir com Nginx
 FROM nginx:alpine
 
+# Instalar Certbot para HTTPS automático
+RUN apk add --no-cache certbot certbot-nginx openssl
+
 # Remove config padrão e adiciona a nossa
 RUN rm /etc/nginx/conf.d/default.conf
 COPY nginx.conf /etc/nginx/conf.d/default.conf
