@@ -5,15 +5,7 @@ import sqlalchemy as sa
 from .core import process_data
 
 # ==================== DEPENDÊNCIAS ====================
-try:
-    import psycopg
-except ImportError:
-    try:
-        import psycopg_binary as psycopg  # fallback se o pacote estiver com nome alternativo
-    except ImportError:
-        raise ImportError(
-            "O driver psycopg3 não está instalado. Execute: pip install psycopg[binary] ou pip install psycopg-binary"
-        )
+import psycopg2
 
 
 # ==================== GET TABLES ====================
