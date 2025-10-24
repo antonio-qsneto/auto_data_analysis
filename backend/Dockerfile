@@ -16,7 +16,8 @@ ENV CFLAGS="-Os -g0" \
 COPY requirements.txt .
 
 # Usa pip wheel para criar wheels isolados (mais eficiente que --prefix)
-RUN pip wheel --wheel-dir /wheels -r requirements.txt --no-cache-dir --no-binary=none-any
+RUN pip wheel --wheel-dir /wheels -r requirements.txt --no-cache-dir
+
 
 # ===============================
 # 🔹 Etapa 2: Imagem final (limpa e mínima)
@@ -45,7 +46,7 @@ COPY . .
 # Remover arquivos inúteis (expande para mais caches)
 RUN find . -name "*.pyc" -delete && \
     rm -rf __pycache__ .pytest_cache .git *.log && \
-    python manage.py collectstatic --noinput || true
+    #python manage.py collectstatic --noinput || true
 
 EXPOSE 8000
 
