@@ -4,9 +4,17 @@ services:
     container_name: backend
     env_file:
       - ./backend/.env
+    command: >
+      gunicorn auto_data_analysis.wsgi:application
+      --bind 0.0.0.0:8000
+      --workers 3
+      --timeout 1000
+      --log-level info
     ports:
       - "8000:8000"
     restart: always
+    depends_on:
+      - frontend
     networks:
       - app-network
 
