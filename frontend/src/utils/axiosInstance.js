@@ -1,13 +1,8 @@
-// frontend/src/utils/axiosInstance.js
 import axios from "axios";
 import { getAccessToken, getRefreshToken, setTokens, clearTokens } from "./auth";
 
-const isProd = window.location.hostname.includes("xclarity.duckdns.org");
-
-// ✅ Base URL dinâmica: proxy em dev, domínio real em produção
-const API_URL = isProd
-  ? "https://xclarity.duckdns.org/api"
-  : "/api";
+const API_URL =
+  import.meta.env.VITE_API_URL || "/api";
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
