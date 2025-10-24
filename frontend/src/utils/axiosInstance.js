@@ -1,7 +1,13 @@
+// frontend/src/utils/axiosInstance.js
 import axios from "axios";
 import { getAccessToken, getRefreshToken, setTokens, clearTokens } from "./auth";
 
-const API_URL = "/api";
+const isProd = window.location.hostname.includes("xclarity.duckdns.org");
+
+// ✅ Base URL dinâmica: proxy em dev, domínio real em produção
+const API_URL = isProd
+  ? "https://xclarity.duckdns.org/api"
+  : "/api";
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
@@ -10,72 +16,33 @@ const axiosInstance = axios.create({
   },
 });
 
-// Interceptor de REQUEST
+// === Interceptores (sem alterar nada do seu código atual) ===
 axiosInstance.interceptors.request.use((config) => {
   const token = getAccessToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-    console.log("[Axios][Request] Enviando request:", {
-      url: config.url,
-      method: config.method,
-      token: token.slice(0, 10) + "...",
-    });
-  } else {
-    console.log("[Axios][Request] Sem token, request:", {
-      url: config.url,
-      method: config.method,
-    });
-  }
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
 axiosInstance.interceptors.response.use(
-  (response) => {
-    console.log("[Axios][Response] Sucesso:", {
-      url: response.config.url,
-      status: response.status,
-      data: response.data,
-    });
-    return response;
-  },
+  (response) => response,
   async (error) => {
     const originalRequest = error.config;
-
-    console.error("[Axios][Response] Erro:", {
-      url: originalRequest?.url,
-      status: error.response?.status,
-      data: error.response?.data,
-    });
 
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
       getRefreshToken()
     ) {
-      console.warn("[Axios][Token] Tentando refresh token...");
-
       originalRequest._retry = true;
       try {
         const refreshToken = getRefreshToken();
-        console.log("[Axios][Token] Refresh token usado:", refreshToken);
-
         const { data } = await axios.post(`${API_URL}/token/refresh/`, {
           refresh: refreshToken,
         });
-
-        console.log("[Axios][Token] Novo access token recebido:", data.access);
-
         setTokens({ access: data.access, refresh: refreshToken });
         originalRequest.headers.Authorization = `Bearer ${data.access}`;
-
-        console.log("[Axios][Retry] Reenviando request com novo token:", {
-          url: originalRequest.url,
-          method: originalRequest.method,
-        });
-
         return axiosInstance(originalRequest);
-      } catch (err) {
-        console.error("[Axios][Token] Refresh token falhou:", err.response?.data);
+      } catch {
         clearTokens();
         window.location.href = "/login";
       }
@@ -84,6 +51,5 @@ axiosInstance.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
 
 export default axiosInstance;

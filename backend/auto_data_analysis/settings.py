@@ -25,7 +25,7 @@ CORS_ALLOWED_ORIGINS = [
     o.strip()
     for o in os.getenv(
         "CORS_ALLOWED_ORIGINS",
-        "http://localhost:5173,http://127.0.0.1:5173,http://frontend,http://localhost",
+        "http://localhost:5173,http://127.0.0.1:5173,http://frontend,http://localhost,https://ec2-3-145-117-156.us-east-2.compute.amazonaws.com",
     ).split(",")
     if o.strip()
 ]
