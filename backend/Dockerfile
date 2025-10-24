@@ -1,53 +1,51 @@
 # ===============================
-# 🔹 Etapa 1: Build limpo e isolado (usa wheels para isolamento)
+# 🔹 Etapa 1: Instalação de dependências
 # ===============================
-FROM python:3.11-slim AS builder
+FROM python:3.11-slim AS base
 
-WORKDIR /install
+WORKDIR /app
 
-# Variáveis básicas
+# Variáveis de ambiente
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    POETRY_VIRTUALENVS_CREATE=false
 
-# 🔹 Flags para otimização de tamanho (strip debug, optimize for size)
-ENV CFLAGS="-Os -g0" \
-    LDFLAGS="-Wl,--strip-all"
+# Instala ferramentas básicas e dependências compiláveis
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
+# Copia somente os arquivos de dependências para aproveitar cache
 COPY requirements.txt .
 
-# Usa pip wheel para criar wheels isolados (mais eficiente que --prefix)
-RUN pip wheel --wheel-dir /wheels -r requirements.txt --no-cache-dir
-
+# Instala todas as dependências em uma camada separada (cacheável)
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install -r requirements.txt
 
 # ===============================
-# 🔹 Etapa 2: Imagem final (limpa e mínima)
+# 🔹 Etapa 2: Código da aplicação
 # ===============================
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Variáveis básicas
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# Copiar wheels do builder
-COPY --from=builder /wheels /wheels
+# Copia apenas as dependências instaladas da etapa anterior
+COPY --from=base /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=base /usr/local/bin /usr/local/bin
 
-# Copiar requirements para esta etapa (necessário para -r)
-COPY requirements.txt .
-
-# Instala de wheels locais (rápido, sem cache, sem compilação extra)
-RUN pip install --no-index --find-links /wheels -r requirements.txt --no-cache-dir && \
-    rm -rf /wheels  # Limpa wheels após install
-
-# Copiar código-fonte (agora menor graças ao .dockerignore)
+# Copia o código da aplicação
 COPY . .
 
-# Remover arquivos inúteis (expande para mais caches)
+# Limpeza de arquivos inúteis
 RUN find . -name "*.pyc" -delete && \
     rm -rf __pycache__ .pytest_cache .git *.log
-    #python manage.py collectstatic --noinput || true
 
 EXPOSE 8000
 
-CMD ["gunicorn", "auto_data_analysis.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "auto_data_analysis.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
