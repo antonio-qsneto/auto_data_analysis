@@ -45,7 +45,7 @@ COPY . .
 
 # Remover arquivos inúteis (expande para mais caches)
 RUN find . -name "*.pyc" -delete && \
-    rm -rf __pycache__ .pytest_cache .git *.log && \
+    rm -rf __pycache__ .pytest_cache .git *.log
     #python manage.py collectstatic --noinput || true
 
 EXPOSE 8000
