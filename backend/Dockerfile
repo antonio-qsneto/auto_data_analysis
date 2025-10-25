@@ -5,7 +5,6 @@ FROM python:3.11-slim AS base
 
 WORKDIR /app
 
-# Variáveis de ambiente
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
@@ -18,31 +17,32 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copia somente os arquivos de dependências para aproveitar cache
+# Copia apenas as dependências para cache
 COPY requirements.txt .
 
-# Instala todas as dependências em uma camada separada (cacheável)
+# Instala dependências e limpa cache do pip imediatamente
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt && \
+    pip cache purge
 
 # ===============================
 # 🔹 Etapa 2: Código da aplicação
 # ===============================
-FROM python:3.11-slim
+FROM python:3.11-slim AS final
 
 WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# Copia apenas as dependências instaladas da etapa anterior
+# Copia apenas os pacotes instalados da etapa base
 COPY --from=base /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=base /usr/local/bin /usr/local/bin
 
 # Copia o código da aplicação
 COPY . .
 
-# Limpeza de arquivos inúteis
+# Limpeza final para reduzir tamanho
 RUN find . -name "*.pyc" -delete && \
     rm -rf __pycache__ .pytest_cache .git *.log
 
