@@ -11,9 +11,9 @@ from .views import password_reset_views
 
 urlpatterns = [
     # Chart generation URLs
-    path("gerar_chart/", chart_views.generate_chart_from_csv, name="gerar_chart"),
-    path("connect_database/", chart_views.list_database_tables, name="connect_database"),
+    path("generate_chart_from_csv/", chart_views.generate_chart_from_csv, name="generate_chart_from_csv"),
     path("generate_chart_from_database/", chart_views.generate_chart_from_database, name="fetch_table_data"),
+    path("connect_database/", chart_views.list_database_tables, name="connect_database"),
 
     # JWT via e-mail/senha
     path('token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -35,5 +35,8 @@ urlpatterns = [
 
     # Delete profile user
     path("user/delete/", DeleteProfileView.as_view(), name="delete-profile"),
+
+    path("task_status/<str:task_id>/", chart_views.get_task_status, name="task_status"),
+
 
 ]

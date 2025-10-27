@@ -23,18 +23,20 @@ export default function DatabasePage({
   const [dbType, setDbType] = useState("postgresql");
   const [tables, setTables] = useState([]);
   const [selectedTable, setSelectedTable] = useState("");
+  const [statusMessage, setStatusMessage] = useState(""); // 🆕 status visual
   const navigate = useNavigate();
 
   // ======================== CONECTAR AO BANCO ========================
   const handleConnect = async () => {
     if (!dbHost || !dbPort || !dbUser || !dbPassword || !dbName) {
-      setError && setError("Please fill in all database credentials.");
+      setError("Please fill in all database credentials.");
       return;
     }
 
     setLoading(true);
     setError("");
     setTables([]);
+    setStatusMessage("Connecting to database...");
 
     try {
       const response = await axiosInstance.post("/connect_database/", {
@@ -49,29 +51,24 @@ export default function DatabasePage({
       if (response.data.tables?.length > 0) {
         setTables(response.data.tables);
         setSelectedTable(response.data.tables[0]);
+        setStatusMessage("✅ Connection successful! Tables loaded.");
       } else {
         throw new Error("No tables found in the database.");
       }
     } catch (err) {
       console.error("❌ Connection error:", err);
-
+      setStatusMessage("❌ Connection failed");
       if (err.response?.data?.error) {
         setError(err.response.data.error);
-      } else if (err.response?.data) {
-        setError(
-          typeof err.response.data === "string"
-            ? err.response.data
-            : JSON.stringify(err.response.data)
-        );
       } else {
-        setError("Unable to connect to the database. Please verify your credentials.");
+        setError("Unable to connect. Please check your credentials.");
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // ======================== BUSCAR DADOS ========================
+  // ======================== BUSCAR DADOS (ASSÍNCRONO COM CELERY) ========================
   const handleFetchData = async () => {
     if (!selectedTable) {
       setError("Please select a table.");
@@ -80,8 +77,10 @@ export default function DatabasePage({
 
     setLoading(true);
     setError("");
+    setStatusMessage("Submitting analysis task...");
 
     try {
+      // 1️⃣ Inicia a task Celery
       const response = await axiosInstance.post("/generate_chart_from_database/", {
         host: dbHost,
         port: dbPort,
@@ -92,41 +91,46 @@ export default function DatabasePage({
         table: selectedTable,
       });
 
-      // 🧠 Verificações de erro / resposta vazia
-      if (response.data?.error) {
-        setError(response.data.error);
-        return; // não navega
-      }
+      const { task_id } = response.data;
+      if (!task_id) throw new Error("No task ID received from server.");
 
-      if (
-        !response.data?.charts ||
-        response.data.charts.length === 0 ||
-        !response.data.business_summary
-      ) {
-        setError("No analytical results were returned. Please try again or select another table.");
-        return; // não navega
-      }
+      setStatusMessage("Processing table data...");
+      console.log("Task started:", task_id);
 
-      // ✅ sucesso
-      setCharts(response.data.charts);
-      setBusinessSummary(response.data.business_summary || "");
-      setInsightsText(response.data.insights_text || "");
-      navigate("/dashboard");
+      // 2️⃣ Polling da task
+      const interval = setInterval(async () => {
+        try {
+          const res = await axiosInstance.get(`/task_status/${task_id}/`);
+          const data = res.data;
 
+          if (data.status === "completed") {
+            clearInterval(interval);
+            setStatusMessage("✅ Task completed successfully!");
+            setCharts(data.charts);
+            setBusinessSummary(data.business_summary || "");
+            setInsightsText(data.insights_text || "");
+
+            setTimeout(() => navigate("/dashboard"), 1000);
+          } else if (data.status === "failed") {
+            clearInterval(interval);
+            setError("Error processing data: " + (data.error || "Unknown error"));
+            setStatusMessage("❌ Task failed");
+            setLoading(false);
+          } else {
+            setStatusMessage(`Status: ${data.status}...`);
+          }
+        } catch (err) {
+          console.error("Error polling task:", err);
+          clearInterval(interval);
+          setError("Error fetching task status.");
+          setStatusMessage("❌ Error checking task status");
+          setLoading(false);
+        }
+      }, 3000);
     } catch (err) {
       console.error("❌ Fetch data error:", err);
-
-      if (err.response?.data?.error) {
-        setError(err.response.data.error);
-      } else if (err.response?.data) {
-        setError(
-          typeof err.response.data === "string"
-            ? err.response.data
-            : JSON.stringify(err.response.data)
-        );
-      } else {
-        setError("Error fetching table data. Please try again.");
-      }
+      setError("Error sending analysis request.");
+      setStatusMessage("❌ Request failed");
     } finally {
       setLoading(false);
     }
@@ -250,15 +254,7 @@ export default function DatabasePage({
                   >
                     <option value="">Select a table</option>
                     {tables.map((table) => (
-                      <option
-                        key={table}
-                        value={table}
-                        className={
-                          theme === "dark"
-                            ? "bg-gray-900 text-white"
-                            : "bg-white text-gray-900"
-                        }
-                      >
+                      <option key={table} value={table}>
                         {table}
                       </option>
                     ))}
@@ -297,10 +293,21 @@ export default function DatabasePage({
           </div>
         </div>
 
+        {/* 🆕 Status visual */}
+        {statusMessage && (
+          <div
+            className={`mt-6 text-center font-semibold text-lg ${
+              theme === "dark" ? "text-cyan-300" : "text-blue-700"
+            }`}
+          >
+            {statusMessage}
+          </div>
+        )}
+
         {/* Mensagem de erro */}
         {error && (
           <div
-            className={`mt-8 text-center font-semibold text-lg max-w-xl px-6 break-words ${
+            className={`mt-6 text-center font-semibold text-lg max-w-xl px-6 break-words ${
               theme === "dark" ? "text-red-400" : "text-red-600"
             }`}
           >
