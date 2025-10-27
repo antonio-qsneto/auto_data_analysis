@@ -3,6 +3,8 @@ import BrandLogo from "../../assets/images/Xclarty_logo.svg";
 import { useNavigate } from "react-router-dom";
 import { clearTokens } from "../../utils/auth";
 import { UserContext } from "../../context/UserContext";
+import arrowDown from "../../assets/icons/arrow-down.svg";
+
 
 export default function Header() {
   const navigate = useNavigate();
@@ -107,7 +109,7 @@ export default function Header() {
                 className="p-2 hover:bg-gray-100 rounded-full transition"
               >
                 <img
-                  src="/src/assets/icons/arrow-down.svg"
+                  src={arrowDown}
                   alt="Abrir menu"
                   className={`w-4 h-4 transition-transform duration-200 ${
                     open ? "rotate-180" : ""
