@@ -10,6 +10,7 @@ from dashboard.utils.quota import require_quota
 @permission_classes([IsAuthenticated])
 @require_quota
 def generate_chart_from_csv(request):
+    print("👋 Iniciando tarefa Celery para generate_chart_from_csv...")
     uploaded_file = request.FILES.get("file")
     if not uploaded_file:
         return Response({"error": "No file uploaded"}, status=400)
@@ -19,6 +20,7 @@ def generate_chart_from_csv(request):
 
     # Enfileira task Celery
     task = generate_chart_from_csv_task.delay(csv_content, request.user.id)
+    print("Task generate_chart_from_csv finalizada!")
     return Response({"task_id": task.id}, status=202)
 
 
@@ -26,6 +28,7 @@ def generate_chart_from_csv(request):
 @permission_classes([IsAuthenticated])
 @require_quota
 def generate_chart_from_database(request):
+    print("👋 Iniciando tarefa Celery para generate_chart_from_database...")
     data = request.data
     connection_data = {
         "host": data.get("host"),
@@ -38,6 +41,7 @@ def generate_chart_from_database(request):
     table = data.get("table")
 
     task = generate_chart_from_database_task.delay(connection_data, table, request.user.id)
+    print("Task generate_chart_from_database finalizada!")
     return Response({"task_id": task.id}, status=202)
 
 
