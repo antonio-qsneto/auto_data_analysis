@@ -1,11 +1,7 @@
-# backend/dashboard/views/chart_views.py
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from dashboard.tasks import (
-    generate_chart_from_csv_task,
-    generate_chart_from_database_task,
-)
+from dashboard.tasks.tasks import generate_chart_from_csv_task, generate_chart_from_database_task
 from celery.result import AsyncResult
 from dashboard.utils.quota import require_quota
 

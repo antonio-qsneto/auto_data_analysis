@@ -1,4 +1,3 @@
-# backend/dashboard/tasks.py
 from celery import shared_task
 from dashboard.views.handle_csv import handle_csv
 from dashboard.views.handle_db import fetch_and_process_table
@@ -29,7 +28,7 @@ def generate_chart_from_csv_task(self, file_content, user_id):
 
         # ====== 2️⃣ Salvar no S3 ======
         s3 = boto3.client("s3")
-        file_key = f"reports/{user.id}/{timezone.now().isoformat()}.json"
+        file_key = f"reports/{user.id}/{timezone.now().isoformat()}.json" # type: ignore
         body = json.dumps({
             "business_summary": result["business_summary"],
             "insights_text": result["insights_text"],
@@ -80,7 +79,7 @@ def generate_chart_from_database_task(self, connection_data, table, user_id):
 
         # ====== Salvar no S3 ======
         s3 = boto3.client("s3")
-        file_key = f"reports/{user.id}/{timezone.now().isoformat()}.json"
+        file_key = f"reports/{user.id}/{timezone.now().isoformat()}.json" # type: ignore
         body = json.dumps({
             "business_summary": result["business_summary"],
             "insights_text": result["insights_text"],
