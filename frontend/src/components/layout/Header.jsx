@@ -4,7 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { clearTokens } from "../../utils/auth";
 import { UserContext } from "../../context/UserContext";
 import arrowDown from "../../assets/icons/arrow-down.svg";
-
+import coin from "../../assets/icons/coin.svg";
+import reports from "../../assets/icons/reports.svg";
+import out from "../../assets/icons/out.svg";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -92,7 +94,7 @@ export default function Header() {
                   <span>{user.first_name || user.username}</span>
                   <span className="flex items-center gap-1 text-yellow-600 font-semibold">
                     <img
-                      src="/src/assets/icons/coin.svg"
+                      src={coin}
                       alt="Credits"
                       className="w-4 h-4"
                     />
@@ -126,7 +128,7 @@ export default function Header() {
                     className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full"
                   >
                     <img
-                      src="/src/assets/icons/reports.svg"
+                      src={reports}
                       alt="Reports"
                       className="w-4 h-4"
                     />
@@ -138,7 +140,7 @@ export default function Header() {
                     className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full"
                   >
                     <img
-                      src="/src/assets/icons/out.svg"
+                      src={out}
                       alt="Sign out"
                       className="w-4 h-4"
                     />
