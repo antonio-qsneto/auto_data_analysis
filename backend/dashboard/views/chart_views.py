@@ -52,3 +52,13 @@ def get_task_status(request, task_id):
         return Response({"status": "failed", "error": str(result.info)}, status=500)
     else:
         return Response(result.result)
+    
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@require_quota
+def list_database_tables(request):
+    from .handle_db import get_tables
+    data, status_code = get_tables(request)
+    return Response(data, status=status_code)
+
