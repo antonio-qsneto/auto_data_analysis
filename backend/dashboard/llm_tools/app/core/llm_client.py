@@ -79,7 +79,7 @@ def call_gemini(prompt: str) -> str:
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-pro",
+            model="gemini-2.5-flash-lite",
             contents=prompt,
         )
         return response.text  # type: ignore
