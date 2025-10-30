@@ -3,6 +3,8 @@ import Charts from "../components/charts/Charts";
 import SideBar from "../components/layout/SideBar";
 import Footer from "../components/layout/Footer";
 import {parseInsightsToCards, InsightTextCard} from './utils/utils';
+import ChatWithAI from "../components/layout/ChatWithAI";
+
 
 // --- Função para parsear business summary (SparkBox mantido) ---
 function parseBusinessSummary(summary) {
@@ -92,6 +94,11 @@ export default function Dashboard({ charts, theme, setTheme, businessSummary, in
             ))}
           </div>
         )}
+
+        {/* Chat IA */}
+      <div className="mt-10">
+        <ChatWithAI />
+      </div>
 
 
       </div>

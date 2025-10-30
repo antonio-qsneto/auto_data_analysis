@@ -7,6 +7,7 @@ from .views.user_delete import DeleteProfileView
 from .views.custom_token_serializer import MyTokenObtainPairView
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import password_reset_views
+from .views.chat_view import chat_api
 
 
 urlpatterns = [
@@ -37,6 +38,10 @@ urlpatterns = [
     path("user/delete/", DeleteProfileView.as_view(), name="delete-profile"),
 
     path("task_status/<str:task_id>/", chart_views.get_task_status, name="task_status"),
+
+    # Chat
+    path("chat_with_data/", chat_api, name="chat_with_data"),
+
 
 
 ]
