@@ -1,12 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import Charts from "../components/charts/Charts";
 import SideBar from "../components/layout/SideBar";
 import Footer from "../components/layout/Footer";
-import {parseInsightsToCards, InsightTextCard} from './utils/utils';
+import { parseInsightsToCards, InsightTextCard } from "./utils/utils";
 import ChatWithAI from "../components/layout/ChatWithAI";
+import { MessageCircle } from "lucide-react"; // ícone do chat
 
-
-// --- Função para parsear business summary (SparkBox mantido) ---
 function parseBusinessSummary(summary) {
   if (!summary) return [];
   const cards = [];
@@ -39,8 +38,14 @@ function parseBusinessSummary(summary) {
   return cards;
 }
 
-
 export default function Dashboard({ charts, theme, setTheme, businessSummary, insightsText }) {
+  const [chatOpen, setChatOpen] = useState(false);
+
+  // ✅ estados do chat persistentes
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
     setTheme(newTheme);
@@ -53,11 +58,11 @@ export default function Dashboard({ charts, theme, setTheme, businessSummary, in
   return (
     <>
       <SideBar />
-      <div className="content-area">
+      <div className="content-area relative">
         {/* Botão alternar tema */}
         <button
           onClick={toggleTheme}
-          className={`absolute top-6 right-10 flex items-center gap-2 px-4 py-2 rounded-full font-semibold shadow-lg backdrop-blur-md transition-all duration-300
+          className={`fixed top-6 right-10 flex items-center gap-2 px-4 py-2 rounded-full font-semibold shadow-lg backdrop-blur-md transition-all duration-300 z-50
             ${theme === "dark"
               ? "bg-white/10 text-cyan-300 hover:bg-white/20"
               : "bg-white/50 text-gray-800 hover:bg-white/70"}`}
@@ -65,6 +70,7 @@ export default function Dashboard({ charts, theme, setTheme, businessSummary, in
         >
           {theme === "dark" ? "☾ Dark" : "☀ Light"}
         </button>
+
 
         {/* Business Summary Cards */}
         <div className="sparkboxes">
@@ -76,7 +82,7 @@ export default function Dashboard({ charts, theme, setTheme, businessSummary, in
           ))}
         </div>
 
-       {/* Charts */}
+        {/* Charts */}
         <div className="charts-grid w-full grid gap-6 mt-6 mb-10">
           <Charts charts={charts} theme={theme} />
         </div>
@@ -95,13 +101,44 @@ export default function Dashboard({ charts, theme, setTheme, businessSummary, in
           </div>
         )}
 
-        {/* Chat IA */}
-      <div className="mt-10">
-        <ChatWithAI />
+        {/* Chat Flutuante */}
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+          {/* Botão do chat */}
+          <button
+            onClick={() => setChatOpen(!chatOpen)}
+            className="bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-400 hover:to-blue-400 text-white p-4 rounded-full shadow-xl hover:scale-105 transition-all duration-300 focus:outline-none"
+            aria-label="Abrir chat"
+          >
+            <MessageCircle size={26} />
+          </button>
+
+          {/* Container do chat */}
+          <div
+            className={`transition-all duration-500 ease-in-out transform ${
+              chatOpen
+                ? "opacity-100 translate-y-0 scale-100"
+                : "opacity-0 translate-y-4 scale-95 pointer-events-none"
+            }`}
+          >
+            {/* Mantém o componente montado sempre — apenas oculta visualmente */}
+            <div
+              className={`mt-4 w-[400px] max-h-[75vh] rounded-2xl shadow-2xl overflow-hidden ${
+                chatOpen ? "visible" : "invisible h-0"
+              }`}
+            >
+              <ChatWithAI
+                messages={chatMessages}
+                setMessages={setChatMessages}
+                input={chatInput}
+                setInput={setChatInput}
+                loading={chatLoading}
+                setLoading={setChatLoading}
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
-
-      </div>
       <Footer />
     </>
   );

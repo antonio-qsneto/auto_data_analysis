@@ -240,3 +240,23 @@ body.light .upload-area span[role="button"] {
   border-radius: 4px;
   font-family: var(--font-code);
 }
+
+
+/* === Scrollbar elegante e translúcida === */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(99,102,241,0.7), rgba(59,130,246,0.6));
+  border-radius: 9999px;
+  box-shadow: 0 0 6px rgba(99,102,241,0.4);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(129,140,248,0.9), rgba(59,130,246,0.9));
+}

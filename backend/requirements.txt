@@ -91,3 +91,5 @@ gunicorn
 tabulate
 celery
 redis
+pyarrow
+scikit-learn

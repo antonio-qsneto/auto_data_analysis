@@ -89,7 +89,7 @@ export default function UploadPage({
           } else if (data.status === "failed") {
             clearInterval(interval);
             setError && setError("Error processing the file: " + data.error);
-            setStatusMessage("❌ Task failed");
+            setStatusMessage("Task failed");
             setLoading && setLoading(false);
           } else {
             setStatusMessage(`Status: ${data.status}...`);
@@ -98,14 +98,14 @@ export default function UploadPage({
           console.error("Error polling task:", err);
           clearInterval(interval);
           setError && setError("Error checking task status.");
-          setStatusMessage("❌ Error fetching task status");
+          setStatusMessage("Error fetching task status");
           setLoading && setLoading(false);
         }
       }, 3000);
     } catch (err) {
       console.error(err);
       setError && setError("Error uploading file or generating charts.");
-      setStatusMessage("❌ Upload failed");
+      setStatusMessage("Upload failed");
     } finally {
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";

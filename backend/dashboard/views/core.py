@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 from dashboard.views.insights import summarize_business, summarize_text_insights
 from dashboard.llm_tools.app.core.prompt_engine import gerar_prompt_dinamico, generate_prompt_insight
 from dashboard.llm_tools.app.core.llm_client import switch_model
-from dashboard.llm_tools.app.core.code_executor import executar_codigo_ia, extrair_codigo_puro
+from dashboard.llm_tools.app.core.code_executor import executar_codigo_ia, extrair_codigo_puro, executar_codigo_chat
 from .utils import convert_numpy, save_json
 from dashboard.cache import set_dataframe
 from dashboard.cache import get_dataframe
@@ -10,8 +10,11 @@ load_dotenv()
 
 
 
-def process_data(df, model_name="gemini"):
-    set_dataframe(df)
+def process_data(df, model_name="gemini", user=None):
+    if user:
+        set_dataframe(df, user.id)
+        print(f"[DEBUG] DataFrame salvo no Redis para user:{user.id}")
+
     model = switch_model(model_name)
 
     business_summary = summarize_business(df)
@@ -71,36 +74,40 @@ def process_data(df, model_name="gemini"):
 
 
 
-
-def chat_with_data(question: str, model_name="gemini"):
+def chat_with_data(question: str, user, model_name="gemini"):
     """
     Analisa a pergunta do usuário sobre o dataframe completo já carregado.
-    Retorna a resposta (texto) e debug opcional.
     """
-    df = get_dataframe()
+    df = get_dataframe(user.id)
     if df is None:
         return {"answer": "Nenhuma tabela foi carregada ainda."}
 
     model = switch_model(model_name)
 
-    # Prompt de orientação ao modelo
     prompt = f"""
-        Você é um assistente de análise de dados. 
+        Você é o Xclarity, um assistente de análise de dados.
+
         O usuário perguntou: "{question}"
 
         Regras:
         1. Use o DataFrame `df` já carregado.
-        2. Gere um pequeno código Python entre os delimitadores abaixo, se necessário:
-        ```python
-        # BEGIN_CODE
-        ...
-        # END_CODE
-        Se não for preciso código, responda diretamente com o resultado calculado.
-
-        Use pandas e numpy apenas.
-
-        Se envolver datas, use pd.to_datetime(..., dayfirst=True).
-        """
+        2. Gere um código Python válido e funcional.
+        3. Não insira comentários, apenas código útil.
+        4. Se não for preciso código, responda diretamente com o resultado calculado.
+        5. Use apenas as bibliotecas: pandas, numpy e os seguintes módulos leves do scikit-learn:
+           - LinearRegression, Ridge, Lasso, LogisticRegression
+           - PolynomialFeatures
+           - StandardScaler, MinMaxScaler, Normalizer
+           - LabelEncoder, OneHotEncoder
+           - train_test_split
+        6. Não use RandomForest, DecisionTree, SVC, PCA, KMeans, nem redes neurais.
+        7. Se envolver datas, use pd.to_datetime(..., dayfirst=True).
+        8. Sempre finalize o código com um print contendo uma resposta em linguagem natural.
+        9. Se a pergunta não tiver relação com os dados, gere uma resposta simples dentro de um print do Python.
+        10. Nunca desvie de temas relacionados ao DataFrame.
+        11. caso use algum modulo do scikit-learn, informar qual foi o algoritmo no print para o usuário.
+        12. Não explique ou dê considerações. Apenas o resultado de forma humana.
+    """
 
     cols = df.columns.tolist()
     sample = df.head(5).to_dict(orient="records")
@@ -108,9 +115,17 @@ def chat_with_data(question: str, model_name="gemini"):
 
     raw = model(prompt)
     codigo = extrair_codigo_puro(raw or "")
+
+    print(" -------------------------------------- CODIGO PURO CHAT IA --------------------------------------")
+    print(codigo)
+
     if codigo:
-        result = executar_codigo_ia(codigo, df)
-        resposta = result.get("stdout") or result.get("answer") or "Código executado sem saída."
+        result = executar_codigo_chat(codigo, df)
+        if result.get("success"):
+            resposta = result.get("stdout")
+        else:
+            resposta = f"Erro ao executar o código:\n{result.get('error')}"
     else:
         resposta = raw
+
     return {"answer": resposta, "debug": {"codigo": codigo, "raw": raw}}

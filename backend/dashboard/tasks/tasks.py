@@ -8,32 +8,57 @@ import boto3
 import json
 import traceback
 import io
+import numpy as np
 
 
+# =====================================================
+# 🔧 Função utilitária: limpeza de valores inválidos JSON
+# =====================================================
+def clean_json(obj):
+    if isinstance(obj, float):
+        if np.isnan(obj) or np.isinf(obj):
+            return 0  # ou None se quiser que vá como null
+        return obj
+    elif isinstance(obj, dict):
+        return {k: clean_json(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [clean_json(v) for v in obj]
+    return obj
+
+
+# =====================================================
+# 📊 TASK 1 — Processar CSV e salvar no S3
+# =====================================================
 @shared_task(bind=True, name="generate_chart_from_csv_task")
 def generate_chart_from_csv_task(self, file_content, user_id):
     """
     Executa em background o pipeline de CSV -> LLM -> Charts -> S3 -> Report
     """
     try:
-        # ====== 1️⃣ Processar CSV ======
+        # ====== 1️⃣ Obter usuário ======
         from django.contrib.auth import get_user_model
         User = get_user_model()
         user = User.objects.get(id=user_id)
 
+        # ====== 2️⃣ Converter CSV recebido ======
         uploaded_file = io.BytesIO(file_content.encode("utf-8"))
         uploaded_file.name = "async_uploaded.csv"
 
-        result = handle_csv(uploaded_file)
+        # ====== 3️⃣ Processar CSV (gera insights e salva df no Redis) ======
+        result = handle_csv(uploaded_file, user=user)
 
-        # ====== 2️⃣ Salvar no S3 ======
+        # ====== 4️⃣ Sanitizar dados ======
+        safe_result = clean_json(result)
+
+        # ====== 5️⃣ Salvar resultado no S3 ======
         s3 = boto3.client("s3")
-        file_key = f"reports/{user.id}/{timezone.now().isoformat()}.json" # type: ignore
+        file_key = f"reports/{user.id}/{timezone.now().isoformat()}.json"  # type: ignore
+
         body = json.dumps({
-            "business_summary": result["business_summary"],
-            "insights_text": result["insights_text"],
-            "charts": result["charts"],
-        })
+            "business_summary": safe_result["business_summary"],
+            "insights_text": safe_result["insights_text"],
+            "charts": safe_result["charts"],
+        }, allow_nan=False)
 
         s3.put_object(
             Bucket=settings.AWS_STORAGE_BUCKET_NAME,
@@ -41,17 +66,23 @@ def generate_chart_from_csv_task(self, file_content, user_id):
             Body=body,
             ContentType="application/json"
         )
-        s3_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{file_key}"
 
-        # ====== 3️⃣ Registrar Report ======
+        s3_url = (
+            f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3."
+            f"{settings.AWS_S3_REGION_NAME}.amazonaws.com/{file_key}"
+        )
+
+        # ====== 6️⃣ Registrar no banco ======
         Report.objects.create(user=user, s3_key=file_key, s3_url=s3_url)
+
+        print(f"[TASK] CSV processado e cache salvo para user:{user.id}")
 
         return {
             "status": "completed",
             "s3_url": s3_url,
-            "business_summary": result["business_summary"],
-            "charts": result["charts"],
-            "insights_text": result["insights_text"],
+            "business_summary": safe_result["business_summary"],
+            "charts": safe_result["charts"],
+            "insights_text": safe_result["insights_text"],
         }
 
     except Exception as e:
@@ -59,6 +90,9 @@ def generate_chart_from_csv_task(self, file_content, user_id):
         return {"status": "failed", "error": str(e)}
 
 
+# =====================================================
+# 🗄️ TASK 2 — Processar Tabela de Banco e salvar no S3
+# =====================================================
 @shared_task(bind=True, name="generate_chart_from_database_task")
 def generate_chart_from_database_task(self, connection_data, table, user_id):
     """
@@ -69,39 +103,47 @@ def generate_chart_from_database_task(self, connection_data, table, user_id):
         User = get_user_model()
         user = User.objects.get(id=user_id)
 
-        result, status_code = fetch_and_process_table({"body": json.dumps({
-            **connection_data,
-            "table": table
-        }), "method": "POST"})
+        result, status_code = fetch_and_process_table({
+            "body": json.dumps({**connection_data, "table": table}),
+            "method": "POST"
+        })
 
         if status_code != 200:
             return {"status": "failed", "error": result.get("error")}
 
+        # ====== Sanitizar dados ======
+        safe_result = clean_json(result)
+
         # ====== Salvar no S3 ======
         s3 = boto3.client("s3")
-        file_key = f"reports/{user.id}/{timezone.now().isoformat()}.json" # type: ignore
+        file_key = f"reports/{user.id}/{timezone.now().isoformat()}.json"  # type: ignore
         body = json.dumps({
-            "business_summary": result["business_summary"],
-            "insights_text": result["insights_text"],
-            "charts": result["charts"],
-        })
+            "business_summary": safe_result["business_summary"],
+            "insights_text": safe_result["insights_text"],
+            "charts": safe_result["charts"],
+        }, allow_nan=False)
+
         s3.put_object(
             Bucket=settings.AWS_STORAGE_BUCKET_NAME,
             Key=file_key,
             Body=body,
             ContentType="application/json"
         )
-        s3_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{file_key}"
+        s3_url = (
+            f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3."
+            f"{settings.AWS_S3_REGION_NAME}.amazonaws.com/{file_key}"
+        )
 
-        # ====== Salvar no banco ======
         Report.objects.create(user=user, s3_key=file_key, s3_url=s3_url)
+
+        print(f"[TASK] Tabela processada e cache salvo para user:{user.id}")
 
         return {
             "status": "completed",
             "s3_url": s3_url,
-            "business_summary": result["business_summary"],
-            "charts": result["charts"],
-            "insights_text": result["insights_text"],
+            "business_summary": safe_result["business_summary"],
+            "charts": safe_result["charts"],
+            "insights_text": safe_result["insights_text"],
         }
 
     except Exception as e:

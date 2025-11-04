@@ -3,6 +3,7 @@ import React, { useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../context/UserContext";
 import axiosInstance from "../utils/axiosInstance";
+import coin from "../assets/icons/coin.svg";
 
 export default function UserProfile() {
   const { user, setUser } = useContext(UserContext);
@@ -86,7 +87,7 @@ export default function UserProfile() {
 
         {/* Créditos */}
         <div className="flex items-center gap-2 mb-6">
-          <img src="/src/assets/icons/coin.svg" alt="Credits" className="w-5 h-5" />
+          <img src={coin} alt="Credits" className="w-4 h-4"/>
           <span className="font-semibold text-yellow-600">{user.quota ?? 0}</span>
         </div>
 

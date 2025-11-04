@@ -137,7 +137,7 @@ def fetch_and_process_table(request):
         df["index"] = df.index
 
         # ========== Processa com IA ==========
-        data = process_data(df)
+        data = process_data(df, user=request.user)
         engine.dispose()
         return data, 200
 
