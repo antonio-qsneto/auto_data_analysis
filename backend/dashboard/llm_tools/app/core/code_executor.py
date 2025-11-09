@@ -5,7 +5,8 @@ import re
 import numpy as np
 import traceback
 import sklearn
-
+import concurrent.futures
+import os
 from sklearn.linear_model import LinearRegression, Ridge, Lasso, LogisticRegression
 from sklearn.preprocessing import (
     StandardScaler, MinMaxScaler, Normalizer, PolynomialFeatures,
@@ -96,6 +97,7 @@ def executar_codigo_chat(codigo: str, df: pd.DataFrame) -> dict:
       - Retornar informações numéricas, estatísticas ou prints
       - NÃO gerar gráficos (isso é papel da função executar_codigo_ia)
       - Pode usar apenas funções e classes leves do scikit-learn
+      - É executado em ambiente controlado e com limite de tempo
     """
     stdout = io.StringIO()
 
@@ -121,36 +123,51 @@ def executar_codigo_chat(codigo: str, df: pd.DataFrame) -> dict:
         "train_test_split": train_test_split,
     }
 
-    try:
+    # Função interna que roda o código dentro da thread isolada
+    def _executar():
         with contextlib.redirect_stdout(stdout):
             exec(codigo, namespace)
 
-        # Captura variáveis criadas pelo código
         result_vars = {
             k: v for k, v in namespace.items()
             if not k.startswith("_") and k not in namespace.keys()
         }
 
-        # Monta resposta textual com stdout e variáveis finais
         resposta = stdout.getvalue().strip()
         if not resposta and result_vars:
-            resposta = "\n".join(
-                [f"{k} = {repr(v)}" for k, v in result_vars.items()]
-            )
+            resposta = "\n".join([f"{k} = {repr(v)}" for k, v in result_vars.items()])
 
         return {
             "success": True,
             "stdout": resposta or "Código executado sem saída.",
-            "result_vars": result_vars
+            "result_vars": result_vars,
+        }
+
+    # Define tempo limite padrão (3s) ou variável de ambiente
+    TIMEOUT_SECONDS = float(os.getenv("CHAT_EXEC_TIMEOUT", "3.0"))
+
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(_executar)
+            result = future.result(timeout=TIMEOUT_SECONDS)
+            return result
+
+    except concurrent.futures.TimeoutError:
+        # Caso o código demore demais → encerra execução
+        print("[CHAT EXEC TIMEOUT] Código excedeu o tempo limite e foi interrompido.")
+        return {
+            "success": False,
+            "error": f"Tempo limite de execução excedido ({TIMEOUT_SECONDS}s). O código foi interrompido por segurança.",
+            "traceback": None,
+            "stdout": stdout.getvalue(),
         }
 
     except Exception as e:
         error_trace = traceback.format_exc()
         print("[CHAT EXEC ERROR]", error_trace)
-        print(e)
         return {
             "success": False,
             "error": str(e),
             "traceback": error_trace,
-            "stdout": stdout.getvalue()
+            "stdout": stdout.getvalue(),
         }

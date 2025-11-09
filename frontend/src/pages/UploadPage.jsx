@@ -1,5 +1,5 @@
 // frontend/src/pages/UploadPage.jsx
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import SideBar from "../components/layout/SideBar";
 import loadingGif from "../assets/images/loading.gif";
@@ -22,12 +22,22 @@ export default function UploadPage({
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
+  // 🆕 Reset states on mount to clear sticky loading from prior sessions
+  useEffect(() => {
+    setLoading && setLoading(false);
+    setSelectedFile(null);
+    setDragActive(false);
+    setStatusMessage("");
+    setError && setError("");
+  }, [setLoading, setError]);
+
   // ========== Handlers de Drag & Drop ==========
   const handleFileChange = (e) => {
     const file = e.target.files?.[0] || e.dataTransfer?.files?.[0];
     if (file) {
       setSelectedFile(file);
       setError && setError("");
+      setStatusMessage(""); // Clear any prior status on new selection
     }
   };
   const handleDragOver = (e) => {

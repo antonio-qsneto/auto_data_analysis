@@ -96,27 +96,33 @@ def generate_chart_from_csv_task(self, file_content, user_id):
 @shared_task(bind=True, name="generate_chart_from_database_task")
 def generate_chart_from_database_task(self, connection_data, table, user_id):
     """
-    Executa em background o pipeline DB -> LLM -> Charts -> S3 -> Report
+    Executa em background o pipeline:
+    Banco -> LLM -> Charts -> S3 -> Report
     """
     try:
         from django.contrib.auth import get_user_model
         User = get_user_model()
         user = User.objects.get(id=user_id)
 
-        result, status_code = fetch_and_process_table({
-            "body": json.dumps({**connection_data, "table": table}),
-            "method": "POST"
-        })
+        # Envia o payload de forma plana (sem JSON.dumps)
+        request_payload = {
+            **connection_data,
+            "table": table,
+            "db_user": connection_data.get("user"),  # garante que vai o certo
+            "django_user": user,
+        }
+
+        result, status_code = fetch_and_process_table(request_payload)
 
         if status_code != 200:
             return {"status": "failed", "error": result.get("error")}
 
-        # ====== Sanitizar dados ======
+        # ====== Sanitiza ======
         safe_result = clean_json(result)
 
-        # ====== Salvar no S3 ======
+        # ====== Salva no S3 ======
         s3 = boto3.client("s3")
-        file_key = f"reports/{user.id}/{timezone.now().isoformat()}.json"  # type: ignore
+        file_key = f"reports/{user.id}/{timezone.now().isoformat()}.json"
         body = json.dumps({
             "business_summary": safe_result["business_summary"],
             "insights_text": safe_result["insights_text"],
@@ -134,9 +140,10 @@ def generate_chart_from_database_task(self, connection_data, table, user_id):
             f"{settings.AWS_S3_REGION_NAME}.amazonaws.com/{file_key}"
         )
 
+        # ====== Cria Report no banco ======
         Report.objects.create(user=user, s3_key=file_key, s3_url=s3_url)
 
-        print(f"[TASK] Tabela processada e cache salvo para user:{user.id}")
+        print(f"[TASK] ✅ Tabela processada e cache salvo para user:{user.id}")
 
         return {
             "status": "completed",

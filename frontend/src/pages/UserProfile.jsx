@@ -1,4 +1,3 @@
-// frontend/src/pages/UserProfile.jsx
 import React, { useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../context/UserContext";
@@ -21,21 +20,17 @@ export default function UserProfile() {
     }
   }, [user?.picture]);
 
-  if (!user) return <p>Carregando...</p>;
+  if (!user) return <p>Loading...</p>;
 
   const handleDelete = async () => {
-    if (confirmText !== "deletar meu perfil") {
-      alert('Digite "deletar meu perfil" para confirmar.');
-      return;
-    }
     setLoading(true);
     try {
       await axiosInstance.delete("/user/delete/");
       setUser(null);
-      alert("Perfil deletado com sucesso.");
+      alert("Profile deleted successfully.");
       navigate("/");
     } catch (err) {
-      alert("Erro ao deletar perfil: " + (err.response?.data?.error || err.message));
+      alert("Error deleting profile: " + (err.response?.data?.error || err.message));
     } finally {
       setLoading(false);
     }
@@ -47,6 +42,8 @@ export default function UserProfile() {
     return "?";
   };
 
+  const isConfirmValid = confirmText === "delete my profile";
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-md flex flex-col items-center relative">
@@ -54,7 +51,7 @@ export default function UserProfile() {
         <button
           onClick={() => navigate(-1)}
           className="absolute top-4 left-4 p-2 rounded-full hover:bg-gray-100 transition"
-          aria-label="Voltar"
+          aria-label="Back"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -81,11 +78,11 @@ export default function UserProfile() {
           </div>
         )}
 
-        {/* Nome e email */}
+        {/* Name and email */}
         <h1 className="text-2xl font-bold mb-1 text-gray-900">{user.first_name || user.username}</h1>
         <p className="text-gray-500 mb-4">{user.email}</p>
 
-        {/* Créditos */}
+        {/* Credits */}
         <div className="flex items-center gap-2 mb-6">
           <img src={coin} alt="Credits" className="w-4 h-4"/>
           <span className="font-semibold text-yellow-600">{user.quota ?? 0}</span>
@@ -94,19 +91,19 @@ export default function UserProfile() {
         {/* Deletion */}
         <input
           type="text"
-          placeholder='Digite "deletar meu perfil"'
+          placeholder='Type "delete my profile"'
           value={confirmText}
           onChange={e => setConfirmText(e.target.value)}
           className="w-full px-4 py-2 mb-4 border border-gray-300 rounded-xl text-center focus:outline-none focus:ring-2 focus:ring-red-400"
         />
         <button
           onClick={handleDelete}
-          disabled={loading}
+          disabled={loading || !isConfirmValid}
           className={`w-full px-6 py-2 rounded-xl text-white font-bold transition ${
-            loading ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"
+            loading || !isConfirmValid ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"
           }`}
         >
-          {loading ? "Deletando..." : "Deletar meu perfil"}
+          {loading ? "Deleting..." : "Delete my profile"}
         </button>
       </div>
     </div>

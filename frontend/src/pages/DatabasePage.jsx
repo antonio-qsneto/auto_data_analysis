@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import SideBar from "../components/layout/SideBar";
 import loadingGif from "../assets/images/loading.gif";
@@ -25,6 +25,21 @@ export default function DatabasePage({
   const [selectedTable, setSelectedTable] = useState("");
   const [statusMessage, setStatusMessage] = useState(""); // 🆕 status visual
   const navigate = useNavigate();
+
+  // 🆕 Reset globals and locals on mount to clear sticky state from other pages (e.g., Upload errors/loading)
+  useEffect(() => {
+    setLoading && setLoading(false);
+    setError && setError("");
+    setStatusMessage("");
+    setTables([]);
+    setSelectedTable("");
+    setDbHost("");
+    setDbPort("");
+    setDbUser("");
+    setDbPassword("");
+    setDbName("");
+    setDbType("postgresql");
+  }, [setLoading, setError]);
 
   // ======================== CONECTAR AO BANCO ========================
   const handleConnect = async () => {

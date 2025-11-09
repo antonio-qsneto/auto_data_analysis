@@ -1,4 +1,3 @@
-// frontend/src/pages/ReportDetail.jsx
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axiosInstance";

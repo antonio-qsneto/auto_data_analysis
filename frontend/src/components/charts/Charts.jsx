@@ -2,14 +2,31 @@ import React from "react";
 import ReactApexChart from "react-apexcharts";
 
 export default function Charts({ charts, theme = "dark" }) {
-  if (!charts || charts.length === 0) {
+  // 🔒 Filtra apenas charts válidos antes de qualquer renderização
+  const safeCharts = (charts || []).filter((ch) => {
+    if (!ch || typeof ch !== "object") return false;
+    if (!ch.series || !Array.isArray(ch.series)) return false;
+    if (ch.series.length === 0) return false;
+
+    // Cada série precisa ter dados válidos
+    const hasValidSeries = ch.series.some((s) => {
+      if (!s) return false;
+      if (Array.isArray(s)) return s.length >= 2;
+      if (typeof s === "object" && Array.isArray(s.data)) return s.data.length >= 2;
+      return false;
+    });
+    return hasValidSeries;
+  });
+
+  // Se nenhum chart sobrou, mostra mensagem
+  if (safeCharts.length === 0) {
     return (
       <p
         className={`text-center ${
           theme === "dark" ? "text-gray-400" : "text-gray-600"
         }`}
       >
-        No charts available
+        No valid charts to display
       </p>
     );
   }
@@ -20,14 +37,14 @@ export default function Charts({ charts, theme = "dark" }) {
   const placements = [];
   let rowIndex = 0;
 
-  for (let i = 0; i < charts.length; i++) {
+  for (let i = 0; i < safeCharts.length; i++) {
     if (placements[i]) continue;
 
-    const chart = charts[i];
+    const chart = safeCharts[i];
     const type = chart.type || "line";
     const wide = isWideType(type);
 
-    const next = charts[i + 1];
+    const next = safeCharts[i + 1];
     const nextIsWide = next ? isWideType(next.type || "line") : false;
 
     if (wide) {
@@ -55,14 +72,13 @@ export default function Charts({ charts, theme = "dark" }) {
   const gridColor = theme === "dark" ? "#444" : "#ccc";
   const cardBg = theme === "dark" ? "transparent" : "transparent";
 
-
   return (
     <>
-      {charts.map((chart, idx) => {
+      {safeCharts.map((chart, idx) => {
         const type = chart.type || "line";
         const chartIdxClass = placements[idx] || "";
 
-        // Filtra candlestick para exibir apenas últimos pontos
+        // 🔍 Trunca candlestick para últimos pontos
         let filteredChart = chart;
         if (
           type === "candlestick" &&
@@ -85,7 +101,7 @@ export default function Charts({ charts, theme = "dark" }) {
 
         const chartToUse = type === "candlestick" ? filteredChart : chart;
 
-        // Configurações dinâmicas para todos os tipos de chart
+        // 🔧 Configurações de renderização
         const options = {
           ...chartToUse.options,
           chart: {
@@ -104,11 +120,12 @@ export default function Charts({ charts, theme = "dark" }) {
             style: { color: textColor },
             y: {
               formatter: (val) => {
-                if (Array.isArray(val)) return val.map(v => v.toFixed ? v.toFixed(1) : v).join(", ");
+                if (Array.isArray(val))
+                  return val.map((v) => (v?.toFixed ? v.toFixed(1) : v)).join(", ");
                 if (typeof val === "number") return val.toFixed(1);
                 return val;
-              }
-            }
+              },
+            },
           },
           grid: { ...chartToUse.options?.grid, borderColor: gridColor },
           dataLabels: { enabled: false },
@@ -159,7 +176,6 @@ export default function Charts({ charts, theme = "dark" }) {
             className={`chart-card ${chartIdxClass}`}
             style={{ backgroundColor: cardBg }}
           >
-
             <div className="chart-title" style={{ color: textColor }}>
               {chartToUse.title || chartToUse.options?.title?.text || ""}
             </div>

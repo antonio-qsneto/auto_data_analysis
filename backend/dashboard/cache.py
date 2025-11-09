@@ -12,7 +12,7 @@ from django.conf import settings
 REDIS_HOST = getattr(settings, "REDIS_HOST", "redis")
 REDIS_PORT = int(getattr(settings, "REDIS_PORT", 6379))
 REDIS_DB = int(getattr(settings, "REDIS_DB", 0))
-REDIS_TTL_SECONDS = 3600  # 1 hora de cache (ajustável)
+REDIS_TTL_SECONDS = 86400  # 1 hora de cache (ajustável)
 
 r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)
 

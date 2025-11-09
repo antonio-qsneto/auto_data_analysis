@@ -8,7 +8,6 @@ from dashboard.utils.quota import require_quota
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-@require_quota
 def generate_chart_from_csv(request):
     print("👋 Iniciando tarefa Celery para generate_chart_from_csv...")
     uploaded_file = request.FILES.get("file")
@@ -26,7 +25,6 @@ def generate_chart_from_csv(request):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-@require_quota
 def generate_chart_from_database(request):
     print("👋 Iniciando tarefa Celery para generate_chart_from_database...")
     data = request.data
@@ -60,7 +58,6 @@ def get_task_status(request, task_id):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-@require_quota
 def list_database_tables(request):
     from .handle_db import get_tables
     data, status_code = get_tables(request)

@@ -87,14 +87,28 @@ def call_gemini(prompt: str) -> str:
     except Exception as e:
         # Se for um erro do Google API com dicionário de erro, extrai a mensagem
         msg = str(e)
+        status_code = None
+        error_details = None
         if hasattr(e, "args") and isinstance(e.args[0], dict):
             details = e.args[0].get("error", {})
-            msg = f"{details.get('status', 'Error')}: {details.get('message', str(e))}"
+            status_code = details.get('code')
+            error_msg = details.get('message', str(e))
+            status = details.get('status', 'Error')
+
+            # 🆕 Detecta overload específico (503 UNAVAILABLE) e retorna mensagem amigável
+            if status_code == 503 or status == 'UNAVAILABLE':
+                user_friendly_msg = "Xclarity está sobrecarregado no momento. Tente novamente em alguns minutos."
+                print(f"[Gemini] Overload detectado: {error_msg} - Retornando mensagem amigável: {user_friendly_msg}")
+                return user_friendly_msg
+
+            msg = f"{status}: {error_msg}"
+            error_details = details
 
         print(f"[Gemini] Erro na API: {msg}")
-        # Retorna um JSON com erro para o frontend
+        
+        # Para outros erros, retorna JSON com detalhes (para depuração interna), mas sem expor ao usuário final
         return json.dumps({
-            "error": f"Gemini API error: {msg}",
+            "error": f"Erro interno no processamento: {msg}",
             "status": "failed"
         })
 
