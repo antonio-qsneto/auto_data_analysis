@@ -11,6 +11,7 @@ from dashboard.cache import set_dataframe
 from dashboard.cache import get_dataframe
 load_dotenv()
 
+USER_CHAT_CONTEXT = {}
 
 def process_data(df, model_name="gemini", user=None):
     """
@@ -206,129 +207,119 @@ def process_data(df, model_name="gemini", user=None):
 def chat_with_data(question: str, user, model_name="gemini"):
     """
     Analisa a pergunta do usuário sobre o dataframe completo já carregado.
-    Aplica loop de retry similar ao process_data: re-gera código e re-executa em caso de erro.
+    Mantém um histórico de conversa para contexto (por usuário).
     """
+
     df = get_dataframe(user.id)
     if df is None:
         return {"answer": "Nenhuma tabela foi carregada ainda."}
-    
+
     # Seleciona modelo
     model = switch_model(model_name)
-    
-    # Parâmetros de retry para geração/executação de código
+
+    # Limites e controle
     MAX_RETRIES = int(os.getenv("LLM_RETRY_COUNT", "3"))
     RETRY_DELAY_SECONDS = float(os.getenv("LLM_RETRY_DELAY_SECONDS", "1.0"))
+    MAX_CONTEXT_MESSAGES = 10  # 🔒 limite de histórico por segurança
+
     last_error = None
     success_result = None
     codigo_for_debug = None
     raw_from_model = None
-    
-    # Loop de tentativas: re-gera prompt e re-chama o modelo se necessário
+
+    # ✅ Recupera o histórico anterior (por usuário)
+    chat_history = USER_CHAT_CONTEXT.get(user.id, [])
+
+    # Adiciona a nova pergunta ao histórico
+    chat_history.append({"role": "user", "content": question})
+
+    # Mantém o histórico recente (limite de 10)
+    chat_history = chat_history[-MAX_CONTEXT_MESSAGES:]
+
+    # Loop de tentativas de execução
     for attempt in range(1, MAX_RETRIES + 1):
-        # Gera o prompt base (sempre fresco a partir do df)
-        prompt = f"""
+        # Base do prompt com instruções fixas
+        system_instructions = """
         Você é o Xclarity, um assistente de análise de dados.
-        O usuário perguntou: "{question}"
+        Use o DataFrame `df` já carregado para responder perguntas do usuário.
         Regras:
-        1. Use o DataFrame `df` já carregado.
-        2. Gere um código Python válido e funcional.
-        3. Não insira comentários, apenas código útil.
-        5. Use apenas as bibliotecas: pandas, numpy e os seguintes módulos leves do scikit-learn:
-           - LinearRegression, Ridge, Lasso, LogisticRegression
-           - PolynomialFeatures
-           - StandardScaler, MinMaxScaler, Normalizer
-           - LabelEncoder, OneHotEncoder
-           - train_test_split
-        6. Não use RandomForest, DecisionTree, SVC, PCA, KMeans, nem redes neurais.
-        7. Se envolver datas, use pd.to_datetime(..., dayfirst=True).
-        8. Sempre finalize o código com um print contendo uma resposta em linguagem natural.
-        9. Se a pergunta não tiver relação com os dados, gere uma resposta de que não há relação com os dados.
-        10. Nunca desvie de temas relacionados ao DataFrame. Caso o usuário insista, repreenda-o a se manter no tema.
-        11. caso use algum modulo do scikit-learn, informar qual foi o algoritmo no print para o usuário.
-        13. verifique o formato das datas se são YYYY-MM-DD ou DD-MM-YYYY ou outro formato.
-        14. Sempre converta colunas de data para datetime com pd.to_datetime(..., infer_datetime_format=True, errors='coerce') antes de usá-las em operações.
-        15. Escolha sabiamente qual algoritmo melhor se aplica aos dados, como regressão linear ou função polnomial dentre outros.
-        16. Caso a pergunta não requeira código, não o faça.
-        17. Jamais gere código que possa travar, rodar indefinidamente, ou consumir recursos excessivos (ex: loops infinitos, recursões sem limite, criação de grandes listas, leitura/escrita de disco, chamadas de rede ou APIs externas). 
-        Caso o usuário solicite algo fora do contexto de análise do DataFrame, rejeite educadamente com uma mensagem do tipo: 
-        print("Por segurança, não posso executar instruções fora do contexto dos dados carregados.")
+        1. Gere apenas código Python válido e seguro.
+        2. Use pandas, numpy e módulos leves do scikit-learn:
+           LinearRegression, Ridge, Lasso, LogisticRegression,
+           PolynomialFeatures, StandardScaler, MinMaxScaler, Normalizer,
+           LabelEncoder, OneHotEncoder, train_test_split
+        3. Não use RandomForest, DecisionTree, SVC, PCA, KMeans ou redes neurais.
+        4. Sempre finalize o código com um print em linguagem natural.
+        5. Se a pergunta não tiver relação com os dados, responda:
+           print("Por segurança, não posso executar instruções fora do contexto dos dados carregados.")
         """
+
+        # Adiciona amostra dos dados para o contexto
         cols = df.columns.tolist()
         sample = df.head(5).to_dict(orient="records")
-        prompt += f"\nO DataFrame tem {len(df)} linhas e colunas: {cols}. Exemplo de dados: {sample}\n"
-        
-        # Se houve erro na tentativa anterior, anexamos contexto resumido
+        dataset_context = f"\nO DataFrame tem {len(df)} linhas e colunas: {cols}. Exemplo de dados: {sample}\n"
+
+        # Monta o prompt incluindo histórico anterior
+        previous_messages = "\n".join(
+            [f"{msg['role'].upper()}: {msg['content']}" for msg in chat_history]
+        )
+
+        prompt = f"{system_instructions}\n{dataset_context}\nHistórico recente:\n{previous_messages}\n\nUsuário perguntou agora: {question}\n"
+
         if last_error:
-            prompt += (
-                "\n\n# Previous execution attempt failed with the following error (short):\n"
-                f"{last_error}\n\n"
-                "Please return only valid Python code that prints a natural language response. "
-                "No explanation, no markdown."
-            )
-        
+            prompt += f"\nA última tentativa falhou com o erro:\n{last_error}\nCorrija e gere apenas código válido.\n"
+
         if settings.DEBUG:
             print(f"[CHAT_WITH_DATA] Attempt {attempt}/{MAX_RETRIES} - Prompt length: {len(prompt)}")
-        
-        # Chamada ao LLM para gerar código
+
+        # Gera resposta via LLM
         try:
             raw_from_model = model(prompt)
         except Exception as e:
-            # Erro ao chamar a LLM — log apenas em DEBUG e tentar novamente
-            if settings.DEBUG:
-                print(f"[CHAT_WITH_DATA][LLM CALL ERROR] attempt={attempt} error={e}")
             last_error = str(e)
+            if settings.DEBUG:
+                print(f"[CHAT_WITH_DATA][LLM ERROR] attempt={attempt} error={e}")
             if attempt < MAX_RETRIES:
                 time.sleep(RETRY_DELAY_SECONDS)
                 continue
-            else:
-                break
-        
-        # Extrai o código puro recebido
+            break
+
+        # Extrai código puro e executa
         codigo = extrair_codigo_puro(raw_from_model or "")
         codigo_for_debug = codigo
+
         if settings.DEBUG:
-            print(" ----------------- CODIGO PURO CHAT IA (attempt %s) -----------------" % attempt)
+            print(" ---------------- CODIGO PURO ----------------")
             print(codigo)
-            print(" --------------------------------------------------------------------")
-        
-        # Executa o código de forma controlada
+            print("----------------------------------------------")
+
         try:
             result = executar_codigo_chat(codigo, df)
         except Exception as e:
-            # Em teoria executar_codigo_chat já captura tracebacks e coloca em result["error"],
-            # mas caso ela próprio lance exceção, tratamos aqui
             result = {"success": False, "error": str(e), "traceback": None, "stdout": ""}
             if settings.DEBUG:
-                print(f"[CHAT_WITH_DATA][EXECUTOR EXCEPTION] attempt={attempt} error={e}")
-        
-        # Verifica resultado
+                print(f"[CHAT_WITH_DATA][EXECUTOR ERROR] {e}")
+
         if result and result.get("success"):
             success_result = result
-            if settings.DEBUG:
-                print(f"[CHAT_WITH_DATA] Success on attempt {attempt}")
             break
         else:
-            # coleta erro/trace para contexto da próxima tentativa
-            last_error = result.get("traceback") or result.get("error") or "Unknown execution error"
+            last_error = result.get("traceback") or result.get("error") or "Erro desconhecido"
             if settings.DEBUG:
                 print(f"[CHAT_WITH_DATA][RETRY] attempt={attempt} failed. error: {last_error}")
             if attempt < MAX_RETRIES:
                 time.sleep(RETRY_DELAY_SECONDS)
-                continue
-    
-    # Pós-loop: sucesso ou falha final
+
+    # ✅ Pós-tentativa
     if not success_result:
-        # Log detalhado apenas em DEBUG
         if settings.DEBUG:
-            print(f"[CHAT_WITH_DATA][ERROR] All {MAX_RETRIES} attempts failed.")
-            print(f"Last error (short): {last_error}")
-            if codigo_for_debug:
-                print("Último código enviado para execução:")
-                print(codigo_for_debug)
-        # Mensagem genérica para o frontend — sem dados técnicos
-        generic_error_msg = "Ocorreu um erro ao processar a pergunta. Tente novamente com uma pergunta mais simples."
-        return {"answer": generic_error_msg, "debug": {"codigo": codigo_for_debug, "raw": raw_from_model}}
-    
-    # Caso de sucesso: usa o stdout como resposta
-    resposta = success_result.get("stdout") or "Código executado sem saída detalhada."
+            print(f"[CHAT_WITH_DATA][FAIL] Erros após {MAX_RETRIES} tentativas: {last_error}")
+        return {"answer": "Ocorreu um erro ao processar a pergunta. Tente novamente com outra pergunta."}
+
+    resposta = success_result.get("stdout") or "Código executado sem saída."
+
+    # ✅ Atualiza histórico com a resposta
+    chat_history.append({"role": "assistant", "content": resposta})
+    USER_CHAT_CONTEXT[user.id] = chat_history[-MAX_CONTEXT_MESSAGES:]
+
     return {"answer": resposta, "debug": {"codigo": codigo_for_debug, "raw": raw_from_model}}
