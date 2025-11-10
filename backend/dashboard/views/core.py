@@ -270,6 +270,8 @@ def chat_with_data(question: str, user, model_name="gemini"):
             prompt += f"\nA última tentativa falhou com o erro:\n{last_error}\nCorrija e gere apenas código válido.\n"
 
         if settings.DEBUG:
+            print(" ------------ [Prompt chat] --------------")
+            print(prompt)
             print(f"[CHAT_WITH_DATA] Attempt {attempt}/{MAX_RETRIES} - Prompt length: {len(prompt)}")
 
         # Gera resposta via LLM
