@@ -322,6 +322,10 @@ def chat_with_data(question: str, user, model_name="gemini"):
 
     # ✅ Atualiza histórico com a resposta
     chat_history.append({"role": "assistant", "content": resposta})
+    print("------------------------- [CHAT HISTORY] -------------------------")
+    print(chat_history)
+    print("------------------------------------------------------------------")
+
     USER_CHAT_CONTEXT[user.id] = chat_history[-MAX_CONTEXT_MESSAGES:]
 
     return {"answer": resposta, "debug": {"codigo": codigo_for_debug, "raw": raw_from_model}}
