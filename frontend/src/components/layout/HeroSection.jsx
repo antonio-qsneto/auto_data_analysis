@@ -27,8 +27,18 @@ export default function HeroSection() {
         <div className="space-y-6 justify-self-start md:pl-0">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
             Turning Data into <br />
-            <span className="text-blue-600">Smart Decisions</span>
+
+            <span
+              className="bg-gradient-to-r from-blue-500 via-blue-400 to-orange-400 bg-clip-text text-transparent"
+              style={{
+                WebkitBackgroundClip: "text",
+                backgroundClip: "text",
+              }}
+            >
+              Smart Decisions
+            </span>
           </h1>
+
 
           <p className="text-lg text-gray-700">
             Auto-Clean. Auto-Analyze. Auto-Visualize. Auto-Insights. Upload your CSV or connect your database, and let the AI handle the rest. 
@@ -40,11 +50,27 @@ export default function HeroSection() {
 
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <button
-              className="px-6 py-3 font-semibold bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition cursor-pointer"
-              onClick={handleTryItClick}
-            >
-              Try It →
-            </button>
+  onClick={handleTryItClick}
+  className="
+    px-7 py-3 rounded-xl font-semibold text-white
+    bg-blue-600
+    hover:bg-blue-700
+    shadow-[0_8px_20px_-6px_rgba(37,99,235,0.4)]
+    hover:shadow-[0_12px_28px_-6px_rgba(37,99,235,0.55)]
+    transition-all
+  "
+>
+  Try It →
+</button>
+
+
+
+
+
+
+
+
+
           </div>
         </div>
 
