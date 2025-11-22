@@ -1,6 +1,7 @@
 import React from "react";
 import Header from "../components/layout/Header";
 import HeroSection from "../components/layout/HeroSection";
+import HeroVideo from "../components/layout/HeroVideo";
 import HowItWorks from "../components/layout/HowItWorks";
 import Footer from "../components/layout/Footer";
 import UseCases from "../components/layout/UseCases";
@@ -10,6 +11,7 @@ export default function Index() {
     <>
       <Header />
       <HeroSection />
+      <HeroVideo />
       <HowItWorks />
       <UseCases />
       <Footer />

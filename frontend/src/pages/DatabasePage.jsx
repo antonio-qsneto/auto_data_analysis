@@ -20,13 +20,14 @@ export default function DatabasePage({
   const [dbUser, setDbUser] = useState("");
   const [dbPassword, setDbPassword] = useState("");
   const [dbName, setDbName] = useState("");
+  const [dbConnectionString, setDbConnectionString] = useState(""); // novo
   const [dbType, setDbType] = useState("postgresql");
   const [tables, setTables] = useState([]);
   const [selectedTable, setSelectedTable] = useState("");
-  const [statusMessage, setStatusMessage] = useState(""); // 🆕 status visual
+  const [statusMessage, setStatusMessage] = useState("");
   const navigate = useNavigate();
 
-  // 🆕 Reset globals and locals on mount to clear sticky state from other pages (e.g., Upload errors/loading)
+  // Reset globals and locals on mount
   useEffect(() => {
     setLoading && setLoading(false);
     setError && setError("");
@@ -38,14 +39,42 @@ export default function DatabasePage({
     setDbUser("");
     setDbPassword("");
     setDbName("");
+    setDbConnectionString("");
     setDbType("postgresql");
   }, [setLoading, setError]);
 
+  // Quando troca o tipo de DB limpamos campos que não interessam
+  useEffect(() => {
+    setTables([]);
+    setSelectedTable("");
+    setStatusMessage("");
+    setError && setError("");
+    if (dbType === "mongodb") {
+      // limpa campos SQL
+      setDbHost("");
+      setDbPort("");
+      setDbUser("");
+      setDbPassword("");
+      setDbName("");
+    } else {
+      // limpa connection string
+      setDbConnectionString("");
+    }
+  }, [dbType, setError]);
+
   // ======================== CONECTAR AO BANCO ========================
   const handleConnect = async () => {
-    if (!dbHost || !dbPort || !dbUser || !dbPassword || !dbName) {
-      setError("Please fill in all database credentials.");
-      return;
+    // validação condicional: Mongo usa connection string
+    if (dbType === "mongodb") {
+      if (!dbConnectionString) {
+        setError("Please provide a MongoDB connection string.");
+        return;
+      }
+    } else {
+      if (!dbHost || !dbPort || !dbUser || !dbPassword || !dbName) {
+        setError("Please fill in all database credentials.");
+        return;
+      }
     }
 
     setLoading(true);
@@ -54,29 +83,43 @@ export default function DatabasePage({
     setStatusMessage("Connecting to database...");
 
     try {
-      const response = await axiosInstance.post("/connect_database/", {
-        host: dbHost,
-        port: dbPort,
-        user: dbUser,
-        password: dbPassword,
-        database: dbName,
-        db_type: dbType,
-      });
+      // monta payload dependendo do tipo
+      let payload;
+      if (dbType === "mongodb") {
+        payload = {
+          connection_string: dbConnectionString,
+          db_type: dbType,
+        };
+      } else {
+        payload = {
+          host: dbHost,
+          port: dbPort,
+          user: dbUser,
+          password: dbPassword,
+          database: dbName,
+          db_type: dbType,
+        };
+      }
+
+      const response = await axiosInstance.post("/connect_database/", payload);
 
       if (response.data.tables?.length > 0) {
         setTables(response.data.tables);
         setSelectedTable(response.data.tables[0]);
-        setStatusMessage("✅ Connection successful! Tables loaded.");
+        setStatusMessage("✅ Connection successful! Tables/Collections loaded.");
       } else {
-        throw new Error("No tables found in the database.");
+        // caso a resposta não traga tabelas/collections, ainda informar
+        setTables([]);
+        setSelectedTable("");
+        throw new Error("No tables/collections found in the database.");
       }
     } catch (err) {
-      console.error("❌ Connection error:", err);
-      setStatusMessage("❌ Connection failed");
+      console.error("Connection error:", err);
+      setStatusMessage("Connection failed");
       if (err.response?.data?.error) {
         setError(err.response.data.error);
       } else {
-        setError("Unable to connect. Please check your credentials.");
+        setError("Unable to connect. Please check your credentials or connection string.");
       }
     } finally {
       setLoading(false);
@@ -86,7 +129,7 @@ export default function DatabasePage({
   // ======================== BUSCAR DADOS (ASSÍNCRONO COM CELERY) ========================
   const handleFetchData = async () => {
     if (!selectedTable) {
-      setError("Please select a table.");
+      setError("Please select a table/collection.");
       return;
     }
 
@@ -95,16 +138,27 @@ export default function DatabasePage({
     setStatusMessage("Submitting analysis task...");
 
     try {
-      // 1️⃣ Inicia a task Celery
-      const response = await axiosInstance.post("/generate_chart_from_database/", {
-        host: dbHost,
-        port: dbPort,
-        user: dbUser,
-        password: dbPassword,
-        database: dbName,
-        db_type: dbType,
-        table: selectedTable,
-      });
+      // monta payload de fetch dependendo do tipo
+      let payload;
+      if (dbType === "mongodb") {
+        payload = {
+          connection_string: dbConnectionString,
+          db_type: dbType,
+          table: selectedTable, // aqui 'table' representa collection
+        };
+      } else {
+        payload = {
+          host: dbHost,
+          port: dbPort,
+          user: dbUser,
+          password: dbPassword,
+          database: dbName,
+          db_type: dbType,
+          table: selectedTable,
+        };
+      }
+
+      const response = await axiosInstance.post("/generate_chart_from_database/", payload);
 
       const { task_id } = response.data;
       if (!task_id) throw new Error("No task ID received from server.");
@@ -112,7 +166,7 @@ export default function DatabasePage({
       setStatusMessage("Processing table data...");
       console.log("Task started:", task_id);
 
-      // 2️⃣ Polling da task
+      // Polling da task
       const interval = setInterval(async () => {
         try {
           const res = await axiosInstance.get(`/task_status/${task_id}/`);
@@ -120,7 +174,7 @@ export default function DatabasePage({
 
           if (data.status === "completed") {
             clearInterval(interval);
-            setStatusMessage("✅ Task completed successfully!");
+            setStatusMessage("Task completed successfully!");
             setCharts(data.charts);
             setBusinessSummary(data.business_summary || "");
             setInsightsText(data.insights_text || "");
@@ -129,7 +183,7 @@ export default function DatabasePage({
           } else if (data.status === "failed") {
             clearInterval(interval);
             setError("Error processing data: " + (data.error || "Unknown error"));
-            setStatusMessage("❌ Task failed");
+            setStatusMessage("Task failed");
             setLoading(false);
           } else {
             setStatusMessage(`Status: ${data.status}...`);
@@ -138,14 +192,14 @@ export default function DatabasePage({
           console.error("Error polling task:", err);
           clearInterval(interval);
           setError("Error fetching task status.");
-          setStatusMessage("❌ Error checking task status");
+          setStatusMessage("Error checking task status");
           setLoading(false);
         }
       }, 3000);
     } catch (err) {
-      console.error("❌ Fetch data error:", err);
+      console.error("Fetch data error:", err);
       setError("Error sending analysis request.");
-      setStatusMessage("❌ Request failed");
+      setStatusMessage("Request failed");
     } finally {
       setLoading(false);
     }
@@ -219,32 +273,47 @@ export default function DatabasePage({
                 <option value="postgresql">PostgreSQL</option>
                 <option value="mysql">MySQL</option>
                 <option value="mariadb">MariaDB</option>
-                <option value="sqlserver">SQL Server</option>
+                <option value="mongodb">MongoDB</option>
               </select>
 
-              {/* Campos de conexão */}
-              {[
-                { placeholder: "Host", value: dbHost, setter: setDbHost },
-                { placeholder: "Port", value: dbPort, setter: setDbPort },
-                { placeholder: "User", value: dbUser, setter: setDbUser },
-                { placeholder: "Password", value: dbPassword, setter: setDbPassword, type: "password" },
-                { placeholder: "Database Name", value: dbName, setter: setDbName },
-              ].map((f, i) => (
+              {/* Quando for Mongo: apenas connection string */}
+              {dbType === "mongodb" ? (
                 <input
-                  key={i}
-                  type={f.type || "text"}
-                  placeholder={f.placeholder}
-                  value={f.value}
-                  onChange={(e) => f.setter(e.target.value)}
+                  type="text"
+                  placeholder="MongoDB Connection String (mongodb://... or mongodb+srv://...)"
+                  value={dbConnectionString}
+                  onChange={(e) => setDbConnectionString(e.target.value)}
                   className={`px-4 py-3 rounded-xl border focus:outline-none backdrop-blur-md transition ${
                     theme === "dark"
                       ? "bg-white/10 border-white/20 text-gray-100 placeholder-gray-400 focus:border-cyan-400"
                       : "bg-white/60 border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-400"
                   }`}
                 />
-              ))}
+              ) : (
+                // Campos de conexão para DB SQL
+                [
+                  { placeholder: "Host", value: dbHost, setter: setDbHost },
+                  { placeholder: "Port", value: dbPort, setter: setDbPort },
+                  { placeholder: "User", value: dbUser, setter: setDbUser },
+                  { placeholder: "Password", value: dbPassword, setter: setDbPassword, type: "password" },
+                  { placeholder: "Database Name", value: dbName, setter: setDbName },
+                ].map((f, i) => (
+                  <input
+                    key={i}
+                    type={f.type || "text"}
+                    placeholder={f.placeholder}
+                    value={f.value}
+                    onChange={(e) => f.setter(e.target.value)}
+                    className={`px-4 py-3 rounded-xl border focus:outline-none backdrop-blur-md transition ${
+                      theme === "dark"
+                        ? "bg-white/10 border-white/20 text-gray-100 placeholder-gray-400 focus:border-cyan-400"
+                        : "bg-white/60 border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-400"
+                    }`}
+                  />
+                ))
+              )}
 
-              {/* Select de tabelas */}
+              {/* Select de tabelas / collections */}
               {tables.length > 0 && (
                 <div className="w-full relative">
                   <label
@@ -253,7 +322,7 @@ export default function DatabasePage({
                       theme === "dark" ? "text-cyan-300" : "text-blue-700"
                     } animate-pulse`}
                   >
-                    🔍 Choose the table to analyze
+                    🔍 Choose the table/collection to analyze
                   </label>
 
                   <select
@@ -267,7 +336,7 @@ export default function DatabasePage({
                       animate-[pulse_2s_ease-in-out_infinite]
                     `}
                   >
-                    <option value="">Select a table</option>
+                    <option value="">Select a table/collection</option>
                     {tables.map((table) => (
                       <option key={table} value={table}>
                         {table}

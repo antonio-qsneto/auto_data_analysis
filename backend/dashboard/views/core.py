@@ -1,3 +1,4 @@
+from doctest import debug
 import os
 import time
 from dotenv import load_dotenv
@@ -73,6 +74,9 @@ def process_data(df, model_name="gemini", user=None):
         except Exception as e:
             debug_print("CACHE ERROR", f"[DEBUG] Falha ao salvar DataFrame no cache: {e}")
 
+
+    df.to_csv(f"user_{user.id}_df.csv", index=False)
+
     # Seleciona modelo e gera resumos
     model = switch_model(model_name)
     business_summary = summarize_business(df)
@@ -139,10 +143,10 @@ def process_data(df, model_name="gemini", user=None):
                 break
 
         codigo = extrair_codigo_puro(raw_from_model or "")
-        codigo_for_debug = codigo
         debug_print("CÓDIGO GERADO", codigo, syntax_lang="python")
 
         try:
+            debug_print("Executando código")
             result = executar_codigo_ia(codigo, df)
         except Exception as e:
             result = {"error": str(e), "charts": []}
@@ -255,23 +259,26 @@ def chat_with_data(question: str, user, model_name="gemini"):
 
     for attempt in range(1, MAX_RETRIES + 1):
         system_instructions = """
-        Você é o Xclarity, um assistente de análise de dados.
-        Use o DataFrame `df` já carregado para responder perguntas do usuário.
-        Regras:
-        1. Gere apenas código Python válido e seguro.
-        2. Use pandas, numpy e módulos leves do scikit-learn:
-           LinearRegression, Ridge, Lasso, LogisticRegression,
-           PolynomialFeatures, StandardScaler, MinMaxScaler, Normalizer,
-           LabelEncoder, OneHotEncoder, train_test_split
-        3. Não use RandomForest, DecisionTree, SVC, PCA, KMeans ou redes neurais.
-        4. Sempre finalize o código com um print em linguagem natural.
-        5. Se a pergunta não tiver relação com os dados, responda:
-           print("Por segurança, não posso executar instruções fora do contexto dos dados carregados.")
+        You are Xclarity, a data-analysis assistant.
+        Use the preloaded DataFrame `df` to answer the user's questions.
+
+        Rules:
+        1. Generate only valid and safe Python code.
+        2. Use pandas, numpy, and lightweight scikit-learn modules:
+        LinearRegression, Ridge, Lasso, LogisticRegression,
+        PolynomialFeatures, StandardScaler, MinMaxScaler, Normalizer,
+        LabelEncoder, OneHotEncoder, train_test_split
+        3. Do not use RandomForest, DecisionTree, SVC, PCA, KMeans, or neural networks.
+        4. Always end the code with a print in natural language.
+        5. If the question is unrelated to the data, respond with:
+        print("For safety reasons, I cannot execute instructions outside the context of the loaded data.")
+        6. For simple predictions, use 4th-degree polynomial regression and answer what algorithm was used.
+        7. Please answer in the "print" according to the language in which it was asked.
         """
 
         cols = df.columns.tolist()
         sample = df.head(5).to_dict(orient="records")
-        dataset_context = f"\nO DataFrame tem {len(df)} linhas e colunas: {cols}. Exemplo de dados: {sample}\n"
+        dataset_context = f"\nThe DataFrame has {len(df)} rows and columns: {cols}. Sample data: {sample}\n"
 
         # Gera prompt com histórico completo
         previous_messages = "\n".join(
@@ -281,15 +288,17 @@ def chat_with_data(question: str, user, model_name="gemini"):
         prompt = (
             f"{system_instructions}\n"
             f"{dataset_context}\n"
-            f"Histórico recente:\n{previous_messages}\n\n"
-            f"Usuário perguntou agora: {question}\n"
+            f"Recent history:\n{previous_messages}\n\n"
+            f"User just asked: {question}\n"
         )
+
 
         if last_error:
             prompt += (
-                f"\nA última tentativa falhou com o erro:\n{last_error}\n"
-                "Corrija e gere apenas código válido.\n"
+                f"\nThe last attempt failed with the following error:\n{last_error}\n"
+                "Fix it and generate only valid code.\n"
             )
+
 
         debug_print("PROMPT CHAT", prompt)
         debug_print("CHAT_WITH_DATA", f"Attempt {attempt}/{MAX_RETRIES} - Prompt length: {len(prompt)}")
@@ -325,14 +334,15 @@ def chat_with_data(question: str, user, model_name="gemini"):
 
     if not success_result:
         debug_print("CHAT_WITH_DATA FAIL", f"Erros após {MAX_RETRIES} tentativas: {last_error}")
-        return {"answer": "Ocorreu um erro ao processar a pergunta. Tente novamente com outra pergunta."}
+        return {"answer": "An error occurred while processing the question. Please try again with a different question."}
 
-    resposta = success_result.get("stdout") or "Código executado sem saída."
 
-    # ✅ Atualiza histórico e salva novamente no Redis
+    resposta = success_result.get("stdout") or "Code executed with no output."
+
+    # ✅ Atualiza histórico e salva novamente no Redisv
     chat_history.append({"role": "assistant", "content": resposta})
     chat_history = chat_history[-MAX_CONTEXT_MESSAGES:]
-    cache.set(chat_key, chat_history, timeout=60 * 60)  # 1 hora
+    cache.set(chat_key, chat_history, timeout=60 * 60 * 6)  # 1 hora
 
     debug_print("CHAT HISTORY", chat_history)
 

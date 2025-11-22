@@ -26,21 +26,31 @@ def generate_chart_from_csv(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def generate_chart_from_database(request):
-    print("👋 Iniciando tarefa Celery para generate_chart_from_database...")
     data = request.data
-    connection_data = {
-        "host": data.get("host"),
-        "port": data.get("port"),
-        "user": data.get("user"),
-        "password": data.get("password"),
-        "database": data.get("database"),
-        "db_type": data.get("db_type", "postgresql").lower(),
-    }
+    db_type = data.get("db_type", "postgresql").lower()
+
+    # Se for Mongo, espera connection_string
+    if db_type == "mongodb":
+        connection_data = {
+            "connection_string": data.get("connection_string"),
+            "db_type": "mongodb",
+        }
+    else:
+        connection_data = {
+            "host": data.get("host"),
+            "port": data.get("port"),
+            "user": data.get("user"),
+            "password": data.get("password"),
+            "database": data.get("database"),
+            "db_type": db_type,
+        }
+
     table = data.get("table")
 
     task = generate_chart_from_database_task.delay(connection_data, table, request.user.id)
     print("Task generate_chart_from_database finalizada!")
     return Response({"task_id": task.id}, status=202)
+
 
 
 @api_view(["GET"])
@@ -51,7 +61,7 @@ def get_task_status(request, task_id):
     if result.state in ["PENDING", "STARTED"]:
         return Response({"status": result.state})
     elif result.state == "FAILURE":
-        return Response({"status": "failed", "error": str(result.info)}, status=500)
+        return Response({"status": "failed", "error": str("The task failed. Please try again.")}, status=500)
     else:
         return Response(result.result)
     

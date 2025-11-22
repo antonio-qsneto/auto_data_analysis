@@ -1,4 +1,3 @@
-# dashboard/views/report_views.py
 import boto3
 import json
 from django.conf import settings
@@ -8,6 +7,7 @@ from rest_framework.response import Response
 from ..models import Report
 from ..serializers.report_serializer import ReportSerializer
 
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def list_reports(request):
@@ -16,6 +16,7 @@ def list_reports(request):
     serializer = ReportSerializer(reports, many=True)
     return Response(serializer.data)
 
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_report_detail(request, pk):
@@ -23,7 +24,7 @@ def get_report_detail(request, pk):
     try:
         report = Report.objects.get(pk=pk, user=request.user)
     except Report.DoesNotExist:
-        return Response({"error": "Report não encontrado"}, status=404)
+        return Response({"error": "Report not found"}, status=404)
 
     s3 = boto3.client("s3")
     try:
@@ -31,16 +32,17 @@ def get_report_detail(request, pk):
         content = obj["Body"].read().decode("utf-8")
         data = json.loads(content)
     except Exception as e:
-        return Response({"error": f"Erro ao buscar JSON no S3: {str(e)}"}, status=500)
+        return Response({"error": "Error fetching object"}, status=500)
 
     return Response({
-        "id": report.id, # type: ignore
-        "created_at": report.created_at,
-        "s3_url": report.s3_url,
+        "id": report.id,  # type: ignore
+        # "created_at": report.created_at,
+        # "s3_url": report.s3_url,
         "business_summary": data.get("business_summary"),
         "insights_text": data.get("insights_text"),
         "charts": data.get("charts"),
     })
+
 
 @api_view(["DELETE"])
 @permission_classes([IsAuthenticated])
@@ -48,13 +50,13 @@ def delete_report(request, pk):
     try:
         report = Report.objects.get(pk=pk, user=request.user)
     except Report.DoesNotExist:
-        return Response({"error": "Report não encontrado"}, status=404)
+        return Response({"error": "Report not found"}, status=404)
 
     s3 = boto3.client("s3")
     try:
         s3.delete_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=report.s3_key)
     except Exception as e:
-        return Response({"error": f"Erro ao deletar arquivo do S3: {str(e)}"}, status=500)
+        return Response({"error": "Error deleting file"}, status=500)
 
     report.delete()
-    return Response({"success": "Report deletado com sucesso."})
+    return Response({"success": "Report successfully deleted."})

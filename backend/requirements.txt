@@ -93,3 +93,6 @@ celery
 redis
 pyarrow
 scikit-learn
+rich
+pymysql
+pymongo

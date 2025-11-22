@@ -11,7 +11,12 @@ def chat_api(request):
     model_name = request.data.get("model", "gemini")
 
     if not question:
-        return Response({"error": "Pergunta não fornecida."}, status=400)
+        return Response({"error": "Question not provided."}, status=400)
 
     result = chat_with_data(question, request.user, model_name)
+
+    # REMOVE camp debug antes de enviar ao frontend
+    if "debug" in result:
+        del result["debug"]
+
     return Response(result)

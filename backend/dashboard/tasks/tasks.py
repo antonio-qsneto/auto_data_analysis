@@ -10,7 +10,6 @@ import traceback
 import io
 import numpy as np
 
-
 # =====================================================
 # 🔧 Função utilitária: limpeza de valores inválidos JSON
 # =====================================================
@@ -87,7 +86,7 @@ def generate_chart_from_csv_task(self, file_content, user_id):
 
     except Exception as e:
         traceback.print_exc()
-        return {"status": "failed", "error": str(e)}
+        return {"status": "failed"}
 
 
 # =====================================================
@@ -95,10 +94,8 @@ def generate_chart_from_csv_task(self, file_content, user_id):
 # =====================================================
 @shared_task(bind=True, name="generate_chart_from_database_task")
 def generate_chart_from_database_task(self, connection_data, table, user_id):
-    """
-    Executa em background o pipeline:
-    Banco -> LLM -> Charts -> S3 -> Report
-    """
+    print("👋 Iniciando tarefa Celery para generate_chart_from_database...")
+
     try:
         from django.contrib.auth import get_user_model
         User = get_user_model()
@@ -115,7 +112,7 @@ def generate_chart_from_database_task(self, connection_data, table, user_id):
         result, status_code = fetch_and_process_table(request_payload)
 
         if status_code != 200:
-            return {"status": "failed", "error": result.get("error")}
+            return {"status": "failed"}
 
         # ====== Sanitiza ======
         safe_result = clean_json(result)
@@ -155,4 +152,4 @@ def generate_chart_from_database_task(self, connection_data, table, user_id):
 
     except Exception as e:
         traceback.print_exc()
-        return {"status": "failed", "error": str(e)}
+        return {"status": "failed", "error": "Erro ao processar sua solicitação."}
