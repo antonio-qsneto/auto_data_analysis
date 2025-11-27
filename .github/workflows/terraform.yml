@@ -1,0 +1,74 @@
+name: Terraform Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Executar terraform apply?"
+        required: true
+        default: "false"
+        type: choice
+        options: [true, false]
+
+      destroy:
+        description: "Destruir ambiente?"
+        required: true
+        default: "false"
+        type: choice
+        options: [true, false]
+
+      plan_destroy:
+        description: "Plan destroy?"
+        required: true
+        default: "false"
+        type: choice
+        options: [true, false]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform:
+    name: Terraform Infra
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::165814550670:role/GithubInfraRole
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: terraform
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: terraform
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: terraform
+        if: github.event.inputs.apply == 'true'
+        run: terraform apply -auto-approve tfplan
+
+      - name: Terraform Plan Destroy
+        working-directory: terraform
+        if: github.event.inputs.plan_destroy == 'true'
+        run: terraform plan -destroy -out=tfplandestroy
+
+      - name: Terraform Destroy
+        working-directory: terraform
+        if: github.event.inputs.destroy == 'true'
+        run: terraform apply -destroy -auto-approve tfplandestroy
