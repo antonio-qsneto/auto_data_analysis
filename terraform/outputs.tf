@@ -13,10 +13,6 @@ output "rds_endpoint" {
   description = "RDS Postgres endpoint"
 }
 
-output "s3_bucket_name" {
-  value = aws_s3_bucket.bucket
-}
-
 output "ecr_repo_url" {
   value = aws_ecr_repository.app.repository_url
 }
