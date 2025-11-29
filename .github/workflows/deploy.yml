@@ -1,9 +1,11 @@
 name: Pipeline CI/CD
 
 on:
-  push:
-    branches:
-      - main
+
+    workflow_dispatch:
+  #push:
+    #branches:
+      #- main
 
 permissions:
   id-token: write
@@ -55,7 +57,23 @@ jobs:
 
             ssh -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
 
-                echo "Logamos!!!""
+                echo "🧹 Limpando tudo por falta de espaço..."
+                docker stop $(docker ps -aq) 2>/dev/null || true
+                docker rm $(docker ps -aq) 2>/dev/null || true
+
+                docker system prune -af --volumes
+
+                echo "🔐 Login no ECR..."
+                aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 165814550670.dkr.ecr.us-east-1.amazonaws.com
+
+                echo "⬇ Puxando apenas imagens latest..."
+                docker compose -f docker-compose.yml pull
+
+                echo "🚀 Subindo stack mantendo a network interna..."
+                docker compose -f docker-compose.yml up -d --remove-orphans
+
+                echo "✅ Deploy concluído!"
+                docker ps
             EOF
 
             rm chave-site.pem

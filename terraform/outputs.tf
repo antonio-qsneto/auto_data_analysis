@@ -19,3 +19,7 @@ output "ecr_repo_urls" {
     backend  = aws_ecr_repository.backend.repository_url
   }
 }
+
+output "deploy_sg_id" {
+  value = aws_security_group.github_actions_deploy_sg.id
+}

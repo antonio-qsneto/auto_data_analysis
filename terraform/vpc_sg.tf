@@ -57,6 +57,32 @@ resource "aws_security_group" "ec2_sg" {
   }
 }
 
+resource "aws_security_group" "github_actions_deploy_sg" {
+  name        = "${var.project_name}-deploy-sg"
+  description = "Temporary SSH access for GitHub Actions"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    description = "SSH (temporário, será controlado pelo Github Actions)"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # será limitado pelo Actions via authorize/revoke
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.project_name}-deploy-sg"
+  }
+}
+
+
 # Security Group for RDS (allow PostgreSQL from EC2 SG)
 resource "aws_security_group" "rds_sg" {
   name        = "${var.project_name}-rds-sg"
