@@ -1,5 +1,5 @@
-resource "aws_ecr_repository" "app" {
-  name = "${var.project_name}-repo"
+resource "aws_ecr_repository" "frontend" {
+  name = "${var.project_name}-frontend"
 
   image_scanning_configuration {
     scan_on_push = false
@@ -9,6 +9,29 @@ resource "aws_ecr_repository" "app" {
     env = var.environment
   }
 }
+
+resource "aws_ecr_repository" "backend" {
+  name = "${var.project_name}-backend"
+
+  image_scanning_configuration {
+    scan_on_push = false
+  }
+
+  tags = {
+    env = var.environment
+  }
+}
+
+# Opcional mas útil: output das URLs para o pipeline
+output "ecr_frontend_url" {
+  value = aws_ecr_repository.frontend.repository_url
+}
+
+output "ecr_backend_url" {
+  value = aws_ecr_repository.backend.repository_url
+}
+
+
 
 # IAM policy for EC2 instance to access entire S3 bucket except terraform-state/
 data "aws_iam_policy_document" "ec2_policy" {
