@@ -1,0 +1,89 @@
+name: Pipeline CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  job1:
+    name: build_ecr
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5.0.0
+
+      - name: "Configure AWS Credentials" 
+        uses: aws-actions/configure-aws-credentials@v4.3.1
+        with:
+          role-to-assume: arn:aws:iam::165814550670:role/GitHubActionsApp
+          aws-region: us-east-1
+
+      - name: Amazon ECR "Login" Action for GitHub Actions
+        uses: aws-actions/amazon-ecr-login@v2.0.1
+      
+      - name: Build, Tag, and Push image to Amazon ECR
+        run: |
+            docker build -t xclarity-frontend:v1.0 ./frontend
+            docker build -t xclarity-backend:v1.0 ./backend
+
+            docker tag xclarity-frontend:v1.0 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:v1.0
+            docker tag xclarity-backend:v1.0 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:v1.0
+
+            # Push para o ECR
+            docker push 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:v1.0
+            docker push 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:v1.0
+
+  job2:
+    name: deploy_ec2
+    needs: job1
+    env: 
+        INSTANCE_KEY: ${{secrets.INSTANCE_KEY}} 
+        PUBLIC_IP: ${{secrets.PUBLIC_IP}}
+    runs-on: ubuntu-latest
+
+    steps:
+        - name: Download EC2 IP from Terraform
+          uses: actions/download-artifact@v4
+          with:
+            name: tf-ec2-ip
+
+        - name: Load PUBLIC_IP
+          run: |
+            echo "PUBLIC_IP=$(cat ec2_ip.txt)" >> $GITHUB_ENV
+            echo "Terraform EC2 IP: $PUBLIC_IP"
+
+        - name: Deploy EC2 via SSH
+          run: |
+            echo "${{ secrets.INSTANCE_KEY }}" > chave-site.pem
+            chmod 400 chave-site.pem
+
+            ssh -i chave-site.pem -o StrictHostKeyChecking=no ec2-user@$PUBLIC_IP << EOF
+
+            echo "🔐 Login no ECR..."
+            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 165814550670.dkr.ecr.us-east-1.amazonaws.com
+
+            echo "⬇️ Pull das novas imagens..."
+            docker pull 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:v1.0
+            docker pull 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:v1.0
+
+            echo "🛑 Parando containers antigos..."
+            docker stop frontend || true
+            docker rm frontend || true
+
+            docker stop backend || true
+            docker rm backend || true
+
+            echo "🚀 Subindo nova versão..."
+            docker run -d -p 80:80 --name frontend 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:v1.0
+            docker run -d -p 4000:80 --name backend 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:v1.0
+
+            echo "✅ Deploy finalizado!"
+            docker ps
+            EOF
+
+            rm chave-site.pem
