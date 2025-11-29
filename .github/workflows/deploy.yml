@@ -68,7 +68,7 @@ jobs:
 
             scp -i chave-site.pem -o StrictHostKeyChecking=no \
                 ./docker-compose.yml \
-                ubuntu@${{ secrets.PUBLIC_IP }}:/home/ubuntu/docker-compose.yml
+                ubuntu@$PUBLIC_IP:/home/ubuntu/docker-compose.yml
 
 
 
