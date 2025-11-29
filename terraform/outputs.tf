@@ -13,6 +13,9 @@ output "rds_endpoint" {
   description = "RDS Postgres endpoint"
 }
 
-output "ecr_repo_url" {
-  value = aws_ecr_repository.app.repository_url
+output "ecr_repo_urls" {
+  value = {
+    frontend = aws_ecr_repository.frontend.repository_url
+    backend  = aws_ecr_repository.backend.repository_url
+  }
 }
