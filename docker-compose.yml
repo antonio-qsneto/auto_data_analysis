@@ -1,11 +1,9 @@
-version: '3.9'
-
 services:
   # =============================
   # 🔹 BACKEND DJANGO + GUNICORN
   # =============================
   backend:
-    build: ./backend
+    image: 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:latest
     container_name: backend
     env_file:
       - ./backend/.env
@@ -19,7 +17,7 @@ services:
       - "8000:8000"
     restart: always
     depends_on:
-      - redis         # ✅ adiciona dependência do Redis
+      - redis
     networks:
       - app-network
 
@@ -27,12 +25,7 @@ services:
   # 🔹 FRONTEND (React + Nginx)
   # =============================
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        # 👇 Passa a URL pública da API para o build do Vite
-        VITE_API_URL: "https://xclarity.duckdns.org/api"
+    image: 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:latest
     container_name: frontend
     ports:
       - "80:80"
@@ -59,7 +52,7 @@ services:
   # 🔹 CELERY WORKER
   # =============================
   worker:
-    build: ./backend
+    image: 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:latest
     container_name: celery-worker
     command: celery -A auto_data_analysis worker --loglevel=INFO
     env_file:
@@ -75,7 +68,7 @@ services:
   # (Opcional) CELERY BEAT - agendador
   # =============================
   # beat:
-  #   build: ./backend
+  #   image: 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:latest
   #   container_name: celery-beat
   #   command: celery -A auto_data_analysis beat --loglevel=INFO
   #   env_file:
@@ -87,7 +80,7 @@ services:
   #     - app-network
 
 # =============================
-# 🔹 REDE COMPARTILHADA
+# 🔹 REDE COMPARTILHADA (mantida)
 # =============================
 networks:
   app-network:
