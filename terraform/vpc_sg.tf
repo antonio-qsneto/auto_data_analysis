@@ -63,7 +63,7 @@ resource "aws_security_group" "github_actions_deploy_sg" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description = "SSH (temporário, será controlado pelo Github Actions)"
+    description = "SSH temporary access controlled by GitHub Actions"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
