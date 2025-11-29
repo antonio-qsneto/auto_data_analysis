@@ -53,7 +53,7 @@ jobs:
             echo "${{ secrets.INSTANCE_KEY }}" > chave-site.pem
             chmod 400 chave-site.pem
 
-            ssh -i chave-site.pem -o StrictHostKeyChecking=no ec2-user@$PUBLIC_IP << 'EOF'
+            ssh -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
 
                 echo "🧹 Limpando tudo por falta de espaço..."
                 docker stop $(docker ps -aq) 2>/dev/null || true
