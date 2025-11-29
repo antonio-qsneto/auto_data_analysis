@@ -9,7 +9,7 @@ data "aws_ami" "linux" {
 }
 
 resource "aws_instance" "app" {
-  ami                         = "ami-0fa3fe0fa7920f68e"
+  ami                         = "ami-0ecb62995f68bb549"
   instance_type               = var.ec2_instance_type
   associate_public_ip_address = var.enable_public_ip_ec2
   subnet_id                   = data.aws_subnets.vpc_subnets.ids[0]
