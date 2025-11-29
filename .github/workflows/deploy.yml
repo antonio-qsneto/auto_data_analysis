@@ -50,6 +50,18 @@ jobs:
 
     steps:
 
+        - name: Abrir SSH temporário para GitHub Actions
+          run: |
+            MY_IP=$(curl -s https://checkip.amazonaws.com)
+            echo "IP do runner GitHub Actions: $MY_IP"
+
+            aws ec2 authorize-security-group-ingress \
+                --group-id ${{ secrets.DEPLOY_SG_ID }} \
+                --protocol tcp \
+                --port 22 \
+                --cidr "$MY_IP/32" || true
+
+
         - name: Deploy EC2 via SSH
           run: |
             echo "$INSTANCE_KEY" > chave-site.pem
@@ -77,3 +89,16 @@ jobs:
             EOF
 
             rm chave-site.pem
+
+        - name: Fechar SSH temporário
+          if: always()
+          run: |
+            MY_IP=$(curl -s https://checkip.amazonaws.com)
+            echo "Fechando SSH para: $MY_IP"
+
+            aws ec2 revoke-security-group-ingress \
+                --group-id ${{ secrets.DEPLOY_SG_ID }} \
+                --protocol tcp \
+                --port 22 \
+                --cidr "$MY_IP/32" || true
+

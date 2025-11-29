@@ -40,8 +40,8 @@ data "aws_iam_policy_document" "ec2_policy" {
   # 1) NEGAR acesso ao prefixo do Terraform (proteção do estado)
   # ============================================================
   statement {
-    sid     = "DenyTerraformStateAccess"
-    effect  = "Deny"
+    sid    = "DenyTerraformStateAccess"
+    effect = "Deny"
     actions = [
       "s3:GetObject",
       "s3:PutObject",
@@ -65,7 +65,7 @@ data "aws_iam_policy_document" "ec2_policy" {
   # 2) PERMITIR acesso completo a todos os outros objetos
   # ============================================================
   statement {
-    sid = "AllowS3FullBucketAccess"
+    sid    = "AllowS3FullBucketAccess"
     effect = "Allow"
     actions = [
       "s3:GetObject",
