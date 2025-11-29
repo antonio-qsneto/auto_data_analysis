@@ -50,7 +50,7 @@ jobs:
 
         - name: Deploy EC2 via SSH
           run: |
-            echo "${{ secrets.INSTANCE_KEY }}" > chave-site.pem
+            echo "$INSTANCE_KEY" > chave-site.pem
             chmod 400 chave-site.pem
 
             ssh -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
