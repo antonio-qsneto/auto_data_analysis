@@ -28,15 +28,15 @@ jobs:
       
       - name: Build, Tag, and Push image to Amazon ECR
         run: |
-            docker build -t xclarity-frontend:v1.0 ./frontend
-            docker build -t xclarity-backend:v1.0 ./backend
+            docker build -t xclarity-frontend:latest ./frontend
+            docker build -t xclarity-backend:latest ./backend
 
-            docker tag xclarity-frontend:v1.0 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:v1.0
-            docker tag xclarity-backend:v1.0 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:v1.0
+            docker tag xclarity-frontend:latest 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:latest
+            docker tag xclarity-backend:latest 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:latest
 
             # Push para o ECR
-            docker push 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:v1.0
-            docker push 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:v1.0
+            docker push 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:latest
+            docker push 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:latest
 
   job2:
     name: deploy_ec2
@@ -62,28 +62,25 @@ jobs:
             echo "${{ secrets.INSTANCE_KEY }}" > chave-site.pem
             chmod 400 chave-site.pem
 
-            ssh -i chave-site.pem -o StrictHostKeyChecking=no ec2-user@$PUBLIC_IP << EOF
+            ssh -i chave-site.pem -o StrictHostKeyChecking=no ec2-user@$PUBLIC_IP << 'EOF'
 
-            echo "🔐 Login no ECR..."
-            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 165814550670.dkr.ecr.us-east-1.amazonaws.com
+                echo "🧹 Limpando tudo por falta de espaço..."
+                docker stop $(docker ps -aq) 2>/dev/null || true
+                docker rm $(docker ps -aq) 2>/dev/null || true
 
-            echo "⬇️ Pull das novas imagens..."
-            docker pull 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:v1.0
-            docker pull 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:v1.0
+                docker system prune -af --volumes
 
-            echo "🛑 Parando containers antigos..."
-            docker stop frontend || true
-            docker rm frontend || true
+                echo "🔐 Login no ECR..."
+                aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 165814550670.dkr.ecr.us-east-1.amazonaws.com
 
-            docker stop backend || true
-            docker rm backend || true
+                echo "⬇ Puxando apenas imagens latest..."
+                docker compose -f docker-compose.yml pull
 
-            echo "🚀 Subindo nova versão..."
-            docker run -d -p 80:80 --name frontend 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:v1.0
-            docker run -d -p 4000:80 --name backend 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:v1.0
+                echo "🚀 Subindo stack mantendo a network interna..."
+                docker compose -f docker-compose.yml up -d --remove-orphans
 
-            echo "✅ Deploy finalizado!"
-            docker ps
+                echo "✅ Deploy concluído!"
+                docker ps
             EOF
 
             rm chave-site.pem
