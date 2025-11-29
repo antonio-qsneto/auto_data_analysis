@@ -61,6 +61,16 @@ jobs:
                 --port 22 \
                 --cidr "$MY_IP/32" || true
 
+        - name: Copiar docker-compose.yml para EC2
+          run: |
+            echo "$INSTANCE_KEY" > chave-site.pem
+            chmod 400 chave-site.pem
+
+            scp -i chave-site.pem -o StrictHostKeyChecking=no \
+                ./docker-compose.yml \
+                ubuntu@${{ secrets.PUBLIC_IP }}:/home/ubuntu/docker-compose.yml
+
+
 
         - name: Deploy EC2 via SSH
           run: |
@@ -68,6 +78,11 @@ jobs:
             chmod 400 chave-site.pem
 
             ssh -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
+
+                echo "📥 Baixando docker-compose.yml do GitHub..."
+                curl -H "Authorization: token ${GITHUB_TOKEN}" \
+                -L https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/main/docker-compose.yml \
+                -o docker-compose.yml
 
                 echo "🧹 Limpando tudo por falta de espaço..."
                 docker stop $(docker ps -aq) 2>/dev/null || true

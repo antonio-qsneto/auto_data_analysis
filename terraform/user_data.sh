@@ -73,3 +73,11 @@ echo "[✔] Certificados armazenados em /etc/letsencrypt/live/${DOMAIN}/"
 # -------------------------------------------------
 echo "[4/5] Verificando Git..."
 git --version && echo "[✔] Git instalado: $(git --version)"
+
+
+# -------------------------------------------------
+# 4⃣ Instalar AWS CLI
+# -------------------------------------------------
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
