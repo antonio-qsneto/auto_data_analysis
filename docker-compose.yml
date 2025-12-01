@@ -28,8 +28,7 @@ services:
     image: 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:latest
     container_name: frontend
     ports:
-      - "80:80"
-      - "443:443"
+      - "8080:80"
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
     restart: always

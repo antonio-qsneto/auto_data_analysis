@@ -81,6 +81,61 @@ jobs:
             scp -i chave-site.pem -o StrictHostKeyChecking=no \
                 ./docker-compose.yml \
                 ubuntu@$PUBLIC_IP:/home/ubuntu/docker-compose.yml
+                
+
+      - name: Configurar Nginx no Host (SSL + Reverse Proxy)
+        run: |
+        
+
+            ssh -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
+
+            echo "🔧 Criando arquivo /etc/nginx/sites-available/xclarity.conf ..."
+
+            sudo bash -c 'cat > /etc/nginx/sites-available/xclarity.conf << "NGINX"
+            server {
+                listen 80;
+                server_name xclarity.duckdns.org;
+                return 301 https://\$host\$request_uri;
+            }
+
+            server {
+                listen 443 ssl;
+                server_name xclarity.duckdns.org;
+
+                ssl_certificate     /etc/letsencrypt/live/xclarity.duckdns.org/fullchain.pem;
+                ssl_certificate_key /etc/letsencrypt/live/xclarity.duckdns.org/privkey.pem;
+
+                location / {
+                    proxy_pass http://localhost:8080;
+                    proxy_set_header Host \$host;
+                    proxy_set_header X-Real-IP \$remote_addr;
+                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto https;
+                }
+
+                location /api/ {
+                    proxy_pass http://localhost:8000/api/;
+                }
+            }
+            NGINX'
+
+                echo "🔗 Ativando configuração Nginx..."
+                sudo ln -sf /etc/nginx/sites-available/xclarity.conf /etc/nginx/sites-enabled/xclarity.conf
+
+                echo "🔍 Testando configuração..."
+                sudo nginx -t
+
+                echo "🔁 Reiniciando Nginx..."
+                sudo systemctl restart nginx
+
+                echo "✅ Nginx configurado com sucesso!"
+
+                EOF
+
+                rm chave-site.pem
+
+
+
 
       - name: Fechar SSH temporário
         if: always()
