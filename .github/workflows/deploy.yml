@@ -116,6 +116,10 @@ jobs:
                 docker stop $(docker ps -aq) 2>/dev/null || true
                 docker rm $(docker ps -aq) 2>/dev/null || true
 
+                sudo systemctl stop nginx
+                sudo systemctl disable nginx
+
+
                 docker system prune -af --volumes
 
                 echo "🔐 Login no ECR..."
