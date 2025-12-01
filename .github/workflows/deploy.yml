@@ -85,8 +85,6 @@ jobs:
 
         - name: Configurar Nginx no Host (SSL + Reverse Proxy)
           run: |
-            echo "$INSTANCE_KEY" > chave-site.pem
-            chmod 400 chave-site.pem
 
             ssh -T -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
 
