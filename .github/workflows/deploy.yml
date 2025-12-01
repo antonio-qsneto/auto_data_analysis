@@ -14,6 +14,8 @@ permissions:
 jobs:
   job1:
     name: build_ecr
+    env: 
+        PUBLIC_IP: ${{secrets.PUBLIC_IP}}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -39,6 +41,12 @@ jobs:
             # Push para o ECR
             docker push 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:latest
             docker push 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:latest
+
+            MY_IP=$(curl -s https://checkip.amazonaws.com)
+            echo "IP do runner GitHub Actions: $MY_IP"
+
+            echo "arquivos no linux do Github: "
+            ls
 
   job2:
     name: deploy_ec2
@@ -66,7 +74,9 @@ jobs:
             echo "$INSTANCE_KEY" > chave-site.pem
             chmod 400 chave-site.pem
 
-            ls
+            scp -i chave-site.pem -o StrictHostKeyChecking=no \
+                ./docker-compose.yml \
+                ubuntu@$$PUBLIC_IP:/home/ubuntu/docker-compose.yml
 
 
 
