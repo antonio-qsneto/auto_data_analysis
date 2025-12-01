@@ -16,7 +16,8 @@ jobs:
     name: build_ecr
     env: 
         PUBLIC_IP: ${{secrets.PUBLIC_IP}}
-        INSTANCE_KEY: ${{secrets.INSTANCE_KEY}} 
+        INSTANCE_KEY: ${{secrets.INSTANCE_KEY}}
+        DEPLOY_SG_ID: ${{ secrets.DEPLOY_SG_ID }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -31,17 +32,6 @@ jobs:
       - name: Amazon ECR "Login" Action for GitHub Actions
         uses: aws-actions/amazon-ecr-login@v2.0.1
       
-      - name: Build, Tag, and Push image to Amazon ECR
-        run: |
-            docker build -t xclarity-frontend:latest ./frontend
-            docker build -t xclarity-backend:latest ./backend
-
-            docker tag xclarity-frontend:latest 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:latest
-            docker tag xclarity-backend:latest 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:latest
-
-            # Push para o ECR
-            docker push 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:latest
-            docker push 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:latest
 
       - name: Abrir SSH temporário para GitHub Actions
         run: |
@@ -49,7 +39,7 @@ jobs:
             echo "IP do runner GitHub Actions: $MY_IP"
 
             aws ec2 authorize-security-group-ingress \
-                --group-id ${{ secrets.DEPLOY_SG_ID }} \
+                --group-id $DEPLOY_SG_ID \
                 --protocol tcp \
                 --port 22 \
                 --cidr "$MY_IP/32" || true
@@ -63,8 +53,17 @@ jobs:
                 ./docker-compose.yml \
                 ubuntu@$$PUBLIC_IP:/home/ubuntu/docker-compose.yml
 
-    
+      - name: Fechar SSH temporário
+        if: always()
+        run: |
+            MY_IP=$(curl -s https://checkip.amazonaws.com)
+            echo "Fechando SSH para: $MY_IP"
 
+            aws ec2 revoke-security-group-ingress \
+                --group-id ${{ secrets.DEPLOY_SG_ID }} \
+                --protocol tcp \
+                --port 22 \
+                --cidr "$MY_IP/32" || true
 
 
   job2:
@@ -104,16 +103,4 @@ jobs:
             EOF
 
             rm chave-site.pem
-
-        - name: Fechar SSH temporário
-          if: always()
-          run: |
-            MY_IP=$(curl -s https://checkip.amazonaws.com)
-            echo "Fechando SSH para: $MY_IP"
-
-            aws ec2 revoke-security-group-ingress \
-                --group-id ${{ secrets.DEPLOY_SG_ID }} \
-                --protocol tcp \
-                --port 22 \
-                --cidr "$MY_IP/32" || true
 
