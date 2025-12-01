@@ -44,6 +44,18 @@ jobs:
                 --port 22 \
                 --cidr "$MY_IP/32" || true
 
+      - name: Build, Tag, and Push image to Amazon ECR
+        run: |
+            docker build -t xclarity-frontend:latest ./frontend
+            docker build -t xclarity-backend:latest ./backend
+
+            docker tag xclarity-frontend:latest 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:latest
+            docker tag xclarity-backend:latest 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:latest
+
+            # Push para o ECR
+            docker push 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:latest
+            docker push 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:latest
+
       - name: Copiar docker-compose.yml para EC2
         run: |
             echo "$INSTANCE_KEY" > chave-site.pem
