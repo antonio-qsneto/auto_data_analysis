@@ -63,7 +63,7 @@ jobs:
 
             scp -i chave-site.pem -o StrictHostKeyChecking=no \
                 ./docker-compose.yml \
-                ubuntu@$$PUBLIC_IP:/home/ubuntu/docker-compose.yml
+                ubuntu@$PUBLIC_IP:/home/ubuntu/docker-compose.yml
 
       - name: Fechar SSH temporário
         if: always()
@@ -72,7 +72,7 @@ jobs:
             echo "Fechando SSH para: $MY_IP"
 
             aws ec2 revoke-security-group-ingress \
-                --group-id ${{ secrets.DEPLOY_SG_ID }} \
+                --group-id $DEPLOY_SG_ID \
                 --protocol tcp \
                 --port 22 \
                 --cidr "$MY_IP/32" || true
