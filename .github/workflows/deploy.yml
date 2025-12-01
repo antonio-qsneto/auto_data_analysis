@@ -16,6 +16,7 @@ jobs:
     name: build_ecr
     env: 
         PUBLIC_IP: ${{secrets.PUBLIC_IP}}
+        INSTANCE_KEY: ${{secrets.INSTANCE_KEY}} 
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -42,11 +43,29 @@ jobs:
             docker push 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:latest
             docker push 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:latest
 
+      - name: Abrir SSH temporário para GitHub Actions
+        run: |
             MY_IP=$(curl -s https://checkip.amazonaws.com)
             echo "IP do runner GitHub Actions: $MY_IP"
 
-            echo "arquivos no linux do Github: "
-            ls
+            aws ec2 authorize-security-group-ingress \
+                --group-id ${{ secrets.DEPLOY_SG_ID }} \
+                --protocol tcp \
+                --port 22 \
+                --cidr "$MY_IP/32" || true
+
+      - name: Copiar docker-compose.yml para EC2
+        run: |
+            echo "$INSTANCE_KEY" > chave-site.pem
+            chmod 400 chave-site.pem
+
+            scp -i chave-site.pem -o StrictHostKeyChecking=no \
+                ./docker-compose.yml \
+                ubuntu@$$PUBLIC_IP:/home/ubuntu/docker-compose.yml
+
+    
+
+
 
   job2:
     name: deploy_ec2
@@ -58,39 +77,12 @@ jobs:
 
     steps:
 
-        - name: Abrir SSH temporário para GitHub Actions
-          run: |
-            MY_IP=$(curl -s https://checkip.amazonaws.com)
-            echo "IP do runner GitHub Actions: $MY_IP"
-
-            aws ec2 authorize-security-group-ingress \
-                --group-id ${{ secrets.DEPLOY_SG_ID }} \
-                --protocol tcp \
-                --port 22 \
-                --cidr "$MY_IP/32" || true
-
-        - name: Copiar docker-compose.yml para EC2
-          run: |
-            echo "$INSTANCE_KEY" > chave-site.pem
-            chmod 400 chave-site.pem
-
-            scp -i chave-site.pem -o StrictHostKeyChecking=no \
-                ./docker-compose.yml \
-                ubuntu@$$PUBLIC_IP:/home/ubuntu/docker-compose.yml
-
-
-
         - name: Deploy EC2 via SSH
           run: |
             echo "$INSTANCE_KEY" > chave-site.pem
             chmod 400 chave-site.pem
 
             ssh -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
-
-                echo "📥 Baixando docker-compose.yml do GitHub..."
-                curl -H "Authorization: token ${GITHUB_TOKEN}" \
-                -L https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/main/docker-compose.yml \
-                -o docker-compose.yml
 
                 echo "🧹 Limpando tudo por falta de espaço..."
                 docker stop $(docker ps -aq) 2>/dev/null || true
