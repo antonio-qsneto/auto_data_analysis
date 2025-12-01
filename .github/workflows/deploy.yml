@@ -44,6 +44,25 @@ jobs:
                 --port 22 \
                 --cidr "$MY_IP/32" || true
 
+      - name: Criar arquivo .env no EC2
+        run: |
+            echo "$INSTANCE_KEY" > chave-site.pem
+            chmod 400 chave-site.pem
+
+            ssh -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
+
+            echo "Criando backend/.env a partir do Secret..."
+
+            mkdir -p /home/ubuntu/backend
+
+            cat > /home/ubuntu/backend/.env << 'EENV'
+            ${{ secrets.ENV_BACKEND }}
+            EENV
+
+            echo "Arquivo .env criado com sucesso!"
+            EOF
+  
+
       - name: Build, Tag, and Push image to Amazon ECR
         run: |
             docker build -t xclarity-frontend:latest ./frontend
