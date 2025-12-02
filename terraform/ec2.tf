@@ -18,6 +18,13 @@ resource "aws_instance" "app" {
   iam_instance_profile        = aws_iam_instance_profile.ec2_profile.name
   user_data                   = file("user_data.sh")
 
+  root_block_device {
+    volume_size = 20        
+    volume_type = "gp3"     
+    delete_on_termination = true
+  }
+
+
   tags = {
     Name        = "${var.project_name}-app"
     Env         = var.environment

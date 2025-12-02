@@ -87,7 +87,7 @@ sudo ./aws/install
 # -------------------------------------------------
 echo "[6/6] Criando SWAP de 4GB..."
 
-sudo fallocate -l 4G /swapfile
+sudo fallocate -l 2G /swapfile
 sudo chmod 600 /swapfile
 sudo mkswap /swapfile
 sudo swapon /swapfile
