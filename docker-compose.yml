@@ -13,7 +13,7 @@ services:
       --workers 3
       --timeout 1000
       --log-level info
-    ports:
+    expose:
       - "8000:8000"
     restart: always
     depends_on:
@@ -29,8 +29,6 @@ services:
     container_name: frontend
     ports:
       - "8080:80"
-    volumes:
-      - /etc/letsencrypt:/etc/letsencrypt:ro
     restart: always
     networks:
       - app-network

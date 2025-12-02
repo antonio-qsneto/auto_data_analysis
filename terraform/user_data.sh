@@ -50,23 +50,9 @@ echo "[✔] Docker Compose (plugin) instalado: $(docker compose version)"
 # -------------------------------------------------
 # 3⃣ Instalar Certbot (Let's Encrypt)
 # -------------------------------------------------
-echo "[3/5] Instalando Certbot..."
 sudo apt install -y certbot python3-certbot-nginx
 
-DOMAIN="xclarity.duckdns.org"
-EMAIL="admin@xclarity.duckdns.org"
-echo "[⚙] Gerando certificado SSL para ${DOMAIN}..."
-sudo certbot certonly --standalone -d "${DOMAIN}" --non-interactive --agree-tos -m "${EMAIL}" || true
 
-# Em container (opcional)
-docker run -it --rm \
-  -v /etc/letsencrypt:/etc/letsencrypt \
-  -v /usr/share/nginx/html:/var/www/html \
-  certbot/certbot certonly \
-    --webroot -w /var/www/html \
-    -d "${DOMAIN}" || true
-
-echo "[✔] Certificados armazenados em /etc/letsencrypt/live/${DOMAIN}/"
 
 # -------------------------------------------------
 # 4⃣ Instalar Git

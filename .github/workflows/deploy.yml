@@ -126,6 +126,34 @@ jobs:
 
                 rm -f chave-site.pem
 
+        - name: Gerar certificados SSL com Certbot
+          run: |
+            echo "$INSTANCE_KEY" > chave-site.pem
+            chmod 400 chave-site.pem
+
+            ssh -T -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
+
+              echo "🔐 Gerando certificados SSL com Certbot..."
+
+              # Reinicia o Nginx para liberar porta 80
+              sudo systemctl restart nginx
+
+              # Gera certificado usando o plugin do Nginx
+              sudo certbot --nginx \
+                -d xclarity.duckdns.org \
+                --non-interactive \
+                --agree-tos \
+                -m admin@xclarity.duckdns.org || true
+
+              # Reload final
+              sudo systemctl reload nginx
+
+              echo "✅ Certificados SSL instalados!"
+            EOF
+
+            rm -f chave-site.pem
+
+
 
         - name: Fechar SSH temporário
           if: always()
