@@ -134,6 +134,9 @@ jobs:
         - name: Ativar Nginx com SSL definitivo
           run: |
 
+            echo "$INSTANCE_KEY" > chave-site.pem
+            chmod 400 chave-site.pem
+
             ssh -T -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
 
               sudo bash -c 'cat << "NGINX" > /etc/nginx/sites-available/xclarity.conf
