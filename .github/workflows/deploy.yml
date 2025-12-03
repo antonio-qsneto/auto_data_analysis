@@ -88,12 +88,12 @@ jobs:
       run: |
         ssh -T -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
 
-          echo "🗑️ Removendo certificados antigos..."
+          echo "Removendo certificados antigos..."
           sudo rm -rf /etc/letsencrypt/live/xclarity.top || true
           sudo rm -rf /etc/letsencrypt/archive/xclarity.top || true
           sudo rm -f /etc/letsencrypt/renewal/xclarity.top.conf || true
 
-          echo "📄 Criando configuração temporária HTTP..."
+          echo "Criando configuração temporária HTTP..."
           sudo bash -c 'cat << "NGINX" > /etc/nginx/sites-available/xclarity.conf
           server {
               listen 80;
@@ -111,12 +111,13 @@ jobs:
           }
           NGINX'
 
-          sudo ln -sf /etc/nginx/sites-available/xclarity.conf /etc/nginx/sites-enabled/xclarity.conf
+                sudo ln -sf /etc/nginx/sites-available/xclarity.conf /etc/nginx/sites-enabled/xclarity.conf
 
-          sudo systemctl daemon-reload
-          sudo nginx -t
-          sudo systemctl restart nginx
-        EOF
+                sudo systemctl daemon-reload
+                sudo nginx -t
+                sudo systemctl restart nginx
+
+          EOF
 
 
     # ============================================================
