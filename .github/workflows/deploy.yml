@@ -86,7 +86,7 @@ jobs:
         sudo bash -c 'cat << "NGINX" > /etc/nginx/sites-available/xclarity.conf
         server {
             listen 80;
-            server_name xclarity.duckdns.org;
+            server_name xclarity.top;
 
             location / {
                 proxy_pass http://localhost:8080;
@@ -118,13 +118,13 @@ jobs:
 
         echo "🔐 Gerando certificados SSL..."
         sudo certbot certonly --nginx \
-          -d xclarity.duckdns.org \
+          -d xclarity.top \
           --non-interactive \
           --agree-tos \
-          -m admin@xclarity.duckdns.org
+          -m admin@xclarity.top
 
         echo "Certificados gerados:"
-        sudo ls -l /etc/letsencrypt/live/xclarity.duckdns.org/
+        sudo ls -l /etc/letsencrypt/live/xclarity.top/
 
         EOF
 
@@ -139,16 +139,16 @@ jobs:
         sudo bash -c 'cat << "NGINX" > /etc/nginx/sites-available/xclarity.conf
         server {
             listen 80;
-            server_name xclarity.duckdns.org;
+            server_name xclarity.top;
             return 301 https://\$host\$request_uri;
         }
 
         server {
             listen 443 ssl;
-            server_name xclarity.duckdns.org;
+            server_name xclarity.top;
 
-            ssl_certificate     /etc/letsencrypt/live/xclarity.duckdns.org/fullchain.pem;
-            ssl_certificate_key /etc/letsencrypt/live/xclarity.duckdns.org/privkey.pem;
+            ssl_certificate     /etc/letsencrypt/live/xclarity.top/fullchain.pem;
+            ssl_certificate_key /etc/letsencrypt/live/xclarity.top/privkey.pem;
 
             location / {
                 proxy_pass http://localhost:8080;
