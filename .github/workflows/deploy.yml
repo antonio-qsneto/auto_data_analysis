@@ -130,7 +130,7 @@ jobs:
 
 
     # ============================================================
-    # 3️⃣ AGORA SIM: NGINX FINAL COM SSL
+    # 3️⃣ AGORA SIM: NGINX FINAL COM SSL (funcionando!)
     # ============================================================
     - name: Ativar Nginx com SSL definitivo
       run: |
