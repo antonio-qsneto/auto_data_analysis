@@ -14,12 +14,13 @@ services:
       --timeout 1000
       --log-level info
     expose:
-      - "8000:8000"
+      - "8000"
     restart: always
     depends_on:
       - redis
     networks:
       - app-network
+
 
   # =============================
   # 🔹 FRONTEND (React + Nginx)
