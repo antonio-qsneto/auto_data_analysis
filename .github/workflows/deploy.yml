@@ -10,183 +10,184 @@ permissions:
 jobs:
   job1:
     name: build_ecr
-    env:
+    env: 
       PUBLIC_IP: ${{ secrets.PUBLIC_IP }}
       INSTANCE_KEY: ${{ secrets.INSTANCE_KEY }}
       DEPLOY_SG_ID: ${{ secrets.DEPLOY_SG_ID }}
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5.0.0
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4.3.1
-        with:
-          role-to-assume: arn:aws:iam::165814550670:role/GitHubActionsApp
-          aws-region: us-east-1
+    - name: Checkout
+      uses: actions/checkout@v5
 
-      - name: Amazon ECR Login
-        uses: aws-actions/amazon-ecr-login@v2.0.1
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::165814550670:role/GitHubActionsApp
+        aws-region: us-east-1
 
-      - name: Abrir SSH temporário
-        run: |
-          MY_IP=$(curl -s https://checkip.amazonaws.com)
-          aws ec2 authorize-security-group-ingress \
-              --group-id $DEPLOY_SG_ID \
-              --protocol tcp \
-              --port 22 \
-              --cidr "$MY_IP/32" || true
+    - name: Amazon ECR Login
+      uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Criar backend/.env no EC2
-        run: |
-          echo "$INSTANCE_KEY" > chave-site.pem
-          chmod 400 chave-site.pem
+    - name: Abrir SSH temporário para GitHub Actions
+      run: |
+        MY_IP=$(curl -s https://checkip.amazonaws.com)
+        echo "IP do runner GitHub Actions: $MY_IP"
 
-          ssh -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
-          mkdir -p /home/ubuntu/backend
-          cat > /home/ubuntu/backend/.env << 'EENV'
-          ${{ secrets.ENV_BACKEND }}
-          EENV
-          EOF
+        aws ec2 authorize-security-group-ingress \
+          --group-id $DEPLOY_SG_ID \
+          --protocol tcp \
+          --port 22 \
+          --cidr "$MY_IP/32" || true
 
-          rm -f chave-site.pem
+    - name: Criar arquivo .env no EC2
+      run: |
+        echo "$INSTANCE_KEY" > chave-site.pem
+        chmod 400 chave-site.pem
 
-      - name: Build & Push Images
-        run: |
-          docker build -t xclarity-frontend:latest ./frontend
-          docker build -t xclarity-backend:latest ./backend
+        ssh -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
 
-          docker tag xclarity-frontend:latest 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:latest
-          docker tag xclarity-backend:latest 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:latest
+        echo "Criando backend/.env a partir do Secret..."
+        mkdir -p /home/ubuntu/backend
 
-          docker push 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:latest
-          docker push 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:latest
+        cat > /home/ubuntu/backend/.env << 'EENV'
+        ${{ secrets.ENV_BACKEND }}
+        EENV
 
-      - name: Enviar docker-compose.yml
-        run: |
+        echo "Arquivo .env criado com sucesso!"
+        EOF
 
-          echo "$INSTANCE_KEY" > chave-site.pem
-          chmod 400 chave-site.pem
+    - name: Build, Tag, and Push images to ECR
+      run: |
+        docker build -t xclarity-frontend:latest ./frontend
+        docker build -t xclarity-backend:latest ./backend
 
-          scp -i chave-site.pem -o StrictHostKeyChecking=no \
-            ./docker-compose.yml \
-            ubuntu@$PUBLIC_IP:/home/ubuntu/docker-compose.yml
+        docker tag xclarity-frontend:latest 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:latest
+        docker tag xclarity-backend:latest 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:latest
 
-          rm -f chave-site.pem
+        docker push 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:latest
+        docker push 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:latest
 
-      # ============================================================
-      # 1️⃣ CRIAR NGINX HTTP (necessário para gerar o SSL)
-      # ============================================================
-      - name: Criar Nginx HTTP temporário
-        run: |
-
-          echo "$INSTANCE_KEY" > chave-site.pem
-          chmod 400 chave-site.pem
-
-          ssh -T -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
-          sudo bash -c "cat > /etc/nginx/sites-available/xclarity.conf << 'NGINX'
-          server {
-              listen 80;
-              server_name xclarity.duckdns.org;
-
-              location / {
-                  proxy_pass http://localhost:8080;
-                  proxy_set_header Host \$host;
-                  proxy_set_header X-Real-IP \$remote_addr;
-                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto http;
-              }
-
-              location /api/ {
-                  proxy_pass http://localhost:8000/api/;
-              }
-          }
-          NGINX"
-
-          sudo ln -sf /etc/nginx/sites-available/xclarity.conf /etc/nginx/sites-enabled/xclarity.conf
-          sudo nginx -t
-          sudo systemctl restart nginx
-          EOF
-
-          rm chave-site.pem
-
-      # ============================================================
-      # 2️⃣ GERAR SSL — AGORA FUNCIONA
-      # ============================================================
-      - name: Gerar certificados SSL com Certbot
-        run: |
-          echo "$INSTANCE_KEY" > chave-site.pem
-          chmod 400 chave-site.pem
-
-          ssh -T -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
-          sudo certbot certonly --nginx \
-            -d xclarity.duckdns.org \
-            --non-interactive \
-            --agree-tos \
-            -m admin@xclarity.duckdns.org || true
-          EOF
-
-          rm chave-site.pem
-
-      # ============================================================
-      # 3️⃣ NGINX DEFINITIVO COM HTTPS
-      # ============================================================
-      - name: Ativar Nginx HTTPS definitivo
-        run: |
-          echo "$INSTANCE_KEY" > chave-site.pem
-          chmod 400 chave-site.pem
-
-          ssh -T -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
-          sudo bash -c "cat > /etc/nginx/sites-available/xclarity.conf << 'NGINX'
-          server {
-              listen 80;
-              server_name xclarity.duckdns.org;
-              return 301 https://\$host\$request_uri;
-          }
-
-          server {
-              listen 443 ssl;
-              server_name xclarity.duckdns.org;
-
-              ssl_certificate     /etc/letsencrypt/live/xclarity.duckdns.org/fullchain.pem;
-              ssl_certificate_key /etc/letsencrypt/live/xclarity.duckdns.org/privkey.pem;
-
-              location / {
-                  proxy_pass http://localhost:8080;
-                  proxy_set_header Host \$host;
-                  proxy_set_header X-Real-IP \$remote_addr;
-                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto https;
-              }
-
-              location /api/ {
-                  proxy_pass http://localhost:8000/api/;
-              }
-          }
-          NGINX"
-
-          sudo nginx -t
-          sudo systemctl restart nginx
-          EOF
-
-          rm chave-site.pem
+    - name: Copiar docker-compose.yml para EC2
+      run: |
+        scp -i chave-site.pem -o StrictHostKeyChecking=no \
+          ./docker-compose.yml \
+          ubuntu@$PUBLIC_IP:/home/ubuntu/docker-compose.yml
 
 
-      - name: Fechar SSH temporário
-        if: always()
-        run: |
-          MY_IP=$(curl -s https://checkip.amazonaws.com)
-          aws ec2 revoke-security-group-ingress \
-              --group-id $DEPLOY_SG_ID \
-              --protocol tcp \
-              --port 22 \
-              --cidr "$MY_IP/32" || true
+    # ============================================================
+    # 1️⃣ INSTALAR CONFIGURAÇÃO HTTP TEMPORÁRIA (SEM SSL)
+    # ============================================================
+    - name: Criar Nginx HTTP temporário (necessário antes do Certbot)
+      run: |
+        ssh -T -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
 
+        sudo bash -c 'cat << "NGINX" > /etc/nginx/sites-available/xclarity.conf
+        server {
+            listen 80;
+            server_name xclarity.duckdns.org;
+
+            location / {
+                proxy_pass http://localhost:8080;
+                proxy_set_header Host \$host;
+                proxy_set_header X-Real-IP \$remote_addr;
+            }
+
+            location /api/ {
+                proxy_pass http://localhost:8000/api/;
+            }
+        }
+        NGINX'
+
+        sudo ln -sf /etc/nginx/sites-available/xclarity.conf /etc/nginx/sites-enabled/xclarity.conf
+
+        sudo systemctl daemon-reload
+        sudo nginx -t
+        sudo systemctl restart nginx
+
+        EOF
+
+
+    # ============================================================
+    # 2️⃣ GERAR CERTIFICADOS COM CERTBOT (AGORA FUNCIONA)
+    # ============================================================
+    - name: Gerar certificados SSL com Certbot
+      run: |
+        ssh -T -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
+
+        echo "🔐 Gerando certificados SSL..."
+        sudo certbot certonly --nginx \
+          -d xclarity.duckdns.org \
+          --non-interactive \
+          --agree-tos \
+          -m admin@xclarity.duckdns.org
+
+        echo "Certificados gerados:"
+        sudo ls -l /etc/letsencrypt/live/xclarity.duckdns.org/
+
+        EOF
+
+
+    # ============================================================
+    # 3️⃣ AGORA SIM: NGINX FINAL COM SSL
+    # ============================================================
+    - name: Ativar Nginx com SSL definitivo
+      run: |
+        ssh -T -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
+
+        sudo bash -c 'cat << "NGINX" > /etc/nginx/sites-available/xclarity.conf
+        server {
+            listen 80;
+            server_name xclarity.duckdns.org;
+            return 301 https://\$host\$request_uri;
+        }
+
+        server {
+            listen 443 ssl;
+            server_name xclarity.duckdns.org;
+
+            ssl_certificate     /etc/letsencrypt/live/xclarity.duckdns.org/fullchain.pem;
+            ssl_certificate_key /etc/letsencrypt/live/xclarity.duckdns.org/privkey.pem;
+
+            location / {
+                proxy_pass http://localhost:8080;
+                proxy_set_header Host \$host;
+                proxy_set_header X-Real-IP \$remote_addr;
+                proxy_set_header X-Forwarded-Proto https;
+            }
+
+            location /api/ {
+                proxy_pass http://localhost:8000/api/;
+            }
+        }
+        NGINX'
+
+        sudo nginx -t
+        sudo systemctl restart nginx
+
+        EOF
+
+
+    - name: Fechar SSH temporário
+      if: always()
+      run: |
+        MY_IP=$(curl -s https://checkip.amazonaws.com)
+        aws ec2 revoke-security-group-ingress \
+          --group-id $DEPLOY_SG_ID \
+          --protocol tcp \
+          --port 22 \
+          --cidr "$MY_IP/32" || true
+
+
+
+  # ============================================================
+  # 4️⃣ DEPLOY FINAL (containers)
+  # ============================================================
   job2:
     name: deploy_ec2
     needs: job1
-    env:
+    env: 
       INSTANCE_KEY: ${{ secrets.INSTANCE_KEY }}
       PUBLIC_IP: ${{ secrets.PUBLIC_IP }}
     runs-on: ubuntu-latest
@@ -198,15 +199,18 @@ jobs:
           chmod 400 chave-site.pem
 
           ssh -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
-          docker stop $(docker ps -aq) 2>/dev/null || true
-          docker rm $(docker ps -aq) 2>/dev/null || true
-          docker system prune -af --volumes
 
-          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 165814550670.dkr.ecr.us-east-1.amazonaws.com
+            docker stop $(docker ps -aq) 2>/dev/null || true
+            docker rm $(docker ps -aq) 2>/dev/null || true
 
-          docker compose -f docker-compose.yml pull
-          docker compose -f docker-compose.yml up -d --remove-orphans
-          docker ps
+            docker system prune -af --volumes
+
+            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 165814550670.dkr.ecr.us-east-1.amazonaws.com
+
+            docker compose -f docker-compose.yml pull
+            docker compose -f docker-compose.yml up -d --remove-orphans
+
+            docker ps
           EOF
 
           rm chave-site.pem
