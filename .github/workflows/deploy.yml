@@ -139,36 +139,36 @@ jobs:
 
             ssh -T -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
 
-              sudo bash -c 'cat << "NGINX" > /etc/nginx/sites-available/xclarity.conf
-              server {
-                  listen 80;
-                  server_name xclarity.duckdns.org;
-                  return 301 https://\$host\$request_uri;
-              }
+            sudo bash -c 'cat << "NGINX" > /etc/nginx/sites-available/xclarity.conf
+            server {
+                listen 80;
+                server_name xclarity.duckdns.org;
+                return 301 https://\$host\$request_uri;
+            }
 
-              server {
-                  listen 443 ssl;
-                  server_name xclarity.duckdns.org;
+            server {
+                listen 443 ssl;
+                server_name xclarity.duckdns.org;
 
-                  ssl_certificate     /etc/letsencrypt/live/xclarity.duckdns.org/fullchain.pem;
-                  ssl_certificate_key /etc/letsencrypt/live/xclarity.duckdns.org/privkey.pem;
+                ssl_certificate     /etc/letsencrypt/live/xclarity.duckdns.org/fullchain.pem;
+                ssl_certificate_key /etc/letsencrypt/live/xclarity.duckdns.org/privkey.pem;
 
-                  location / {
-                      proxy_pass http://localhost:8080;
-                      proxy_set_header Host \$host;
-                      proxy_set_header X-Real-IP \$remote_addr;
-                      proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                      proxy_set_header X-Forwarded-Proto https;
-                  }
+                location / {
+                    proxy_pass http://localhost:8080;
+                    proxy_set_header Host \$host;
+                    proxy_set_header X-Real-IP \$remote_addr;
+                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto https;
+                }
 
-                  location /api/ {
-                      proxy_pass http://localhost:8000/api/;
-                  }
-              }
-              NGINX'
+                location /api/ {
+                    proxy_pass http://localhost:8000/api/;
+                }
+            }
+            NGINX'
 
-              sudo nginx -t
-              sudo systemctl restart nginx || true
+            sudo nginx -t
+            sudo systemctl restart nginx || true
 
             EOF
 
