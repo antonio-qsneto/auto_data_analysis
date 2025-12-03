@@ -66,6 +66,9 @@ jobs:
       - name: Enviar docker-compose.yml
         run: |
 
+          echo "$INSTANCE_KEY" > chave-site.pem
+          chmod 400 chave-site.pem
+
           scp -i chave-site.pem -o StrictHostKeyChecking=no \
             ./docker-compose.yml \
             ubuntu@$PUBLIC_IP:/home/ubuntu/docker-compose.yml
