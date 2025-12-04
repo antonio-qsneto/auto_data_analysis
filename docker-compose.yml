@@ -28,6 +28,8 @@ services:
   frontend:
     image: 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:latest
     container_name: frontend
+    env_file:
+      - ./frontend/.env
     ports:
       - "8080:80"
     restart: always
