@@ -290,3 +290,17 @@ CACHES = {
         "TIMEOUT": 60 * 60,  # 1 hora de persistência
     }
 }
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "ERROR",  # troca para "DEBUG" para ver TUDO
+    },
+}
