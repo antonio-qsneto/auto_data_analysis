@@ -301,6 +301,6 @@ LOGGING = {
     },
     "root": {
         "handlers": ["console"],
-        "level": "ERROR",  # troca para "DEBUG" para ver TUDO
+        "level": "DEBUG",  # troca para "DEBUG" para ver TUDO
     },
 }
