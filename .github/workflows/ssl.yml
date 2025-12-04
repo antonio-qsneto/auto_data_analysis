@@ -1,0 +1,136 @@
+name: Issue SSL Certificate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  issue_ssl:
+    name: Issue SSL for xclarity.top
+    runs-on: ubuntu-latest
+    env:
+      PUBLIC_IP: ${{ secrets.PUBLIC_IP }}
+      INSTANCE_KEY: ${{ secrets.INSTANCE_KEY }}
+      DEPLOY_SG_ID: ${{ secrets.DEPLOY_SG_ID }}
+
+    steps:
+
+    - name: Abrir SSH temporário
+      run: |
+        MY_IP=$(curl -s https://checkip.amazonaws.com)
+        aws ec2 authorize-security-group-ingress \
+          --group-id $DEPLOY_SG_ID \
+          --protocol tcp \
+          --port 22 \
+          --cidr "$MY_IP/32" || true
+
+    - name: Criar chave PEM
+      run: |
+        echo "$INSTANCE_KEY" > chave-site.pem
+        chmod 400 chave-site.pem
+
+    # ============================================================
+    # 1️⃣ CRIAR CONFIG HTTP TEMPORÁRIA
+    # ============================================================
+    - name: Criar Nginx temporário HTTP
+      run: |
+        ssh -T -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
+
+          echo "Criando configuração HTTP temporária..."
+
+          sudo bash -c 'cat << "NGINX" > /etc/nginx/sites-available/xclarity.conf
+          server {
+              listen 80;
+              server_name xclarity.top;
+
+              location / {
+                  proxy_pass http://localhost:8080;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+              }
+
+              location /api/ {
+                  proxy_pass http://localhost:8000/api/;
+              }
+          }
+        NGINX'
+
+          sudo ln -sf /etc/nginx/sites-available/xclarity.conf /etc/nginx/sites-enabled/xclarity.conf
+          sudo nginx -t
+          sudo systemctl restart nginx
+        EOF
+
+    # ============================================================
+    # 2️⃣ GERAR CERTIFICADO (somente quando VOCÊ mandar rodar)
+    # ============================================================
+    - name: Gerar certificado SSL (Certbot)
+      run: |
+        ssh -T -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
+          echo "Iniciando Certbot..."
+
+          sudo certbot certonly --nginx \
+            --key-type rsa \
+            -d xclarity.top \
+            --non-interactive \
+            --agree-tos \
+            -m admin@xclarity.top
+
+          echo "Certificados existentes:"
+          sudo ls -l /etc/letsencrypt/live/xclarity.top/
+        EOF
+
+    # ============================================================
+    # 3️⃣ CONFIGURAÇÃO SSL FINAL
+    # ============================================================
+    - name: Instalar config SSL definitiva
+      run: |
+        ssh -T -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
+
+          echo "Aplicando configuração SSL..."
+
+          sudo bash -c 'cat << "NGINX" > /etc/nginx/sites-available/xclarity.conf
+          server {
+              listen 80;
+              server_name xclarity.top;
+              return 301 https://\$host\$request_uri;
+          }
+
+          server {
+              listen 443 ssl;
+              server_name xclarity.top;
+
+              ssl_certificate     /etc/letsencrypt/live/xclarity.top/fullchain.pem;
+              ssl_certificate_key /etc/letsencrypt/live/xclarity.top/privkey.pem;
+
+              location / {
+                  proxy_pass http://localhost:8080;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-Proto https;
+              }
+
+              location /api/ {
+                  proxy_pass http://localhost:8000/api/;
+              }
+          }
+        NGINX'
+
+          sudo nginx -t
+          sudo systemctl restart nginx
+        EOF
+
+    - name: Fechar SSH temporário
+      if: always()
+      run: |
+        MY_IP=$(curl -s https://checkip.amazonaws.com)
+        aws ec2 revoke-security-group-ingress \
+          --group-id $DEPLOY_SG_ID \
+          --protocol tcp \
+          --port 22 \
+          --cidr "$MY_IP/32" || true
+
+    - name: Remover PEM local
+      run: rm -f chave-site.pem

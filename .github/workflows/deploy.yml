@@ -30,20 +30,6 @@ jobs:
     - name: Amazon ECR Login
       uses: aws-actions/amazon-ecr-login@v2
 
-
-    # ============================================================
-    # 🔓 Abrir SSH temporário
-    # ============================================================
-    - name: Abrir SSH temporário
-      run: |
-        MY_IP=$(curl -s https://checkip.amazonaws.com)
-        aws ec2 authorize-security-group-ingress \
-          --group-id $DEPLOY_SG_ID \
-          --protocol tcp \
-          --port 22 \
-          --cidr "$MY_IP/32" || true
-
-
     # ============================================================
     # 📦 Criar .env no servidor
     # ============================================================
@@ -88,101 +74,6 @@ jobs:
       run: |
         scp -i chave-site.pem -o StrictHostKeyChecking=no \
           docker-compose.yml ubuntu@$PUBLIC_IP:/home/ubuntu/docker-compose.yml
-
-
-    # ============================================================
-    # 1️⃣ REMOVER CERTIFICADOS ANTIGOS + CONFIGURAÇÃO TEMPORÁRIA
-    # ============================================================
-    - name: Apagar certificados antigos + Criar Nginx HTTP temporário
-      run: |
-        ssh -T -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
-
-        echo "Removendo certificados antigos..."
-        sudo rm -rf /etc/letsencrypt/live/xclarity.top || true
-        sudo rm -rf /etc/letsencrypt/archive/xclarity.top || true
-        sudo rm -f /etc/letsencrypt/renewal/xclarity.top.conf || true
-
-        echo "Criando configuração temporária HTTP..."
-        sudo bash -c 'cat << "NGINX" > /etc/nginx/sites-available/xclarity.conf
-        server {
-            listen 80;
-            server_name xclarity.top;
-
-            location / {
-                proxy_pass http://localhost:8080;
-                proxy_set_header Host \$host;
-                proxy_set_header X-Real-IP \$remote_addr;
-            }
-
-            location /api/ {
-                proxy_pass http://localhost:8000/api/;
-            }
-        }
-        NGINX'
-
-              sudo ln -sf /etc/nginx/sites-available/xclarity.conf /etc/nginx/sites-enabled/xclarity.conf
-
-              sudo systemctl daemon-reload
-              sudo nginx -t
-              sudo systemctl restart nginx
-
-        EOF
-
-
-    # ============================================================
-    # 2️⃣ CERTBOT (AGORA FUNCIONA SEM ERRO)
-    # ============================================================
-    - name: Gerar certificados SSL com Certbot (RSA)
-      run: |
-        ssh -T -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
-          sudo certbot certonly --nginx \
-            --key-type rsa \
-            -d xclarity.top \
-            --non-interactive \
-            --agree-tos \
-            -m admin@xclarity.top
-
-          sudo ls -l /etc/letsencrypt/live/xclarity.top/
-        EOF
-
-
-    # ============================================================
-    # 3️⃣ CONFIGURAÇÃO FINAL COM SSL
-    # ============================================================
-    - name: Ativar Nginx com SSL definitivo
-      run: |
-        ssh -T -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
-
-          sudo bash -c 'cat << "NGINX" > /etc/nginx/sites-available/xclarity.conf
-          server {
-              listen 80;
-              server_name xclarity.top;
-              return 301 https://\$host\$request_uri;
-          }
-
-          server {
-              listen 443 ssl;
-              server_name xclarity.top;
-
-              ssl_certificate     /etc/letsencrypt/live/xclarity.top/fullchain.pem;
-              ssl_certificate_key /etc/letsencrypt/live/xclarity.top/privkey.pem;
-
-              location / {
-                  proxy_pass http://localhost:8080;
-                  proxy_set_header Host \$host;
-                  proxy_set_header X-Real-IP \$remote_addr;
-                  proxy_set_header X-Forwarded-Proto https;
-              }
-
-              location /api/ {
-                  proxy_pass http://localhost:8000/api/;
-              }
-          }
-        NGINX'
-
-          sudo nginx -t
-          sudo systemctl restart nginx
-        EOF
 
 
     # ============================================================
