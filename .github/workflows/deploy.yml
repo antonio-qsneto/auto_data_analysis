@@ -45,9 +45,6 @@ jobs:
           cat > /home/ubuntu/backend/.env << 'EENV'
         ${{ secrets.ENV_BACKEND }}
         EENV
-          cat > /home/ubuntu/frontend/.env << 'EENV'
-        ${{ secrets.ENV_FRONTEND }}
-        EENV
         EOF
 
 

@@ -6,6 +6,7 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from ..serializers.user_serializer import UserSerializer
 from ..serializers.auth_serializer import SignupSerializer
+from rest_framework.permissions import AllowAny
 
 User = get_user_model()
 
@@ -78,7 +79,7 @@ class GoogleLoginView(APIView):
 
 class SignupView(APIView):
     authentication_classes = []
-    permission_classes = []
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = SignupSerializer(data=request.data)
