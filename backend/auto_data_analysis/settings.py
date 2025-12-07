@@ -25,7 +25,7 @@ CORS_ALLOWED_ORIGINS = [
     o.strip()
     for o in os.getenv(
         "CORS_ALLOWED_ORIGINS",
-        "http://localhost:5173,http://127.0.0.1:5173,http://frontend,http://localhost,https://ec2-54-236-66-226.compute-1.amazonaws.com",
+        "http://localhost:5173,http://127.0.0.1:5173,http://frontend,http://localhost,https://ec2-13-217-233-112.compute-1.amazonaws.com",
     ).split(",")
     if o.strip()
 ]
@@ -301,6 +301,6 @@ LOGGING = {
     },
     "root": {
         "handlers": ["console"],
-        "level": "DEBUG",  # troca para "DEBUG" para ver TUDO
+        "level": "DEBUG",  
     },
 }
