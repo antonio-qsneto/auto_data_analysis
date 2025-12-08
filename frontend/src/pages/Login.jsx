@@ -75,21 +75,12 @@ export default function LoginPage() {
             </div>
 
             {/* Login com Google */}
-            <div className="w-full flex flex-col items-center">
+            <div className="w-full">
               <GoogleLoginButton
                 onLoginSuccess={handleLoginSuccess}
-                onLoginStart={() => setIsLoading(true)}
+                onLoginStart={handleLoginStart}
               />
-
-              {isLoading && (
-                <img
-                  src={loadingGif}
-                  alt="loading"
-                  className="w-5 h-5 mt-3 animate-pulse"
-                />
-              )}
             </div>
-
           </div>
         )}
       </div>
