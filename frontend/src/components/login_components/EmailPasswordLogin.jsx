@@ -2,19 +2,19 @@ import { useState, useContext } from "react";
 import axiosInstance from "../../utils/axiosInstance";
 import { setTokens } from "../../utils/auth";
 import { UserContext } from "../../context/UserContext";
+import loadingGif from "../../assets/images/loading.gif";
 
-export default function EmailPasswordLogin({ onLoginSuccess, onLoginStart }) {
+export default function EmailPasswordLogin({ onLoginSuccess }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const { loadUser } = useContext(UserContext);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
-    // Ativa loading externo
-    onLoginStart && onLoginStart();
+    setLoading(true); // ativa loader no botão
 
     try {
       const res = await axiosInstance.post("/token/", { email, password });
@@ -29,6 +29,8 @@ export default function EmailPasswordLogin({ onLoginSuccess, onLoginStart }) {
       } else {
         setError("E-mail ou senha inválidos");
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -41,8 +43,9 @@ export default function EmailPasswordLogin({ onLoginSuccess, onLoginStart }) {
         onChange={(e) => setEmail(e.target.value)}
         required
         className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/60 placeholder-gray-400 text-gray-900 shadow-sm
-                   focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 backdrop-blur-md transition"
+                   focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
       />
+
       <input
         type="password"
         placeholder="Senha"
@@ -50,14 +53,21 @@ export default function EmailPasswordLogin({ onLoginSuccess, onLoginStart }) {
         onChange={(e) => setPassword(e.target.value)}
         required
         className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/60 placeholder-gray-400 text-gray-900 shadow-sm
-                   focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 backdrop-blur-md transition"
+                   focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
       />
+
       <button
         type="submit"
-        className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-500 to-indigo-500
-                   shadow-md hover:shadow-lg hover:from-blue-600 hover:to-indigo-600 transition"
+        disabled={loading}
+        className={`w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-500 to-indigo-500
+                    shadow-md transition flex items-center justify-center
+                    ${loading ? "opacity-70 cursor-not-allowed" : "hover:shadow-lg hover:from-blue-600 hover:to-indigo-600"}`}
       >
-        Login
+        {loading ? (
+          <img src={loadingGif} alt="loading" className="w-5 h-5" />
+        ) : (
+          "Login"
+        )}
       </button>
 
       {error && (
