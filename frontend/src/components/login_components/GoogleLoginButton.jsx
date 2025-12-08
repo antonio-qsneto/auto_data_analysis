@@ -4,10 +4,13 @@ import { setTokens } from "../../utils/auth";
 import { useContext } from "react";
 import { UserContext } from "../../context/UserContext";
 
-export default function GoogleLoginButton({ onLoginSuccess }) {
+export default function GoogleLoginButton({ onLoginSuccess, onLoginStart }) {
   const { loadUser } = useContext(UserContext);
 
   const handleSuccess = async (credentialResponse) => {
+    // Ativa loading externo
+    onLoginStart && onLoginStart();
+
     try {
       const res = await axiosInstance.post("/auth/google/", {
         id_token: credentialResponse.credential,
@@ -15,7 +18,6 @@ export default function GoogleLoginButton({ onLoginSuccess }) {
 
       setTokens({ access: res.data.access, refresh: res.data.refresh });
 
-      // 🔑 força atualização imediata do usuário no contexto
       await loadUser();
 
       onLoginSuccess && onLoginSuccess(res.data.user);
@@ -28,7 +30,7 @@ export default function GoogleLoginButton({ onLoginSuccess }) {
     <GoogleLogin
       onSuccess={handleSuccess}
       onError={() => console.error("Login Google falhou")}
-      ux_mode="popup"   // força popup em vez de redirect
+      ux_mode="popup"
       auto_select={false}
     />
   );

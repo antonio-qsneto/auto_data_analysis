@@ -3,7 +3,7 @@ import axiosInstance from "../../utils/axiosInstance";
 import { setTokens } from "../../utils/auth";
 import { UserContext } from "../../context/UserContext";
 
-export default function EmailPasswordLogin({ onLoginSuccess }) {
+export default function EmailPasswordLogin({ onLoginSuccess, onLoginStart }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -12,6 +12,10 @@ export default function EmailPasswordLogin({ onLoginSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    // Ativa loading externo
+    onLoginStart && onLoginStart();
+
     try {
       const res = await axiosInstance.post("/token/", { email, password });
       setTokens({ access: res.data.access, refresh: res.data.refresh });
@@ -55,6 +59,7 @@ export default function EmailPasswordLogin({ onLoginSuccess }) {
       >
         Login
       </button>
+
       {error && (
         <p className="text-red-600 text-sm mt-1 text-center">{error}</p>
       )}
