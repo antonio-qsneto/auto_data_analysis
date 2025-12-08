@@ -5,7 +5,6 @@ on:
     branches:
       - main
 
-
 permissions:
   id-token: write
   contents: read
@@ -20,7 +19,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
     - name: Checkout
       uses: actions/checkout@v5
 
@@ -33,25 +31,16 @@ jobs:
     - name: Amazon ECR Login
       uses: aws-actions/amazon-ecr-login@v2
 
-
-    # ============================================================
-    # 🐳 Build + Push Docker
-    # ============================================================
     - name: Build, Tag, Push Docker images
       run: |
-
         docker build \
           --build-arg VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }} \
           --build-arg VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }} \
           -t xclarity-frontend:latest ./frontend
 
         docker tag xclarity-frontend:latest 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:latest
-
         docker push 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:latest
 
-  # ============================================================
-  # 🚀 Deploy containers
-  # ============================================================
   job2:
     name: deploy_ec2
     needs: job1
@@ -68,15 +57,13 @@ jobs:
 
           ssh -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
 
-            docker stop $(docker ps -aq) 2>/dev/null || true
-            docker rm $(docker ps -aq) 2>/dev/null || true
-
-            docker system prune -af --volumes
-
             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 165814550670.dkr.ecr.us-east-1.amazonaws.com
 
-            docker compose -f docker-compose.yml pull
-            docker compose -f docker-compose.yml up -d --remove-orphans
+            # PULL APENAS DO FRONTEND
+            docker compose -f docker-compose.yml pull frontend
+
+            # SUBIR APENAS O FRONTEND (sem derrubar backend/celery/etc.)
+            docker compose -f docker-compose.yml up -d frontend
 
             docker ps
           EOF
