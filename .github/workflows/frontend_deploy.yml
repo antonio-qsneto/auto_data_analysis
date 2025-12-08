@@ -1,7 +1,10 @@
-name: Pipeline CI/CD
+name: Deploy Frontend React
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
+
 
 permissions:
   id-token: write
@@ -30,61 +33,21 @@ jobs:
     - name: Amazon ECR Login
       uses: aws-actions/amazon-ecr-login@v2
 
-    # ============================================================
-    # 📦 Criar .env no servidor
-    # ============================================================
-    - name: Criar arquivo .env no EC2
-      run: |
-        echo "$INSTANCE_KEY" > chave-site.pem
-        chmod 400 chave-site.pem
-
-        ssh -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
-          mkdir -p /home/ubuntu/backend;
-
-          cat > /home/ubuntu/backend/.env << 'EENV'
-        ${{ secrets.ENV_BACKEND }}
-        EENV
-        EOF
-
 
     # ============================================================
     # 🐳 Build + Push Docker
     # ============================================================
     - name: Build, Tag, Push Docker images
       run: |
+
         docker build \
           --build-arg VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }} \
           --build-arg VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }} \
           -t xclarity-frontend:latest ./frontend
 
-        docker build -t xclarity-backend:latest ./backend
-
         docker tag xclarity-frontend:latest 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:latest
-        docker tag xclarity-backend:latest 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:latest
 
         docker push 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-frontend:latest
-        docker push 165814550670.dkr.ecr.us-east-1.amazonaws.com/xclarity-backend:latest
-
-
-    - name: Copiar docker-compose.yml para EC2
-      run: |
-        scp -i chave-site.pem -o StrictHostKeyChecking=no \
-          docker-compose.yml ubuntu@$PUBLIC_IP:/home/ubuntu/docker-compose.yml
-
-
-    # ============================================================
-    # 🔒 Fechar SSH temporário
-    # ============================================================
-    - name: Fechar SSH temporário
-      if: always()
-      run: |
-        MY_IP=$(curl -s https://checkip.amazonaws.com)
-        aws ec2 revoke-security-group-ingress \
-          --group-id $DEPLOY_SG_ID \
-          --protocol tcp \
-          --port 22 \
-          --cidr "$MY_IP/32" || true
-
 
   # ============================================================
   # 🚀 Deploy containers
