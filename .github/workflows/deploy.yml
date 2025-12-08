@@ -40,7 +40,6 @@ jobs:
 
         ssh -i chave-site.pem -o StrictHostKeyChecking=no ubuntu@$PUBLIC_IP << 'EOF'
           mkdir -p /home/ubuntu/backend;
-          mkdir -p /home/ubuntu/frontend;
 
           cat > /home/ubuntu/backend/.env << 'EENV'
         ${{ secrets.ENV_BACKEND }}
