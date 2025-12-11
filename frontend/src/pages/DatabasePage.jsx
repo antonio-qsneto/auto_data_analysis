@@ -164,7 +164,7 @@ export default function DatabasePage({
       if (!task_id) throw new Error("No task ID received from server.");
 
       setStatusMessage("Processing table data...");
-      console.log("Task started:", task_id);
+      //console.log("Task started:", task_id);
 
       // Polling da task
       const interval = setInterval(async () => {
@@ -380,24 +380,37 @@ export default function DatabasePage({
         {/* 🆕 Status visual */}
         {statusMessage && (
           <div
-            className={`mt-6 text-center font-semibold text-lg ${
-              theme === "dark" ? "text-cyan-300" : "text-blue-700"
-            }`}
+            className={`
+              mt-8 
+              text-center 
+              text-base 
+              font-medium 
+              tracking-tight
+              ${theme === "dark" ? "text-neutral-200" : "text-neutral-800"}
+            `}
           >
             {statusMessage}
           </div>
         )}
 
-        {/* Mensagem de erro */}
         {error && (
           <div
-            className={`mt-6 text-center font-semibold text-lg max-w-xl px-6 break-words ${
-              theme === "dark" ? "text-red-400" : "text-red-600"
-            }`}
+            className={`
+              mt- 8 
+              text-center 
+              text-base 
+              font-medium 
+              tracking-tight
+              max-w-xl 
+              px-4 
+              mx-auto
+              ${theme === "dark" ? "text-red-300" : "text-red-500"}
+            `}
           >
-            ⚠️ {error}
+            {error}
           </div>
         )}
+
       </div>
     </>
   );

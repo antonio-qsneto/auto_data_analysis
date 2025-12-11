@@ -97,7 +97,7 @@ def call_gemini(prompt: str) -> str:
 
             # 🆕 Detecta overload específico (503 UNAVAILABLE) e retorna mensagem amigável
             if status_code == 503 or status == 'UNAVAILABLE':
-                user_friendly_msg = "Xclarity está sobrecarregado no momento. Tente novamente em alguns minutos."
+                user_friendly_msg = "Xclarity is currently overloaded. Please try again in a few minutes."
                 print(f"[Gemini] Overload detectado: {error_msg} - Retornando mensagem amigável: {user_friendly_msg}")
                 return user_friendly_msg
 

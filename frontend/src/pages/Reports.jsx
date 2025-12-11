@@ -67,24 +67,27 @@ export default function Reports({ theme, setTheme }) {
 
   const h2Classes = theme === "dark" ? "text-4xl font-extrabold text-white tracking-tight text-left" : "text-4xl font-extrabold text-gray-900 tracking-tight text-left";
 
-  if (loading)
-    return (
-      <div className={`flex items-center justify-center min-h-screen w-full ${theme === "dark" ? "bg-gray-900" : "bg-gradient-to-br from-blue-100 via-white to-blue-50"}`}>
-        <div className="flex flex-col items-center space-y-6">
-          <div className={`w-16 h-16 border-4 ${theme === "dark" ? "border-gray-600 border-t-blue-500" : "border-blue-300 border-t-blue-600"} rounded-full animate-spin`} />
-          <p className={`text-lg font-semibold tracking-wide ${theme === "dark" ? "text-gray-300" : "text-blue-800"}`}>
-            Loading reports...
-          </p>
-          <p className={`text-sm ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>
-            Please wait while we fetch your data.
-          </p>
-        </div>
-      </div>
-    );
-
   return (
     <>
       <SideBar />
+      {loading && (
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="flex flex-col items-center space-y-6">
+            <div className={`w-16 h-16 border-4 ${
+              theme === "dark"
+                ? "border-gray-600 border-t-blue-500"
+                : "border-blue-300 border-t-blue-600"
+            } rounded-full animate-spin`} />
+
+            <p className={`text-lg font-semibold ${
+              theme === "dark" ? "text-gray-200" : "text-gray-800"
+            }`}>
+              Loading reports...
+            </p>
+          </div>
+        </div>
+      )}
+
       <div
         className={`min-h-screen w-full relative transition-colors duration-300 ${
           theme === "dark"

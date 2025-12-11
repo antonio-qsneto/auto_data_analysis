@@ -35,9 +35,8 @@ def get_report_detail(request, pk):
         return Response({"error": "Error fetching object"}, status=500)
 
     return Response({
-        "id": report.id,  # type: ignore
-        # "created_at": report.created_at,
-        # "s3_url": report.s3_url,
+        "id": report.id,
+        "created_at": report.created_at,
         "business_summary": data.get("business_summary"),
         "insights_text": data.get("insights_text"),
         "charts": data.get("charts"),

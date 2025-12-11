@@ -72,10 +72,10 @@ export default function ReportDetail({ theme, setTheme }) {
         <div className="flex flex-col items-center space-y-6">
           <div className="w-16 h-16 border-4 border-blue-300 border-t-blue-600 rounded-full animate-spin" />
           <p className="text-blue-800 text-lg font-semibold tracking-wide">
-            Carregando relatório...
+            Loading report...
           </p>
           <p className="text-gray-500 text-sm">
-            Estamos preparando seu relatório para exibição.
+            We are preparing your report for presentation.
           </p>
         </div>
       </div>
@@ -83,7 +83,7 @@ export default function ReportDetail({ theme, setTheme }) {
   }
 
   if (!report) {
-    return <p className="p-4 text-red-600">Erro: relatório não encontrado.</p>;
+    return <p className="p-4 text-red-600">Error: Report not found.</p>;
   }
 
   const cards = parseBusinessSummary(report.business_summary);
@@ -126,8 +126,9 @@ export default function ReportDetail({ theme, setTheme }) {
         {/* Título */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-6">
           <h2 className="text-2xl font-bold">
-            Relatório {report.id} -{" "}
+            Report {report.id} -{" "}
             {new Date(report.created_at).toLocaleString()}
+            {console.log("RAW DATE:", report.created_at)}
           </h2>
         </div>
 

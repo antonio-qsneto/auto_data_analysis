@@ -79,7 +79,6 @@ export default function UploadPage({
 
       const { task_id } = response.data;
       setStatusMessage("Processing data with AI...");
-      console.log("Task created:", task_id);
 
       // 2️⃣ Polling para acompanhar status da task
       const interval = setInterval(async () => {
@@ -116,9 +115,11 @@ export default function UploadPage({
       console.error(err);
       setError && setError("Error uploading file or generating charts.");
       setStatusMessage("Upload failed");
+      setLoading && setLoading(false);
     } finally {
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      setLoading && setLoading(false);
     }
   };
 
@@ -252,26 +253,39 @@ export default function UploadPage({
         </div>
 
         {/* 🆕 Status da Task */}
-        {statusMessage && (
+       {statusMessage && (
           <div
-            className={`mt-6 text-center font-semibold text-lg ${
-              theme === "dark" ? "text-cyan-300" : "text-blue-700"
-            }`}
+            className={`
+              mt-8 
+              text-center 
+              text-base 
+              font-medium 
+              tracking-tight
+              ${theme === "dark" ? "text-neutral-200" : "text-neutral-800"}
+            `}
           >
             {statusMessage}
           </div>
         )}
 
-        {/* Erros */}
         {error && (
           <div
-            className={`mt-8 text-center font-semibold text-lg ${
-              theme === "dark" ? "text-red-400" : "text-red-600"
-            }`}
+            className={`
+              mt-8 
+              text-center 
+              text-base 
+              font-medium 
+              tracking-tight
+              max-w-xl 
+              px-4 
+              mx-auto
+              ${theme === "dark" ? "text-red-300" : "text-red-500"}
+            `}
           >
             {error}
           </div>
         )}
+
       </div>
     </>
   );

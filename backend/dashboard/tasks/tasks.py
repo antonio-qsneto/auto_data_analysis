@@ -51,7 +51,7 @@ def generate_chart_from_csv_task(self, file_content, user_id):
 
         # ====== 5️⃣ Salvar resultado no S3 ======
         s3 = boto3.client("s3")
-        file_key = f"reports/{user.id}/{timezone.now().isoformat()}.json"  # type: ignore
+        file_key = f"reports/{user.id}/{timezone.now().strftime('%Y%m%dT%H%M%S')}.json"
 
         body = json.dumps({
             "business_summary": safe_result["business_summary"],
@@ -78,7 +78,8 @@ def generate_chart_from_csv_task(self, file_content, user_id):
 
         return {
             "status": "completed",
-            "s3_url": s3_url,
+            "id": report.id,
+            "created_at": report.created_at.isoformat(),
             "business_summary": safe_result["business_summary"],
             "charts": safe_result["charts"],
             "insights_text": safe_result["insights_text"],
@@ -119,7 +120,7 @@ def generate_chart_from_database_task(self, connection_data, table, user_id):
 
         # ====== Salva no S3 ======
         s3 = boto3.client("s3")
-        file_key = f"reports/{user.id}/{timezone.now().isoformat()}.json"
+        file_key = f"reports/{user.id}/{timezone.now().strftime('%Y%m%dT%H%M%S')}.json"
         body = json.dumps({
             "business_summary": safe_result["business_summary"],
             "insights_text": safe_result["insights_text"],
