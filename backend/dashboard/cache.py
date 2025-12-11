@@ -66,7 +66,7 @@ def get_dataframe(user_id: int) -> pd.DataFrame | None:
             return None
         df = _deserialize_df(data)
         # save dataframe as .csv
-        df.to_csv("df.csv", index=False)
+        #df.to_csv("df.csv", index=False)
         print(f"[CACHE] DataFrame recuperado do Redis para user:{user_id}")
         return df
     except Exception as e:

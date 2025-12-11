@@ -1,9 +1,7 @@
 name: Deploy Frontend React
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 permissions:
   id-token: write
