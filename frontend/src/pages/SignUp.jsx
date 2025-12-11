@@ -121,7 +121,7 @@ export default function Signup() {
               {isLoading ? (
                 <>
                   <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                  Processando...
+                  Signing up...
                 </>
               ) : (
                 "Cadastrar"
