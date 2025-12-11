@@ -173,6 +173,9 @@ ACCOUNT_USERNAME_REQUIRED = False
 LOGIN_REDIRECT_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 LOGOUT_REDIRECT_URL = os.getenv("FRONTEND_URL", "http://localhost:5173") + "/"
 
+FRONTEND_URL= os.getenv("FRONTEND_URL", "http://localhost:5173")
+
+
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'APP': {

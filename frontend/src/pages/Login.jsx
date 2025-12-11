@@ -39,11 +39,23 @@ export default function LoginPage() {
 
           {/* Login tradicional */}
           <div className="w-full flex flex-col gap-4">
+            <div className="space-y-4">
             <EmailPasswordLogin
               onLoginSuccess={handleLoginSuccess}
               onLoginStart={handleLoginStart}
               disabled={isLoading}
             />
+            </div>
+
+            <div className="text-right mt-2">
+              <Link
+                to="/reset-password"
+                className="text-blue-500 hover:text-blue-700 text-sm font-medium"
+              >
+                Forgot your password?
+              </Link>
+            </div>
+
           </div>
 
           {/* Divisor */}
