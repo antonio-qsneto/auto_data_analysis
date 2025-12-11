@@ -78,7 +78,6 @@ def generate_chart_from_csv_task(self, file_content, user_id):
 
         return {
             "status": "completed",
-            "id": report.id,
             "created_at": report.created_at.isoformat(),
             "business_summary": safe_result["business_summary"],
             "charts": safe_result["charts"],
