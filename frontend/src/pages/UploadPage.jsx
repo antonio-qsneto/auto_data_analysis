@@ -18,11 +18,11 @@ export default function UploadPage({
 }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [dragActive, setDragActive] = useState(false);
-  const [statusMessage, setStatusMessage] = useState(""); // 🆕 exibe status da task
+  const [statusMessage, setStatusMessage] = useState("");
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
-  // 🆕 Reset states on mount to clear sticky loading from prior sessions
+  // Reset inicial
   useEffect(() => {
     setLoading && setLoading(false);
     setSelectedFile(null);
@@ -31,56 +31,61 @@ export default function UploadPage({
     setError && setError("");
   }, [setLoading, setError]);
 
-  // ========== Handlers de Drag & Drop ==========
+  // Drag & Drop
   const handleFileChange = (e) => {
     const file = e.target.files?.[0] || e.dataTransfer?.files?.[0];
     if (file) {
       setSelectedFile(file);
       setError && setError("");
-      setStatusMessage(""); // Clear any prior status on new selection
+      setStatusMessage("");
     }
   };
+
   const handleDragOver = (e) => {
     e.preventDefault();
-    e.stopPropagation();
     setDragActive(true);
   };
+
   const handleDragLeave = (e) => {
     e.preventDefault();
-    e.stopPropagation();
     setDragActive(false);
   };
+
   const handleDrop = (e) => {
     e.preventDefault();
-    e.stopPropagation();
     setDragActive(false);
     handleFileChange(e);
   };
 
-  // ========== Upload CSV (agora com Celery) ==========
+  // ==============================
+  // UPLOAD CSV + CELERY POLLING
+  // ==============================
   const handleFileUpload = async () => {
     if (!selectedFile) {
       setError && setError("Please select a CSV file to upload.");
       return;
     }
 
-    setLoading && setLoading(true);
-    setError && setError("");
+    setLoading(true);
+    setError("");
     setStatusMessage("Uploading file...");
 
     const formData = new FormData();
     formData.append("file", selectedFile);
 
     try {
-      // 1️⃣ Envia CSV e recebe task_id
-      const response = await axiosInstance.post("/generate_chart_from_csv/", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      // Envia CSV e recebe task_id
+      const response = await axiosInstance.post(
+        "/generate_chart_from_csv/",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
 
       const { task_id } = response.data;
+
       setStatusMessage("Processing data with AI...");
 
-      // 2️⃣ Polling para acompanhar status da task
+      // Polling
       const interval = setInterval(async () => {
         try {
           const res = await axiosInstance.get(`/task_status/${task_id}/`);
@@ -88,66 +93,72 @@ export default function UploadPage({
 
           if (data.status === "completed") {
             clearInterval(interval);
-            setStatusMessage("✅ Task completed successfully!");
-            setCharts && setCharts(data.charts);
-            setBusinessSummary && setBusinessSummary(data.business_summary || "");
-            setInsightsText && setInsightsText(data.insights_text || "");
+            setStatusMessage("Task completed successfully!");
 
-            // Pequeno delay para UX suave
+            setCharts(data.charts);
+            setBusinessSummary(data.business_summary || "");
+            setInsightsText(data.insights_text || "");
+
+            // Somente aqui desliga loading
+            setLoading(false);
+
             setTimeout(() => navigate("/dashboard"), 1000);
           } else if (data.status === "failed") {
             clearInterval(interval);
-            setError && setError("Error processing the file: " + data.error);
+
+            setError("Error processing the file: " + data.error);
             setStatusMessage("Task failed");
-            setLoading && setLoading(false);
+
+            // Desliga loading em falha
+            setLoading(false);
           } else {
             setStatusMessage(`Status: ${data.status}...`);
           }
         } catch (err) {
-          console.error("Error polling task:", err);
           clearInterval(interval);
-          setError && setError("Error checking task status.");
+          setError("Error checking task status.");
           setStatusMessage("Error fetching task status");
-          setLoading && setLoading(false);
+          setLoading(false);
         }
       }, 3000);
     } catch (err) {
-      console.error(err);
-      setError && setError("Error uploading file or generating charts.");
+      setError("Error uploading file or generating charts.");
       setStatusMessage("Upload failed");
-      setLoading && setLoading(false);
+      setLoading(false);
     } finally {
+      // Limpa o arquivo escolhido, mas NÃO mexe no loading
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
-      setLoading && setLoading(false);
     }
   };
 
-  // ========== Alternância de Tema ==========
+  // Tema
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
     setTheme(newTheme);
     document.body.className = newTheme;
   };
 
-  // ========== Render ==========
   return (
     <>
       <SideBar />
       <div
         className={`flex flex-col items-center justify-center min-h-screen relative transition-all duration-700
-          ${theme === "dark"
-            ? "bg-gradient-to-br from-[#0a0a0f] via-[#1b1d26] to-[#0e0e14] text-gray-100"
-            : "bg-gradient-to-br from-[#3b5998] via-[#6395c7] to-[#f7a99c] text-gray-900"}
-        `}
+          ${
+            theme === "dark"
+              ? "bg-gradient-to-br from-[#0a0a0f] via-[#1b1d26] to-[#0e0e14] text-gray-100"
+              : "bg-gradient-to-br from-[#3b5998] via-[#6395c7] to-[#f7a99c] text-gray-900"
+          }`}
       >
         {/* Botão Tema */}
         <button
           onClick={toggleTheme}
           className={`absolute top-6 right-10 flex items-center gap-2 px-4 py-2 rounded-full font-semibold shadow-lg backdrop-blur-md transition-all duration-300
-            ${theme === "dark"
-              ? "bg-white/10 text-cyan-300 hover:bg-white/20"
-              : "bg-white/60 text-gray-800 hover:bg-white/80"}`}
+            ${
+              theme === "dark"
+                ? "bg-white/10 text-cyan-300 hover:bg-white/20"
+                : "bg-white/60 text-gray-800 hover:bg-white/80"
+            }`}
           aria-label="Switch theme"
         >
           {theme === "dark" ? "☾ Dark" : "☀ Light"}
@@ -159,7 +170,9 @@ export default function UploadPage({
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            onClick={() => fileInputRef.current && fileInputRef.current.click()}
+            onClick={() =>
+              fileInputRef.current && fileInputRef.current.click()
+            }
             className={`rounded-3xl backdrop-blur-xl border transition-all duration-300 shadow-2xl p-12 flex flex-col items-center cursor-pointer ${
               dragActive
                 ? "border-cyan-400 scale-105"
@@ -183,7 +196,9 @@ export default function UploadPage({
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
-                className={`${theme === "dark" ? "text-cyan-300" : "text-blue-600"} mb-2`}
+                className={`${
+                  theme === "dark" ? "text-cyan-300" : "text-blue-600"
+                } mb-2`}
                 viewBox="0 0 24 24"
               >
                 <path
@@ -219,7 +234,8 @@ export default function UploadPage({
                     theme === "dark" ? "text-cyan-300" : "text-blue-600"
                   }`}
                 >
-                  Selected: <span className="font-bold">{selectedFile.name}</span>
+                  Selected:{" "}
+                  <span className="font-bold">{selectedFile.name}</span>
                 </div>
               )}
 
@@ -241,7 +257,11 @@ export default function UploadPage({
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
-                    <img src={loadingGif} alt="Loading..." className="w-6 h-6 animate-spin" />
+                    <img
+                      src={loadingGif}
+                      alt="Loading..."
+                      className="w-6 h-6 animate-spin"
+                    />
                     Uploading...
                   </span>
                 ) : (
@@ -252,40 +272,27 @@ export default function UploadPage({
           </div>
         </div>
 
-        {/* 🆕 Status da Task */}
-       {statusMessage && (
+        {/* Status da Task */}
+        {statusMessage && (
           <div
-            className={`
-              mt-8 
-              text-center 
-              text-base 
-              font-medium 
-              tracking-tight
-              ${theme === "dark" ? "text-neutral-200" : "text-neutral-800"}
-            `}
+            className={`mt-8 text-center text-base font-medium tracking-tight ${
+              theme === "dark" ? "text-neutral-200" : "text-neutral-800"
+            }`}
           >
             {statusMessage}
           </div>
         )}
 
+        {/* Erro */}
         {error && (
           <div
-            className={`
-              mt-8 
-              text-center 
-              text-base 
-              font-medium 
-              tracking-tight
-              max-w-xl 
-              px-4 
-              mx-auto
-              ${theme === "dark" ? "text-red-300" : "text-red-500"}
-            `}
+            className={`mt-8 text-center text-base font-medium tracking-tight max-w-xl px-4 mx-auto ${
+              theme === "dark" ? "text-red-300" : "text-red-500"
+            }`}
           >
             {error}
           </div>
         )}
-
       </div>
     </>
   );
