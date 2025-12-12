@@ -98,7 +98,7 @@ export default function ChatWithAI({
           <textarea
             className="flex-1 bg-white/10 border border-white/20 rounded-xl p-3 text-sm text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
             rows={2}
-            placeholder="Qual a média de lucro do Luiz no mês de Março?"
+            placeholder="What was Luiz's average profit in the month of March?"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
