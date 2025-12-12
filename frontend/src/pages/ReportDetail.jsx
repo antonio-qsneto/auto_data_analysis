@@ -127,10 +127,32 @@ export default function ReportDetail({ theme, setTheme }) {
           {isLoading ? (
             <Skeleton height={32} width={280} />
           ) : (
-            <h2 className={`text-2xl font-bold fade-in ${showContent ? "show" : ""}`}>
+            <h2
+              className={`
+                fade-in ${showContent ? "show" : ""}
+                text-3xl sm:text-4xl font-extrabold tracking-tight
+                bg-clip-text text-transparent
+                ${theme === "dark"
+                  ? "bg-gradient-to-r from-cyan-300 via-blue-400 to-blue-600 drop-shadow-md"
+                  : "bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500"
+                }
+                transform transition-all duration-700
+                ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}
+              `}
+            >
               Report {report.id}
-              {report.created_at ? ` – ${new Date(report.created_at).toLocaleString()}` : ""}
+              {report.created_at ? (
+                <span
+                  className={`
+                    block mt-1 text-lg font-semibold
+                    ${theme === "dark" ? "text-gray-300" : "text-gray-700"}
+                  `}
+                >
+                  {new Date(report.created_at).toLocaleString()}
+                </span>
+              ) : null}
             </h2>
+
           )}
         </div>
 
