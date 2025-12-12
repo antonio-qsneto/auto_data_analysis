@@ -8,6 +8,7 @@ export default function Reports({ theme, setTheme }) {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [loadingCardId, setLoadingCardId] = useState(null);
   const REPORTS_PER_PAGE = 10;
   const navigate = useNavigate();
 
@@ -122,54 +123,76 @@ export default function Reports({ theme, setTheme }) {
               No reports available at the moment.
             </p>
           ) : (
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-6 mt-6 mb-8">
               {currentReports.map((report) => (
                 <div
                   key={report.id}
                   className={cardClasses}
+                  onClick={() => {
+                    setLoadingCardId(report.id);
+                    setTimeout(() => navigate(`/reports/${report.id}`), 300);
+                  }}
                 >
-                  <div
-                    className="flex-1 cursor-pointer"
-                    onClick={() => navigate(`/reports/${report.id}`)}
-                  >
-                    <div className="mb-3">
-                      <h3 className={h3Classes}>
-                        Report {report.id}
-                      </h3>
-                      <span className={dateClasses}>
-                        {new Date(report.created_at).toLocaleDateString("en-US", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
+                  {loadingCardId === report.id ? (
+                    <div className="w-full flex flex-col items-center justify-center py-6">
+                      <div
+                        className={`w-8 h-8 border-4 rounded-full animate-spin ${
+                          theme === "dark"
+                            ? "border-gray-600 border-t-blue-400"
+                            : "border-gray-300 border-t-blue-600"
+                        }`}
+                      ></div>
+                      <p
+                        className={`mt-3 text-sm ${
+                          theme === "dark" ? "text-gray-300" : "text-gray-600"
+                        }`}
+                      >
+                        Opening report...
+                      </p>
                     </div>
-                    <p className={pClasses}>
-                      Click to view report details.
-                    </p>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="flex-1 cursor-pointer">
+                        <div className="mb-3">
+                          <h3 className={h3Classes}>Report {report.id}</h3>
+                          <span className={dateClasses}>
+                            {new Date(report.created_at).toLocaleDateString("en-US", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
+                        <p className={pClasses}>Click to view report details.</p>
+                      </div>
 
-                  <button
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      if (!window.confirm("Are you sure you want to delete this report?")) return;
-                      try {
-                        await axiosInstance.delete(`/reports/${report.id}/delete/`);
-                        setReports((prev) => prev.filter((r) => r.id !== report.id));
-                      } catch (err) {
-                        alert("Error deleting report: " + (err.response?.data?.error || err.message));
-                      }
-                    }}
-                    className={deleteClasses}
-                  >
-                    Delete
-                  </button>
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (!window.confirm("Are you sure you want to delete this report?")) return;
+                          try {
+                            await axiosInstance.delete(`/reports/${report.id}/delete/`);
+                            setReports((prev) => prev.filter((r) => r.id !== report.id));
+                          } catch (err) {
+                            alert(
+                              "Error deleting report: " +
+                                (err.response?.data?.error || err.message)
+                            );
+                          }
+                        }}
+                        className={deleteClasses}
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
           )}
+
 
           {/* Paginação */}
           {totalPages > 1 && (

@@ -260,3 +260,26 @@ body.light .upload-area span[role="button"] {
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, rgba(129,140,248,0.9), rgba(59,130,246,0.9));
 }
+
+
+/* Skeleton personalizado */
+.dark-skeleton .react-loading-skeleton {
+  --base-color: #2f2f2f !important;
+  --highlight-color: #3d3d3d !important;
+  border-radius: 10px;
+}
+
+.light-skeleton .react-loading-skeleton {
+  --base-color: #d1d5db !important;       /* bg-gray-300 */
+  --highlight-color: #e5e7eb !important;  /* bg-gray-200 */
+  border-radius: 10px;
+}
+
+/* Fade-in suave */
+.fade-in {
+  opacity: 0;
+  transition: opacity 0.6s ease-in-out;
+}
+.fade-in.show {
+  opacity: 1;
+}

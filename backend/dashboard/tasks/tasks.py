@@ -72,12 +72,13 @@ def generate_chart_from_csv_task(self, file_content, user_id):
         )
 
         # ====== 6️⃣ Registrar no banco ======
-        Report.objects.create(user=user, s3_key=file_key, s3_url=s3_url)
+        report = Report.objects.create(user=user, s3_key=file_key, s3_url=s3_url)
 
         print(f"[TASK] CSV processado e cache salvo para user:{user.id}")
 
         return {
             "status": "completed",
+            "id": report.id,
             "created_at": report.created_at.isoformat(),
             "business_summary": safe_result["business_summary"],
             "charts": safe_result["charts"],
