@@ -2,21 +2,31 @@ import React, { useState, useContext } from "react";
 import screenFake from "../../assets/images/screen_fake.png";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../../context/UserContext";
+import { isLocalAuthMode, redirectToSignIn } from "../../utils/auth";
 
 export default function HeroSection() {
   const navigate = useNavigate();
   const [toast, setToast] = useState(false);
   const { user } = useContext(UserContext);
 
-  const handleTryItClick = () => {
+  const handleTryItClick = async () => {
     if (user) {
       // Usuário logado → vai para upload
       navigate("/upload");
     } else {
-      // Usuário não logado → mostra aviso e manda para login
-      setToast(true);
-      setTimeout(() => setToast(false), 3000);
-      navigate("/login");
+      if (isLocalAuthMode()) {
+        // Usuário não logado → mostra aviso e manda para login local
+        setToast(true);
+        setTimeout(() => setToast(false), 3000);
+        navigate("/login");
+        return;
+      }
+
+      try {
+        await redirectToSignIn();
+      } catch {
+        navigate("/login");
+      }
     }
   };
 

@@ -1,7 +1,12 @@
 import React, { useEffect, useRef, useState, useContext } from "react";
 import BrandLogo from "../../assets/images/Xclarty_logo.svg";
 import { useNavigate } from "react-router-dom";
-import { signOut } from "../../utils/auth";
+import {
+  isLocalAuthMode,
+  redirectToSignIn,
+  redirectToSignUp,
+  signOut,
+} from "../../utils/auth";
 import { UserContext } from "../../context/UserContext";
 import arrowDown from "../../assets/icons/arrow-down.svg";
 import coin from "../../assets/icons/coin.svg";
@@ -40,6 +45,32 @@ export default function Header() {
     signOut();
   };
 
+  const handleLogin = async () => {
+    if (isLocalAuthMode()) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      await redirectToSignIn();
+    } catch {
+      navigate("/login");
+    }
+  };
+
+  const handleSignup = async () => {
+    if (isLocalAuthMode()) {
+      navigate("/signup");
+      return;
+    }
+
+    try {
+      await redirectToSignUp();
+    } catch {
+      navigate("/signup");
+    }
+  };
+
   return (
     <header className="w-full bg-white shadow-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-between py-4 px-6 md:px-0">
@@ -51,13 +82,13 @@ export default function Header() {
           {!user ? (
             <>
               <button
-                onClick={() => navigate("/login")}
+                onClick={handleLogin}
                 className="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition mr-2"
               >
                 Log in
               </button>
               <button
-                onClick={() => navigate("/signup")}
+                onClick={handleSignup}
                 className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
               >
                 Sign up

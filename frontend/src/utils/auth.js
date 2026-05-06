@@ -88,10 +88,10 @@ export const hasValidSession = () => {
   return Date.now() < expiresAt - 60_000 || Boolean(getRefreshToken());
 };
 
-export const redirectToSignIn = () => redirectToManagedLogin();
-export const redirectToSignUp = () => redirectToManagedLogin({ screenHint: "signup" });
+export const redirectToSignIn = () => redirectToManagedLogin({ path: "/login" });
+export const redirectToSignUp = () => redirectToManagedLogin({ path: "/signup" });
 
-export const redirectToManagedLogin = async ({ screenHint } = {}) => {
+export const redirectToManagedLogin = async ({ path = "/login", screenHint } = {}) => {
   const { domain, clientId, redirectUri, scope } = requireCognitoConfig();
   const verifier = randomBase64Url(32);
   const state = randomBase64Url(32);
@@ -112,7 +112,7 @@ export const redirectToManagedLogin = async ({ screenHint } = {}) => {
 
   if (screenHint) params.set("screen_hint", screenHint);
 
-  window.location.assign(`${domain}/oauth2/authorize?${params.toString()}`);
+  window.location.assign(`${domain}${path}?${params.toString()}`);
 };
 
 export const handleAuthCallback = async () => {

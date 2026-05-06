@@ -136,40 +136,6 @@ print(value)
 PY
 }
 
-read_stack_output_optional() {
-  local outputs_file="$1"
-  local output_key="$2"
-
-  python3 - "$outputs_file" "$STACK_NAME" "$output_key" <<'PY'
-import json
-import sys
-from pathlib import Path
-
-outputs_file = Path(sys.argv[1])
-stack_name = sys.argv[2]
-output_key = sys.argv[3]
-data = json.loads(outputs_file.read_text(encoding="utf-8"))
-print(data.get(stack_name, {}).get(output_key, ""))
-PY
-}
-
-read_stack_output_first() {
-  local outputs_file="$1"
-  shift
-
-  local value
-  for output_key in "$@"; do
-    value="$(read_stack_output_optional "$outputs_file" "$output_key")"
-    if [ -n "$value" ]; then
-      echo "$value"
-      return 0
-    fi
-  done
-
-  echo "Missing CDK output. Tried: $*" >&2
-  exit 1
-}
-
 fetch_stack_outputs() {
   local outputs_file="$1"
   local raw_outputs_file
@@ -422,7 +388,7 @@ fi
 amplify_app_id="$(read_stack_output "$outputs_file" AmplifyAppId)"
 frontend_url="$(read_stack_output "$outputs_file" AmplifyBranchUrl)"
 api_base_url="$(read_stack_output "$outputs_file" ApiBaseUrl)"
-cognito_domain="$(read_stack_output_first "$outputs_file" CognitoManagedLoginDomain CognitoHostedUiDomain)"
+cognito_domain="$(read_stack_output "$outputs_file" CognitoHostedUiDomain)"
 cognito_client_id="$(read_stack_output "$outputs_file" CognitoUserPoolClientId)"
 
 echo "Building frontend for ${frontend_url}"
