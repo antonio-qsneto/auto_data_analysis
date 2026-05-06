@@ -60,7 +60,7 @@ export default function LoginPage() {
 
         <h1 className="text-3xl font-semibold text-gray-900 text-center">Welcome</h1>
         <p className="text-gray-700 text-center text-sm mb-2">
-          {localMode ? "Use a local development account" : "Use your Cognito account to continue"}
+          {localMode ? "Use a local development account" : "Use Cognito managed login to continue"}
         </p>
 
         {localMode ? (
@@ -104,7 +104,7 @@ export default function LoginPage() {
               {loadingAction === "login" ? (
                 <img src={loadingGif} alt="Loading" className="w-5 h-5" />
               ) : (
-                "Log in with Cognito"
+                "Continue with managed login"
               )}
             </button>
 

@@ -13,7 +13,7 @@ Este diretório cria a infraestrutura AWS para o backend Django usando:
 - AWS Amplify Hosting para o frontend
 - RDS PostgreSQL
 - ElastiCache Redis
-- Cognito User Pool + Hosted UI para login, cadastro, reset de senha e federação opcional com Google
+- Cognito User Pool + Managed login para login, cadastro, reset de senha e federação opcional com Google
 - (Opcional) S3 bucket para relatórios
 
 ## Estrutura
@@ -75,12 +75,16 @@ FRONTEND_URL=https://main.d1wxfdqkne5owr.amplifyapp.com \
 ./scripts/deploy.sh
 ```
 
+Por padrao, o build do frontend roda em Docker com `node:22-alpine`, evitando
+problemas com versoes locais de Node/npm e caches em `node_modules`. Para forcar
+o Node local, use `FRONTEND_BUILD_RUNTIME=local`.
+
 Esse comando:
 - cria/atualiza o secret `auto-data-analysis/prod/app` no Secrets Manager
 - faz build e upload da imagem backend via CDK Docker asset
 - provisiona/atualiza VPC, ECS, RDS, Redis, S3, Cognito, ALB, CloudFront e Amplify
 - builda o frontend com os outputs do CDK
-- publica `frontend/dist` no branch Amplify `prod`
+- publica `frontend/dist` no branch Amplify `prod`, ou atualiza as variaveis e inicia um job `RELEASE` quando o Amplify esta conectado a um repositorio
 
 ## Synth de produção
 ```bash
@@ -118,12 +122,38 @@ Secret JSON no AWS Secrets Manager contendo:
 - `DEFAULT_FROM_EMAIL`
 
 ## Cognito / frontend
+O CDK configura o dominio do User Pool com `ManagedLoginVersion.NEWER_MANAGED_LOGIN`
+e cria um `AWS::Cognito::ManagedLoginBranding` com os estilos padrao do Cognito.
+O User Pool fica no feature plan `ESSENTIALS`, que e o tier minimo para o novo
+Managed login.
+
 Em produção, `scripts/deploy.sh` configura o build do Vite automaticamente com
-os outputs do CDK:
+os outputs do CDK e os dados atuais do Cognito:
 
 - `VITE_AUTH_MODE=cognito`
 - `VITE_API_BASE_URL=<ApiBaseUrl>`
-- `VITE_COGNITO_DOMAIN=<CognitoHostedUiDomain>`
+- `VITE_COGNITO_DOMAIN=<CognitoManagedLoginDomain>`
+- `VITE_COGNITO_MANAGED_LOGIN_VERSION=NEWER_MANAGED_LOGIN`
 - `VITE_COGNITO_USER_POOL_CLIENT_ID=<CognitoUserPoolClientId>`
 - `VITE_COGNITO_REDIRECT_URI=<AmplifyBranchUrl>/auth/callback`
 - `VITE_COGNITO_LOGOUT_URI=<AmplifyBranchUrl>/login`
+
+Para recuperar essas informacoes sem copiar do console AWS:
+
+```bash
+cd infra
+AWS_REGION=us-east-1 ./scripts/export_cognito_env.sh
+```
+
+Para gerar um env local do frontend:
+
+```bash
+cd infra
+AWS_REGION=us-east-1 ./scripts/export_cognito_env.sh \
+  --frontend-url https://main.d1wxfdqkne5owr.amplifyapp.com \
+  --output ../frontend/.env.production.local
+```
+
+Esse arquivo contem apenas IDs e URLs publicos de configuracao. Ele nao inclui
+client secret, porque o User Pool Client do frontend usa PKCE e nao deve ter
+secret embutido no browser.

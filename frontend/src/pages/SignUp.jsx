@@ -82,8 +82,8 @@ export default function Signup() {
           {localMode
             ? "Create a local development account"
             : redirecting
-            ? "Redirecting to Cognito..."
-            : "Use Cognito to create your account"}
+            ? "Redirecting to managed login..."
+            : "Use Cognito managed login to create your account"}
         </p>
 
         {redirecting && <img src={loadingGif} alt="Loading" className="w-10 h-10" />}
@@ -145,7 +145,7 @@ export default function Signup() {
               disabled={!cognitoConfigured || redirecting}
               className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md hover:shadow-lg hover:from-blue-700 hover:to-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Open Cognito sign up
+              Open managed sign up
             </button>
 
             <button

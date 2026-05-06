@@ -88,10 +88,10 @@ export const hasValidSession = () => {
   return Date.now() < expiresAt - 60_000 || Boolean(getRefreshToken());
 };
 
-export const redirectToSignIn = () => redirectToHostedUi();
-export const redirectToSignUp = () => redirectToHostedUi({ screenHint: "signup" });
+export const redirectToSignIn = () => redirectToManagedLogin();
+export const redirectToSignUp = () => redirectToManagedLogin({ screenHint: "signup" });
 
-export const redirectToHostedUi = async ({ screenHint } = {}) => {
+export const redirectToManagedLogin = async ({ screenHint } = {}) => {
   const { domain, clientId, redirectUri, scope } = requireCognitoConfig();
   const verifier = randomBase64Url(32);
   const state = randomBase64Url(32);

@@ -55,7 +55,12 @@ class AutoDataAnalysisStack(Stack):
 
         existing_amplify_app_id = self._ctx_str("existing_amplify_app_id", "")
         existing_amplify_default_domain = self._ctx_str("existing_amplify_default_domain", "")
-        amplify_branch_name = self._ctx_str("amplify_branch_name", app_env if is_prod else environment_name)
+        amplify_branch_name = self._ctx_prod_str(
+            "amplify_branch_name",
+            "dev",
+            app_env,
+            is_prod,
+        )
         if existing_amplify_app_id:
             amplify_app_id = existing_amplify_app_id
             amplify_default_domain = (
@@ -269,6 +274,7 @@ class AutoDataAnalysisStack(Stack):
             self,
             "CognitoUserPool",
             user_pool_name=f"{name_prefix}-users",
+            feature_plan=cognito.FeaturePlan.ESSENTIALS,
             self_sign_up_enabled=True,
             sign_in_aliases=cognito.SignInAliases(email=True),
             sign_in_case_sensitive=False,
@@ -290,6 +296,7 @@ class AutoDataAnalysisStack(Stack):
         user_pool_domain = user_pool.add_domain(
             "CognitoUserPoolDomain",
             cognito_domain=cognito.CognitoDomainOptions(domain_prefix=cognito_domain_prefix),
+            managed_login_version=cognito.ManagedLoginVersion.NEWER_MANAGED_LOGIN,
         )
 
         supported_identity_providers = [cognito.UserPoolClientIdentityProvider.COGNITO]
@@ -338,6 +345,16 @@ class AutoDataAnalysisStack(Stack):
         )
         if google_provider:
             user_pool_client.node.add_dependency(google_provider)
+
+        managed_login_branding = cognito.CfnManagedLoginBranding(
+            self,
+            "CognitoManagedLoginBranding",
+            user_pool_id=user_pool.user_pool_id,
+            client_id=user_pool_client.user_pool_client_id,
+            use_cognito_provided_values=True,
+        )
+        managed_login_branding.node.add_dependency(user_pool_domain)
+        managed_login_branding.node.add_dependency(user_pool_client)
 
         cognito_issuer = Fn.join(
             "",
@@ -640,7 +657,12 @@ class AutoDataAnalysisStack(Stack):
         CfnOutput(self, "CognitoUserPoolId", value=user_pool.user_pool_id)
         CfnOutput(self, "CognitoUserPoolClientId", value=user_pool_client.user_pool_client_id)
         CfnOutput(self, "CognitoIssuer", value=cognito_issuer)
-        CfnOutput(self, "CognitoHostedUiDomain", value=user_pool_domain.base_url())
+        CfnOutput(self, "CognitoManagedLoginDomain", value=user_pool_domain.base_url())
+        CfnOutput(
+            self,
+            "CognitoManagedLoginVersion",
+            value=cognito.ManagedLoginVersion.NEWER_MANAGED_LOGIN.name,
+        )
         CfnOutput(self, "CognitoCallbackUrls", value=",".join(cognito_callback_urls))
         CfnOutput(self, "CognitoLogoutUrls", value=",".join(cognito_logout_urls))
         if reports_bucket:
