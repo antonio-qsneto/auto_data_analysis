@@ -78,13 +78,14 @@ def process_data(df, model_name="gemini", user=None):
     df.to_csv(f"user_{user.id}_df.csv", index=False)
 
     # Seleciona modelo e gera resumos
-    model = switch_model(model_name)
+    insight_model = switch_model(model_name, task="insight")
+    chart_model = switch_model(model_name, task="chart")
     business_summary = summarize_business(df)
     insight = summarize_text_insights(df)
     insight_prompt = generate_prompt_insight(insight)
 
     try:
-        insight_raw = model(insight_prompt) if insight_prompt else ""
+        insight_raw = insight_model(insight_prompt) if insight_prompt else ""
     except Exception as e:
         debug_print("INSIGHT ERROR", f"[DEBUG] Erro ao chamar modelo para insights: {e}")
         insight_raw = ""
@@ -132,7 +133,7 @@ def process_data(df, model_name="gemini", user=None):
         debug_print("PROCESS_DATA", f"Attempt {attempt}/{MAX_RETRIES}")
 
         try:
-            raw_from_model = model(chart_prompt)
+            raw_from_model = chart_model(chart_prompt)
         except Exception as e:
             last_error = str(e)
             debug_print("LLM ERROR", f"{e}")
@@ -236,7 +237,7 @@ def chat_with_data(question: str, user, model_name="gemini"):
     if df is None:
         return {"answer": "Nenhuma tabela foi carregada ainda."}
 
-    model = switch_model(model_name)
+    model = switch_model(model_name, task="insight")
 
     MAX_RETRIES = int(os.getenv("LLM_RETRY_COUNT", "3"))
     RETRY_DELAY_SECONDS = float(os.getenv("LLM_RETRY_DELAY_SECONDS", "1.0"))

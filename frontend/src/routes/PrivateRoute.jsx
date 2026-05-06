@@ -1,7 +1,6 @@
 import { Navigate } from "react-router-dom";
-import { getAccessToken } from "../utils/auth";
+import { hasValidSession } from "../utils/auth";
 
 export default function PrivateRoute({ children }) {
-  const token = getAccessToken();
-  return token ? children : <Navigate to="/login" replace />;
+  return hasValidSession() ? children : <Navigate to="/login" replace />;
 }

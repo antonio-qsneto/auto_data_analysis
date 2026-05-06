@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useContext } from "react";
 import BrandLogo from "../../assets/images/Xclarty_logo.svg";
 import { useNavigate } from "react-router-dom";
-import { clearTokens } from "../../utils/auth";
+import { signOut } from "../../utils/auth";
 import { UserContext } from "../../context/UserContext";
 import arrowDown from "../../assets/icons/arrow-down.svg";
 import coin from "../../assets/icons/coin.svg";
@@ -36,9 +36,8 @@ export default function Header() {
 
   // Logout
   const handleLogout = () => {
-    clearTokens();
     setUser(null);
-    navigate("/");
+    signOut();
   };
 
   return (

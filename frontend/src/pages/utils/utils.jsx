@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 export function parseInsightsToCards(insightsText) {
   if (!insightsText) return [];
 

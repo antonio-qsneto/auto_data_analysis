@@ -12,7 +12,7 @@ export default function InsightCard({ insightsText }) {
           onClick={() => {
             try {
               navigator.clipboard.writeText(insightsText || "");
-            } catch (e) {
+            } catch {
               // ignore
             }
           }}

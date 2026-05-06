@@ -6,10 +6,9 @@ import DatabasePage from '../pages/DatabasePage';
 import Reports from '../pages/Reports';
 import LoginPage from '../pages/Login';
 import SignUp from '../pages/SignUp';
+import AuthCallback from "../pages/AuthCallback";
 import PrivateRoute from './PrivateRoute';
 import ReportDetail from "../pages/ReportDetail";
-import PasswordResetRequest from "../pages/PasswordResetRequest";
-import PasswordResetConfirm from "../pages/PasswordResetConfirm";
 import UserProfile from "../pages/UserProfile";
 
 
@@ -18,7 +17,9 @@ export default function AppRoutes(props) {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/SignUp" element={<SignUp />} />
+      <Route path="/signup" element={<SignUp />} />
+      <Route path="/SignUp" element={<Navigate to="/signup" replace />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/" element={<HomePage {...props} />} />
       <Route path="/upload" element={<PrivateRoute><UploadPage {...props} /></PrivateRoute>} />
       <Route path="/dashboard" element={<PrivateRoute>{props.charts && props.charts.length > 0 ? (<DashboardPage {...props} />
@@ -31,8 +32,7 @@ export default function AppRoutes(props) {
       <Route path="/database" element={<PrivateRoute><DatabasePage {...props} /></PrivateRoute>} />
       <Route path="/reports" element={<PrivateRoute><Reports {...props}/> </PrivateRoute>} />
       <Route path="/reports/:id" element={<PrivateRoute><ReportDetail {...props}/> </PrivateRoute>} />
-      <Route path="/reset-password" element={<PasswordResetRequest />} />
-      <Route path="/reset-password-confirm/:token" element={<PasswordResetConfirm />} />
+      <Route path="/reset-password" element={<Navigate to="/login" replace />} />
       <Route path="/profile" element={<PrivateRoute><UserProfile {...props} /></PrivateRoute>} />
 
     </Routes>

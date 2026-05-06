@@ -1,124 +1,97 @@
 import os
-import requests
-from openai import OpenAI # type: ignore
-from google import genai # type: ignore
-import json
+from typing import Any, Callable, Literal
+
 from dotenv import load_dotenv
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 
 load_dotenv()
 
-def call_openAI(prompt: str) -> str | None:
+TaskType = Literal["insight", "chart"]
 
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError("Variável de ambiente OPENAI_API_KEY não encontrada.")
+SYSTEM_PROMPT = "Você é um analista de dados."
+OPENROUTER_MODELS: dict[TaskType, str] = {
+    "chart": "moonshotai/kimi-k2:free",
+    "insight": "deepseek/deepseek-chat-v3-0324:free",
+}
 
-    try:
-        # Cria o cliente com a chave de API do OpenAI
-        client = OpenAI(api_key=api_key)
 
-        # Chama o modelo GPT-5 Nano
-        response = client.chat.completions.create(
-            model="gpt-5-nano",
-            messages=[
-                {"role": "system", "content": "Você é um analista de dados que gera código Python para visualização."},
-                {"role": "user", "content": prompt}
-            ],
+def _extract_text(content: Any) -> str:
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts: list[str] = []
+        for item in content:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict):
+                text = item.get("text")
+                if isinstance(text, str):
+                    parts.append(text)
+        return "".join(parts).strip()
+    return str(content or "")
+
+
+def _build_llm(model: str, task: TaskType):
+    provider = model.strip().lower()
+
+    if provider == "gemini":
+        api_key = os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            raise RuntimeError("GOOGLE_API_KEY não encontrada nas variáveis de ambiente.")
+        return ChatGoogleGenerativeAI(
+            model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite"),
+            google_api_key=api_key,
             temperature=0.3,
-            max_tokens=3000
+            max_output_tokens=3000,
         )
 
-        return response.choices[0].message.content or ""
+    if provider == "openai":
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise RuntimeError("Variável de ambiente OPENAI_API_KEY não encontrada.")
+        return ChatOpenAI(
+            model=os.getenv("OPENAI_MODEL", "gpt-5-nano"),
+            api_key=api_key,
+            temperature=0.3,
+            max_tokens=3000,
+        )
 
-    except Exception as e:
-        print(f"Erro na API do OpenAI: {str(e)}")
-        raise RuntimeError(f"Erro na API do OpenAI: {str(e)}")
+    if provider == "openrouter":
+        api_key = os.getenv("OPENROUTER_API_KEY")
+        if not api_key:
+            raise RuntimeError("OPENROUTER_API_KEY não encontrada nas variáveis de ambiente.")
+        return ChatOpenAI(
+            model=OPENROUTER_MODELS[task],
+            api_key=api_key,
+            base_url="https://openrouter.ai/api/v1",
+            temperature=0.3,
+            max_tokens=3000,
+        )
 
-
-def call_openRouter(prompt: str, model="insight") -> str:
-    api_key = os.getenv("OPENROUTER_API_KEY")
-    url = "https://openrouter.ai/api/v1/chat/completions"
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}"
-    }
-    model_mapping = {
-        "chart": "moonshotai/kimi-k2:free",
-        "insight": "deepseek/deepseek-chat-v3-0324:free",
-    }
-    model = model_mapping.get(model)
-    if not model:
-        raise ValueError(f"Tipo inválido especificado: {type}. Deve ser 'chart' ou 'insight'.")
-
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": "Você é um analista de dados."},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.3,
-        "max_tokens": 3000,
-    }
-
-    response = requests.post(url, json=payload, headers=headers, timeout=60)
-    if response.status_code == 200:
-        return response.json()["choices"][0]["message"]["content"]
-    else:
-        print(f"Chave de API no cliente LLM: {api_key}")
-        print(f"Código de status da resposta: {response.status_code}")
-        print(f"Texto da resposta: {response.text}")
-        raise RuntimeError(f"Erro {response.status_code}: {response.text}")
+    raise ValueError(f"Modelo não suportado: {model}")
 
 
-def call_gemini(prompt: str) -> str:
-    api_key = os.getenv("GOOGLE_API_KEY")
-    if not api_key:
-        raise RuntimeError("GOOGLE_API_KEY não encontrada nas variáveis de ambiente.")
-
-    client = genai.Client(api_key=api_key)
+def _invoke_llm(llm: Any, prompt: str, model_name: str) -> str:
+    composed_prompt = f"{SYSTEM_PROMPT}\n\n{prompt}"
 
     try:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash-lite",
-            contents=prompt,
-        )
-        return response.text  # type: ignore
-
+        response = llm.invoke(composed_prompt)
     except Exception as e:
-        # Se for um erro do Google API com dicionário de erro, extrai a mensagem
-        msg = str(e)
-        status_code = None
-        error_details = None
-        if hasattr(e, "args") and isinstance(e.args[0], dict):
-            details = e.args[0].get("error", {})
-            status_code = details.get('code')
-            error_msg = details.get('message', str(e))
-            status = details.get('status', 'Error')
+        if model_name.strip().lower() == "gemini":
+            msg = str(e).upper()
+            if "503" in msg or "UNAVAILABLE" in msg:
+                return "Xclarity is currently overloaded. Please try again in a few minutes."
+        raise RuntimeError(f"Erro ao chamar modelo '{model_name}': {e}") from e
 
-            # 🆕 Detecta overload específico (503 UNAVAILABLE) e retorna mensagem amigável
-            if status_code == 503 or status == 'UNAVAILABLE':
-                user_friendly_msg = "Xclarity is currently overloaded. Please try again in a few minutes."
-                print(f"[Gemini] Overload detectado: {error_msg} - Retornando mensagem amigável: {user_friendly_msg}")
-                return user_friendly_msg
-
-            msg = f"{status}: {error_msg}"
-            error_details = details
-
-        print(f"[Gemini] Erro na API: {msg}")
-        
-        # Para outros erros, retorna JSON com detalhes (para depuração interna), mas sem expor ao usuário final
-        return json.dumps({
-            "error": f"Erro interno no processamento: {msg}",
-            "status": "failed"
-        })
+    return _extract_text(response.content)
 
 
-def switch_model(model: str):
-    if model == "gemini":
-        return call_gemini
-    elif model == "openai":
-        return call_openAI
-    elif model == "openrouter":
-        return call_openRouter
-    else:
-        raise ValueError(f"Modelo não suportado: {model}")
+def invoke_model(prompt: str, model: str = "gemini", task: TaskType = "insight") -> str:
+    llm = _build_llm(model=model, task=task)
+    return _invoke_llm(llm=llm, prompt=prompt, model_name=model)
+
+
+def switch_model(model: str, task: TaskType = "insight") -> Callable[[str], str]:
+    llm = _build_llm(model=model, task=task)
+    return lambda prompt: _invoke_llm(llm=llm, prompt=prompt, model_name=model)

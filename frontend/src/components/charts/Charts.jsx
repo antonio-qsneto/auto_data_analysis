@@ -168,7 +168,7 @@ export default function Charts({ charts, theme = "dark" }) {
           } : {})
         };
 
-        const { title, ...optionsWithoutTitle } = options;
+        const { title: _title, ...optionsWithoutTitle } = options;
 
         return (
           <div

@@ -173,6 +173,10 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+infra/secrets/*.env
+!infra/secrets/*.env.example
+frontend/.vite/
+.vite/
 
 # vercel
 .vercel
@@ -218,6 +222,8 @@ build/Release
 
 # Dependency directories
 node_modules/
+.vite/
+frontend/.vite/
 jspm_packages/
 
 # Snowpack dependency directory (https://snowpack.dev/)

@@ -1,6 +1,7 @@
 import React, { useContext, useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { UserContext } from "../../context/UserContext";
+import { signOut } from "../../utils/auth";
 
 import XLogo from "../../assets/icons/X.svg";
 import csv from "../../assets/icons/fluent_document-table-16-regular.svg";
@@ -10,7 +11,7 @@ import folder from "../../assets/icons/folder.svg";
 export default function SideBar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, loadUser } = useContext(UserContext);
+  const { user, setUser } = useContext(UserContext);
   const [open, setOpen] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const ref = useRef(null);
@@ -36,10 +37,8 @@ export default function SideBar() {
 
   // Logout
   const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    navigate("/login");
-    loadUser(); // refresh context
+    setUser(null);
+    signOut();
   };
 
   return (

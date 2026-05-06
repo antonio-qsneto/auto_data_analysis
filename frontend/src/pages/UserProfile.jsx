@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../context/UserContext";
 import axiosInstance from "../utils/axiosInstance";
+import { signOut } from "../utils/auth";
 import coin from "../assets/icons/coin.svg";
 
 export default function UserProfile() {
@@ -27,6 +28,7 @@ export default function UserProfile() {
     try {
       await axiosInstance.delete("/user/delete/");
       setUser(null);
+      signOut({ redirect: false });
       alert("Profile deleted successfully.");
       navigate("/");
     } catch (err) {

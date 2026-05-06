@@ -1,8 +1,10 @@
 import axios from "axios";
-import { getAccessToken, getRefreshToken, setTokens, clearTokens } from "./auth";
+import { getApiToken, getRefreshToken, refreshTokens, signOut } from "./auth";
 
 const API_URL =
-  import.meta.env.VITE_API_URL || "/api";
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  "/api";
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
@@ -11,9 +13,8 @@ const axiosInstance = axios.create({
   },
 });
 
-// === Interceptores (sem alterar nada do seu código atual) ===
 axiosInstance.interceptors.request.use((config) => {
-  const token = getAccessToken();
+  const token = getApiToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -30,15 +31,12 @@ axiosInstance.interceptors.response.use(
     ) {
       originalRequest._retry = true;
       try {
-        const refreshToken = getRefreshToken();
-        const { data } = await axios.post(`${API_URL}/token/refresh/`, {
-          refresh: refreshToken,
-        });
-        setTokens({ access: data.access, refresh: refreshToken });
-        originalRequest.headers.Authorization = `Bearer ${data.access}`;
+        const tokens = await refreshTokens();
+        const apiToken = tokens.id_token || tokens.access_token || getApiToken();
+        originalRequest.headers.Authorization = `Bearer ${apiToken}`;
         return axiosInstance(originalRequest);
       } catch {
-        clearTokens();
+        signOut({ redirect: false });
         window.location.href = "/login";
       }
     }

@@ -1,10 +1,8 @@
-import boto3
-import json
-from django.conf import settings
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from ..models import Report
+from ..report_storage import delete_report_payload, load_report_payload
 from ..serializers.report_serializer import ReportSerializer
 
 
@@ -26,12 +24,9 @@ def get_report_detail(request, pk):
     except Report.DoesNotExist:
         return Response({"error": "Report not found"}, status=404)
 
-    s3 = boto3.client("s3")
     try:
-        obj = s3.get_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=report.s3_key)
-        content = obj["Body"].read().decode("utf-8")
-        data = json.loads(content)
-    except Exception as e:
+        data = load_report_payload(report.s3_key)
+    except Exception:
         return Response({"error": "Error fetching object"}, status=500)
 
     return Response({
@@ -51,10 +46,9 @@ def delete_report(request, pk):
     except Report.DoesNotExist:
         return Response({"error": "Report not found"}, status=404)
 
-    s3 = boto3.client("s3")
     try:
-        s3.delete_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=report.s3_key)
-    except Exception as e:
+        delete_report_payload(report.s3_key)
+    except Exception:
         return Response({"error": "Error deleting file"}, status=500)
 
     report.delete()

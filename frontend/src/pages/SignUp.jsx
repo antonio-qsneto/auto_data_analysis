@@ -1,166 +1,168 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axiosInstance from "../utils/axiosInstance";
-import GoogleLoginButton from "../components/login_components/GoogleLoginButton";
-import { GoogleOAuthProvider } from "@react-oauth/google";
+import { useContext, useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import XLogo from "../assets/icons/X.svg";
 import loadingGif from "../assets/images/loading.gif";
+import {
+  isCognitoConfigured,
+  isLocalAuthMode,
+  localSignup,
+  redirectToSignIn,
+  redirectToSignUp,
+} from "../utils/auth";
+import { UserContext } from "../context/UserContext";
 
 export default function Signup() {
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [password2, setPassword2] = useState("");
-
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [isLoading, setIsLoading] = useState(false);          // << ADICIONADO
-  const [googleLoading, setGoogleLoading] = useState(false);  // << ADICIONADO
-
+  const [redirecting, setRedirecting] = useState(false);
+  const [username, setUsername] = useState("demo");
+  const [email, setEmail] = useState("demo@example.com");
+  const [password, setPassword] = useState("Password123");
+  const [password2, setPassword2] = useState("Password123");
   const navigate = useNavigate();
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const { loadUser } = useContext(UserContext);
+  const localMode = isLocalAuthMode();
+  const cognitoConfigured = isCognitoConfigured();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    if (localMode) return;
+    if (!cognitoConfigured) return;
+
+    setRedirecting(true);
+    redirectToSignUp().catch((err) => {
+      setError(err.message || "Cognito authentication is not configured.");
+      setRedirecting(false);
+    });
+  }, [cognitoConfigured, localMode]);
+
+  const handleLogin = async () => {
     setError("");
-    setSuccess("");
-    setIsLoading(true);
-
+    setRedirecting(true);
     try {
-      await axiosInstance.post("/auth/signup/", {
-        username,
-        email,
-        password,
-        password2,
-      });
-
-      setSuccess("Cadastro realizado com sucesso! Redirecionando para login...");
-
-      setTimeout(() => navigate("/login"), 2000);
-
+      await redirectToSignIn();
     } catch (err) {
-      if (err.response?.data?.error) {
-        setError(err.response.data.error);
-      } else {
-        setError("Erro ao cadastrar. Tente novamente.");
-      }
-    } finally {
-      setIsLoading(false);
+      setError(err.message || "Cognito authentication is not configured.");
+      setRedirecting(false);
+    }
+  };
+
+  const handleSignup = async () => {
+    setError("");
+    setRedirecting(true);
+    try {
+      await redirectToSignUp();
+    } catch (err) {
+      setError(err.message || "Cognito authentication is not configured.");
+      setRedirecting(false);
+    }
+  };
+
+  const handleLocalSignup = async (event) => {
+    event.preventDefault();
+    setError("");
+    setRedirecting(true);
+    try {
+      await localSignup({ username, email, password, password2 });
+      await loadUser();
+      navigate("/", { replace: true });
+    } catch (err) {
+      setError(err.message || "Erro ao criar conta local.");
+      setRedirecting(false);
     }
   };
 
   return (
-    <GoogleOAuthProvider clientId={clientId}>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-200 via-slate-100 to-slate-300 p-4">
-        <div className="w-full max-w-md p-8 rounded-3xl bg-white/70 backdrop-blur-xl border border-white/40 shadow-lg flex flex-col items-center gap-6">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-200 via-slate-100 to-slate-300 p-4">
+      <div className="w-full max-w-md p-8 rounded-3xl bg-white/70 backdrop-blur-xl border border-white/40 shadow-lg flex flex-col items-center gap-6">
+        <div className="w-20 h-20 rounded-full bg-white/50 backdrop-blur-lg border border-white/50 flex items-center justify-center shadow-md">
+          <img src={XLogo} alt="Logo" className="w-12 h-12" />
+        </div>
 
-          {/* Logo */}
-          <div className="w-20 h-20 rounded-full bg-white/50 backdrop-blur-lg border border-white/50 flex items-center justify-center shadow-md">
-            <img src={XLogo} alt="Logo" className="w-12 h-12" />
-          </div>
+        <h1 className="text-2xl font-semibold text-gray-900 text-center">Create account</h1>
+        <p className="text-gray-700 text-center text-sm">
+          {localMode
+            ? "Create a local development account"
+            : redirecting
+            ? "Redirecting to Cognito..."
+            : "Use Cognito to create your account"}
+        </p>
 
-          <h1 className="text-2xl font-semibold text-gray-900 text-center">Cadastrar</h1>
+        {redirecting && <img src={loadingGif} alt="Loading" className="w-10 h-10" />}
 
-          <p className="text-gray-700 text-center text-sm mb-4">
-            Crie sua conta para começar
+        {!localMode && !cognitoConfigured && (
+          <p className="text-red-600 text-sm text-center">
+            Configure VITE_COGNITO_DOMAIN and VITE_COGNITO_USER_POOL_CLIENT_ID.
           </p>
+        )}
+        {error && <p className="text-red-600 text-sm text-center">{error}</p>}
 
-          {/* FORM */}
-          <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
+        {localMode ? (
+          <form onSubmit={handleLocalSignup} className="w-full flex flex-col gap-4">
             <input
               type="text"
               placeholder="Usuário"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(event) => setUsername(event.target.value)}
               required
-              disabled={isLoading}
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 placeholder-gray-500 text-gray-900 shadow-md
-                         focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 backdrop-blur-md transition disabled:opacity-60"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/60 placeholder-gray-400 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
             />
-
             <input
               type="email"
               placeholder="E-mail"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(event) => setEmail(event.target.value)}
               required
-              disabled={isLoading}
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 placeholder-gray-500 text-gray-900 shadow-md
-                         focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 backdrop-blur-md transition disabled:opacity-60"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/60 placeholder-gray-400 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
             />
-
             <input
               type="password"
               placeholder="Senha"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(event) => setPassword(event.target.value)}
               required
-              disabled={isLoading}
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 placeholder-gray-500 text-gray-900 shadow-md
-                         focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 backdrop-blur-md transition disabled:opacity-60"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/60 placeholder-gray-400 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
             />
-
             <input
               type="password"
               placeholder="Confirmar senha"
               value={password2}
-              onChange={(e) => setPassword2(e.target.value)}
+              onChange={(event) => setPassword2(event.target.value)}
               required
-              disabled={isLoading}
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 placeholder-gray-500 text-gray-900 shadow-md
-                         focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 backdrop-blur-md transition disabled:opacity-60"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/60 placeholder-gray-400 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
             />
-
-            {/* BOTÃO COM LOADING INTERNO */}
             <button
               type="submit"
-              disabled={isLoading}
-              className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600
-                         shadow-md hover:shadow-lg hover:from-blue-700 hover:to-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              disabled={redirecting}
+              className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md hover:shadow-lg hover:from-blue-700 hover:to-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isLoading ? (
-                <>
-                  <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                  Signing up...
-                </>
-              ) : (
-                "Cadastrar"
-              )}
+              Create local account
             </button>
           </form>
+        ) : (
+          <div className="w-full flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={handleSignup}
+              disabled={!cognitoConfigured || redirecting}
+              className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md hover:shadow-lg hover:from-blue-700 hover:to-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              Open Cognito sign up
+            </button>
 
-          {/* FEEDBACK */}
-          {error && <p className="text-red-600 text-sm text-center">{error}</p>}
-          {success && <p className="text-green-600 text-sm text-center">{success}</p>}
-
-          {/* Divisor */}
-          <div className="flex items-center gap-3 w-full my-4">
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent"></div>
-            <span className="text-gray-500 text-sm">ou</span>
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent"></div>
+            <button
+              type="button"
+              onClick={handleLogin}
+              disabled={!cognitoConfigured || redirecting}
+              className="w-full py-3 rounded-xl font-semibold text-blue-700 bg-white/70 border border-blue-200 shadow-sm hover:bg-blue-50 transition disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              Log in instead
+            </button>
           </div>
+        )}
 
-          {/* GOOGLE LOGIN */}
-          <div className="w-full flex flex-col items-center gap-3">
-
-            <GoogleLoginButton
-              onLoginStart={() => setGoogleLoading(true)}
-              onLoginSuccess={() => {
-                setGoogleLoading(false);
-                navigate("/");
-              }}
-            />
-
-            {/* LOADING ABAIXO DO BOTÃO GOOGLE */}
-            {googleLoading && (
-              <div className="flex flex-col items-center mt-1">
-                <img src={loadingGif} className="w-10 h-10" alt="Loading" />
-                <p className="text-gray-700 text-xs mt-1">Autenticando...</p>
-              </div>
-            )}
-          </div>
-        </div>
+        <Link to="/" className="text-gray-500 hover:text-gray-700 text-sm">
+          Back to home
+        </Link>
       </div>
-    </GoogleOAuthProvider>
+    </div>
   );
 }

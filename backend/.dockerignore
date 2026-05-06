@@ -32,6 +32,12 @@ MANIFEST
 .env.*.local
 *.log
 logs/
+db.sqlite3
+*.sqlite3
+*.csv
+data_output.json
+local_reports/
+media/
 
 # Testing and docs
 .pytest_cache/

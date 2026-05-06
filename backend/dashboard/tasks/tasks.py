@@ -2,10 +2,7 @@ from celery import shared_task
 from dashboard.views.handle_csv import handle_csv
 from dashboard.views.handle_db import fetch_and_process_table
 from dashboard.models import Report
-from django.conf import settings
-from django.utils import timezone
-import boto3
-import json
+from dashboard.report_storage import build_report_payload, save_report_payload
 import traceback
 import io
 import numpy as np
@@ -49,30 +46,11 @@ def generate_chart_from_csv_task(self, file_content, user_id):
         # ====== 4️⃣ Sanitizar dados ======
         safe_result = clean_json(result)
 
-        # ====== 5️⃣ Salvar resultado no S3 ======
-        s3 = boto3.client("s3")
-        file_key = f"reports/{user.id}/{timezone.now().strftime('%Y%m%dT%H%M%S')}.json"
-
-        body = json.dumps({
-            "business_summary": safe_result["business_summary"],
-            "insights_text": safe_result["insights_text"],
-            "charts": safe_result["charts"],
-        }, allow_nan=False)
-
-        s3.put_object(
-            Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-            Key=file_key,
-            Body=body,
-            ContentType="application/json"
-        )
-
-        s3_url = (
-            f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3."
-            f"{settings.AWS_S3_REGION_NAME}.amazonaws.com/{file_key}"
-        )
+        # ====== 5️⃣ Salvar resultado no S3 ou no disco local ======
+        file_key, report_url = save_report_payload(user.id, build_report_payload(safe_result))
 
         # ====== 6️⃣ Registrar no banco ======
-        report = Report.objects.create(user=user, s3_key=file_key, s3_url=s3_url)
+        report = Report.objects.create(user=user, s3_key=file_key, s3_url=report_url)
 
         print(f"[TASK] CSV processado e cache salvo para user:{user.id}")
 
@@ -85,7 +63,7 @@ def generate_chart_from_csv_task(self, file_content, user_id):
             "insights_text": safe_result["insights_text"],
         }
 
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return {"status": "failed"}
 
@@ -118,39 +96,22 @@ def generate_chart_from_database_task(self, connection_data, table, user_id):
         # ====== Sanitiza ======
         safe_result = clean_json(result)
 
-        # ====== Salva no S3 ======
-        s3 = boto3.client("s3")
-        file_key = f"reports/{user.id}/{timezone.now().strftime('%Y%m%dT%H%M%S')}.json"
-        body = json.dumps({
-            "business_summary": safe_result["business_summary"],
-            "insights_text": safe_result["insights_text"],
-            "charts": safe_result["charts"],
-        }, allow_nan=False)
-
-        s3.put_object(
-            Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-            Key=file_key,
-            Body=body,
-            ContentType="application/json"
-        )
-        s3_url = (
-            f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3."
-            f"{settings.AWS_S3_REGION_NAME}.amazonaws.com/{file_key}"
-        )
+        # ====== Salva no S3 ou no disco local ======
+        file_key, report_url = save_report_payload(user.id, build_report_payload(safe_result))
 
         # ====== Cria Report no banco ======
-        Report.objects.create(user=user, s3_key=file_key, s3_url=s3_url)
+        Report.objects.create(user=user, s3_key=file_key, s3_url=report_url)
 
         print(f"[TASK] ✅ Tabela processada e cache salvo para user:{user.id}")
 
         return {
             "status": "completed",
-            "s3_url": s3_url,
+            "s3_url": report_url,
             "business_summary": safe_result["business_summary"],
             "charts": safe_result["charts"],
             "insights_text": safe_result["insights_text"],
         }
 
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return {"status": "failed", "error": "Erro ao processar sua solicitação."}

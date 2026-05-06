@@ -1,7 +1,6 @@
 from pathlib import Path
 from dotenv import load_dotenv  # type: ignore
 import os
-from datetime import timedelta
 
 # ===========================
 # ⚙️ Inicialização básica
@@ -20,7 +19,6 @@ ALLOWED_HOSTS = [h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost
 # ===========================
 # 🌐 CORS / CSRF
 # ===========================
-SITE_ID = 1
 CORS_ALLOWED_ORIGINS = [
     o.strip()
     for o in os.getenv(
@@ -43,20 +41,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.sites',
 
-    # REST / Auth
+    # REST
     'rest_framework',
-    'rest_framework.authtoken',
-    'rest_framework_simplejwt',
-    'dj_rest_auth',
-    'dj_rest_auth.registration',
-
-    # Social Auth
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
 
     # Outras apps
     'corsheaders',
@@ -76,7 +63,6 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -159,60 +145,59 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ===========================
-# 👤 Autenticação / Allauth
+# 👤 Autenticação / AWS Cognito
 # ===========================
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_EMAIL_VERIFICATION = 'none'
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_USERNAME_REQUIRED = False
 LOGIN_REDIRECT_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 LOGOUT_REDIRECT_URL = os.getenv("FRONTEND_URL", "http://localhost:5173") + "/"
 
-FRONTEND_URL= os.getenv("FRONTEND_URL", "http://localhost:5173")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
-
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'APP': {
-            'client_id': os.getenv("GOOGLE_CLIENT_ID"),
-            'secret': os.getenv("GOOGLE_CLIENT_SECRET"),
-        },
-        'SCOPE': ['profile', 'email'],
-        'AUTH_PARAMS': {'access_type': 'online'},
-        'OAUTH_PKCE_ENABLED': True,
-    }
-}
+COGNITO_REGION = os.getenv("COGNITO_REGION", os.getenv("AWS_REGION", "us-east-1"))
+COGNITO_USER_POOL_ID = os.getenv("COGNITO_USER_POOL_ID", "")
+COGNITO_APP_CLIENT_ID = os.getenv("COGNITO_APP_CLIENT_ID", "")
+COGNITO_ISSUER = os.getenv(
+    "COGNITO_ISSUER",
+    f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{COGNITO_USER_POOL_ID}"
+    if COGNITO_USER_POOL_ID
+    else "",
+)
+COGNITO_JWKS_URL = (
+    f"{COGNITO_ISSUER}/.well-known/jwks.json"
+    if COGNITO_ISSUER
+    else ""
+)
+AUTH_MODE = os.getenv("AUTH_MODE", "cognito").strip().lower()
+LOCAL_AUTH_JWT_SECRET = os.getenv("LOCAL_AUTH_JWT_SECRET", SECRET_KEY)
+LOCAL_AUTH_ACCESS_MINUTES = int(os.getenv("LOCAL_AUTH_ACCESS_MINUTES", "60"))
+LOCAL_AUTH_REFRESH_DAYS = int(os.getenv("LOCAL_AUTH_REFRESH_DAYS", "7"))
 
 # ===========================
-# 🔒 Django REST + JWT
+# 🔒 Django REST + Cognito JWT
 # ===========================
+DEFAULT_AUTHENTICATION_CLASS = (
+    "dashboard.authentication.LocalJWTAuthentication"
+    if AUTH_MODE == "local"
+    else "dashboard.authentication.CognitoJWTAuthentication"
+)
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        DEFAULT_AUTHENTICATION_CLASS,
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
 }
 
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv("JWT_ACCESS_MINUTES", "15"))),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.getenv("JWT_REFRESH_DAYS", "1"))),
-    'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'ALGORITHM': 'HS256',
-    'SIGNING_KEY': os.getenv('JWT_SECRET_KEY', SECRET_KEY),
-}
-
 # ===========================
 # ☁️ AWS / S3
 # ===========================
 AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
+LOCAL_REPORTS_ROOT = os.getenv("LOCAL_REPORTS_ROOT", str(BASE_DIR / "local_reports"))
 if AWS_STORAGE_BUCKET_NAME:
     AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
     AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
@@ -268,6 +253,8 @@ LOGGING = {
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    USE_X_FORWARDED_HOST = True
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "True").lower() in ("1", "true", "yes")
     SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", 60))
     SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv("SECURE_HSTS_INCLUDE_SUBDOMAINS", "True").lower() in ("1", "true", "yes")
@@ -275,8 +262,13 @@ if not DEBUG:
 
 
 # Celery / Redis
-CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
-CELERY_RESULT_BACKEND = os.getenv("REDIS_URL", "redis://redis:6379/0")
+REDIS_HOST = os.getenv("REDIS_HOST", "redis")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+REDIS_DB = int(os.getenv("REDIS_DB", "0"))
+REDIS_URL = os.getenv("REDIS_URL", f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}")
+
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
 
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
@@ -289,7 +281,7 @@ CELERY_TASK_TIME_LIMIT = 60 * 20  # 20 minutos por segurança
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": os.getenv("REDIS_URL", "redis://redis:6379/0"),
+        "LOCATION": REDIS_URL,
         "TIMEOUT": 60 * 60,  # 1 hora de persistência
     }
 }
@@ -304,6 +296,6 @@ LOGGING = {
     },
     "root": {
         "handlers": ["console"],
-        "level": "DEBUG",  
+        "level": LOG_LEVEL,
     },
 }

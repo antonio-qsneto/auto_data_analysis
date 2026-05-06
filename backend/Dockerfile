@@ -1,59 +1,28 @@
-# ===============================
-# 🔹 Etapa 1: Base com dependências
-# ===============================
-FROM python:3.11-slim AS base
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Variáveis de ambiente
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    POETRY_VIRTUALENVS_CREATE=false
+    PIP_NO_CACHE_DIR=1
 
-# Instala ferramentas necessárias
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
-    curl \
-    git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copia apenas requirements.txt para cache de dependências
 COPY requirements.txt .
-
-# Instala dependências
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install -r requirements.txt
 
-
-# ===============================
-# 🔹 Etapa 2: Imagem final
-# ===============================
-FROM python:3.11-slim AS final
-
-WORKDIR /app
-
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
-
-# Copia libs instaladas
-COPY --from=base /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=base /usr/local/bin /usr/local/bin
-
-# Copia o código da aplicação
 COPY . .
+RUN chmod +x /app/entrypoint.sh && \
+    adduser --disabled-password --gecos "" --uid 10001 appuser && \
+    chown -R appuser:appuser /app
 
-# Copia o entrypoint
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+USER appuser
 
-# Limpa caches
-RUN find . -name "*.pyc" -delete && \
-    rm -rf __pycache__ .pytest_cache .git *.log
-
-# Porta do Gunicorn
 EXPOSE 8000
 
-ENTRYPOINT ["/entrypoint.sh"]
-
-CMD []
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["web"]

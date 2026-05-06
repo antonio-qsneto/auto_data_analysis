@@ -114,14 +114,14 @@ export default function UploadPage({
           } else {
             setStatusMessage(`Status: ${data.status}...`);
           }
-        } catch (err) {
+        } catch {
           clearInterval(interval);
           setError("Error checking task status.");
           setStatusMessage("Error fetching task status");
           setLoading(false);
         }
       }, 3000);
-    } catch (err) {
+    } catch {
       setError("Error uploading file or generating charts.");
       setStatusMessage("Upload failed");
       setLoading(false);

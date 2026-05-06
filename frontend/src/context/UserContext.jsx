@@ -1,7 +1,8 @@
 // context/UserContext.jsx
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useState, useEffect, useCallback } from "react";
 import axiosInstance from "../utils/axiosInstance";
-import { getAccessToken } from "../utils/auth";
+import { hasValidSession } from "../utils/auth";
 
 export const UserContext = createContext();
 
@@ -9,8 +10,7 @@ export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   const loadUser = useCallback(async () => {
-    const token = getAccessToken();
-    if (!token) {
+    if (!hasValidSession()) {
       setUser(null);
       return;
     }
